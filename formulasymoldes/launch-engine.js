@@ -1,4 +1,4 @@
-const LAUNCH_ENGINE={
+window.LAUNCH_ENGINE={
 
 clases:[
 
