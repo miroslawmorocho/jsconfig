@@ -1,1 +1,1 @@
-# jsconfig
+**Configuraciones JS para mis proyectos web.**
