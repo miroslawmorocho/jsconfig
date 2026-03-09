@@ -4,25 +4,25 @@ clases:[
 
 {
 titulo:"📅 Resina Clase 1 – Crea tus primeras piezas de resina desde casa",
-fecha:new Date("2026-03-09T19:30:00-05:00"),
+fecha:new Date("2026-03-09T18:32:00-05:00"),
 link:"https://www.youtube.com/live/EBr1Omb4MN4"
 },
 
 {
 titulo:"📅 Resina Clase 2 – Desmoldado, decoración y cómo vender tus piezas",
-fecha:new Date("2026-03-09T19:30:00-05:00"),
+fecha:new Date("2026-03-09T18:36:00-05:00"),
 link:"https://www.youtube.com/watch?v=C7CEtHEAB7Q"
 },
 
 {
 titulo:"📅 Resina Clase 3 – prueba",
-fecha:new Date("2026-03-09T19:30:00-05:00"),
+fecha:new Date("2026-03-09T18:40:00-05:00"),
 link:"https://www.youtube.com/watch?v=eS4FKyfPapw"
 }
 
 ],
 
-cierreEvento:new Date("2026-04-03T23:59:59-05:00"),
+cierreEvento:new Date("2026-03-09T18:44:00-05:00"),
 
 tiempos:{
 
