@@ -10,7 +10,7 @@ link:"https://www.youtube.com/live/EBr1Omb4MN4"
 
 {
 titulo:"📅 Resina Clase 2 – Desmoldado, decoración y cómo vender tus piezas",
-fecha:new Date("2026-03-09T22:36:00-05:00"),
+fecha:new Date("2026-03-10T22:36:00-05:00"),
 link:"https://www.youtube.com/watch?v=C7CEtHEAB7Q"
 }
 
