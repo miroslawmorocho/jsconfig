@@ -4,13 +4,13 @@ clases:[
 
 {
 titulo:"📅 Resina Clase 1 – Crea tus primeras piezas de resina desde casa",
-fecha:new Date("2026-03-10T00:40:00-05:00"),
+fecha:new Date("2026-03-10T12:40:00-05:00"),
 link:"https://www.youtube.com/live/EBr1Omb4MN4"
 },
 
 {
 titulo:"📅 Resina Clase 2 – Desmoldado, decoración y cómo vender tus piezas",
-fecha:new Date("2026-03-10T22:36:00-05:00"),
+fecha:new Date("2026-03-10T13:36:00-05:00"),
 link:"https://www.youtube.com/watch?v=C7CEtHEAB7Q"
 }
 
@@ -21,7 +21,7 @@ cierreEvento:new Date("2026-03-10T18:44:00-05:00"),
 tiempos:{
 
 duracionClase:2,
-duracionCalendario:15,
+duracionCalendario:90,
 aperturaSala:1
 
 },
@@ -31,7 +31,7 @@ oferta:{
 claseOferta:2,
 delayMinutos:1,
 hotlink:"https://www.formulasymoldes.com/programa-resina#comprar",
-texto:"💣 OFERTA ESPECIAL: 37 US$<br> {pais} {bandera} — Clic Aquí Ahora"
+texto:"🔥 OFERTA ESPECIAL: 37 US$<br> {pais} {bandera} — Clic Aquí Ahora"
 
 },
 
