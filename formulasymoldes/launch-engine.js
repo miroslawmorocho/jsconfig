@@ -4,7 +4,7 @@ clases:[
 
 {
 titulo:"📅 Resina Clase 1 – Crea tus primeras piezas de resina desde casa",
-fecha:new Date("2026-03-10T21:32:00-05:00"),
+fecha:new Date("2026-03-10T00:40:00-05:00"),
 link:"https://www.youtube.com/live/EBr1Omb4MN4"
 },
 
