@@ -1,10 +1,12 @@
 .pricing-box {
   background:#3b0764;
   color:#fff;
+  isolation:isolate;
   border-radius:16px;
   padding:18px 4px;
   margin-bottom:30px;
-  font-family:Arial, sans-serif;
+  /*font-family:Arial, sans-serif;*/
+  font-size:18px;
 }
 
 .pricing-box h2 {
