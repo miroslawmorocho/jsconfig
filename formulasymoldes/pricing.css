@@ -1,4 +1,3 @@
-<style>
 .pricing-box {
   background:#3b0764;
   color:#fff;
@@ -156,4 +155,16 @@
   }
 }
 
-</style>
+.pricing-country-note{
+text-align:center;
+padding:10px;
+background:#f0fdf4;
+color:#065f46;
+}
+
+.pricing-extra-note{
+text-align:center;
+padding:10px;
+background:#ffffff;
+color:#374151;
+}
