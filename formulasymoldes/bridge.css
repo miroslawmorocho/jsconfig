@@ -29,14 +29,14 @@ margin-bottom:var(--space-lg);
 }
 
 #offer-deadline{
-margin-bottom:var(--space-lg);
+margin-bottom:var(--space-md);
 }
 
 #contador-wrapper{
 margin-bottom:var(--space-xl);
 }
 
-#launch-live-button{
+/*#launch-live-button{
 margin-bottom:var(--space-xl);
 display:flex;
 justify-content:center;
@@ -50,7 +50,7 @@ justify-content:center;
 
 #launch-live-button .clase-boton a{
 width:220px;
-}
+}*/
 
 #launch-info{
 font-size:var(--text-size);
