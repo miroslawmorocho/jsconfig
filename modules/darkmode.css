@@ -1,0 +1,86 @@
+/* Transición suave */
+html {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* ====== DARK MODE GLOBAL ====== */
+.dark-mode {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Reinvertir elementos que NO queremos oscuros */
+.dark-mode .no-dark,
+.dark-mode .carousel-btn,
+.dark-mode .slider {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Reinvertir imágenes excepto las que quieras forzar */
+.dark-mode img:not(.force-dark),
+.dark-mode video,
+.dark-mode iframe {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* ====== SWITCH ====== */
+.switch {
+  position: fixed;
+  top: 20px;
+  width: 64px;
+  height: 34px;
+  z-index: 9999;
+}
+
+/* Desktop alineado al contenedor */
+@media (min-width: 1024px) {
+  .switch {
+    left: calc(50% + 384px); /* 768/2 + separación left: calc(50% + 384px + 20px); */
+  }
+}
+
+/* Móvil esquina normal */
+@media (max-width: 1023px) {
+  .switch {
+    right: 40px;
+    left: auto;
+  }
+}
+
+.switch input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  background-color: #ccc;
+  border-radius: 34px;
+  width: 100%;
+  height: 100%;
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "☀️";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: #555;
+}
+
+input:checked + .slider:before {
+  transform: translateX(30px);
+  content: "🌙";
+}
