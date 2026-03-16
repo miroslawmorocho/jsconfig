@@ -214,7 +214,11 @@ async function initLaunchEngine() {
   /* =====================================================
      EVENT LISTENERS (Manejo de visibilidad y caché)
   ===================================================== */
-  document.addEventListener("DOMContentLoaded", initLaunchEngine);
+  if (document.readyState === "loading") {
+     document.addEventListener("DOMContentLoaded", initLaunchEngine);
+   } else {
+     initLaunchEngine();
+   }      
   
   window.addEventListener("pageshow", function(e) {
     if (e.persisted) {
