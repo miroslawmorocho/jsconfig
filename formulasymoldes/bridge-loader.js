@@ -19,6 +19,7 @@ document.head.appendChild(css);
 
 const script = document.createElement("script");
 script.src = base + "bridge.js";
+script.defer = true;
 document.body.appendChild(script);
 
 }catch(e){
