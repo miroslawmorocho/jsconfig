@@ -28,6 +28,10 @@ font-family: 'Montserrat', sans-serif;
 margin-bottom:var(--space-lg);
 }
 
+#offer-deadline{
+margin-bottom:var(--space-lg);
+}
+
 #contador-wrapper{
 margin-bottom:var(--space-xl);
 }
@@ -58,11 +62,6 @@ font-size:var(--subtitle-size);
 margin-top:var(--space-xl);
 margin-bottom:var(--space-md);
 font-family: 'Montserrat', sans-serif;
-}
-
-#launch-calendar-note{
-font-size:var(--text-size);
-margin-bottom:var(--space-lg);
 }
 
 /* =====================================================
