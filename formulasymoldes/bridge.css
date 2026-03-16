@@ -1,0 +1,288 @@
+*{
+box-sizing:border-box;
+}
+
+/* =====================================================
+VARIABLES VISUALES
+===================================================== */
+
+:root{
+--text-color:#ffffff;
+--button-bg:#009d43;
+--button-text:#ffffff;
+--border-color:#333;
+
+--title-size:40px;
+--subtitle-size:32px;
+--text-size:22px;
+
+--space-xl:40px;
+--space-lg:30px;
+--space-md:20px;
+}
+
+#launch-header{
+font-size:var(--title-size);
+font-weight:bold;
+font-family: 'Montserrat', sans-serif;
+margin-bottom:var(--space-lg);
+}
+
+#contador-wrapper{
+margin-bottom:var(--space-xl);
+}
+
+#launch-live-button{
+margin-bottom:var(--space-xl);
+display:flex;
+justify-content:center;
+}
+
+#launch-live-button .clase-boton{
+flex:none;
+width:auto;
+justify-content:center;
+}
+
+#launch-live-button .clase-boton a{
+width:220px;
+}
+
+#launch-info{
+font-size:var(--text-size);
+margin-bottom:var(--space-xl);
+}
+
+#launch-calendar-title{
+font-size:var(--subtitle-size);
+margin-top:var(--space-xl);
+margin-bottom:var(--space-md);
+font-family: 'Montserrat', sans-serif;
+}
+
+#launch-calendar-note{
+font-size:var(--text-size);
+margin-bottom:var(--space-lg);
+}
+
+/* =====================================================
+CONTENEDOR
+===================================================== */
+
+#launch-engine{
+max-width:768px;
+margin:auto;
+font-size:20px;
+color:var(--text-color);
+}
+
+/* =====================================================
+CLASE ITEM
+===================================================== */
+
+.clase-item{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:20px 0;
+border-bottom:1px solid var(--border-color);
+gap:20px;
+}
+
+/* info clonada arriba */
+#launch-proxima .clase-item{
+border-bottom:none;
+margin-bottom:var(--space-lg);
+}
+
+.clase-info{
+flex:2;
+line-height:1.5;
+}
+
+.clase-boton{
+flex:1;
+display:flex;
+justify-content:flex-end;
+align-items:center;
+}
+
+.clase-boton a{
+background:var(--button-bg);
+color:var(--button-text);
+padding:10px 12px;
+text-decoration:none;
+font-weight:bold;
+border-radius:25px;
+display:block;
+width:220px;
+text-align:center;
+}
+
+/* =====================================================
+LIVE DOT
+===================================================== */
+
+.live-dot{
+width:10px;
+height:10px;
+background:red;
+border-radius:50%;
+display:inline-block;
+margin-right:6px;
+vertical-align:middle;
+animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+0%{opacity:1;}
+50%{opacity:.3;}
+100%{opacity:1;}
+}
+
+@media(max-width:480px){
+
+#launch-engine{
+font-size:18px;
+}
+
+.clase-item{
+flex-direction:column;
+align-items:flex-start;
+}
+
+.clase-boton{
+width:90%;
+}
+
+.clase-boton a{
+width:90%;
+}
+
+}
+
+/* =====================================================
+COUNTDOWN
+===================================================== */
+
+.countdown-container{
+  width:100%;
+  max-width:768px;
+  margin:auto;
+  text-align:center;
+}
+
+.countdown{
+
+  --numero-color:#ffffff;
+  --texto-color:#bbbbbb;
+
+  --numero-size:52px;
+  --texto-size:16px;
+
+  display:flex !important;
+  flex-direction:row;
+  justify-content:center;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.unit{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+
+.number{
+  font-size:var(--numero-size);
+  font-weight:700;
+  color:var(--numero-color);
+  line-height:1;
+}
+
+.label{
+  font-size:var(--texto-size);
+  color:var(--texto-color);
+  margin-top:6px;
+  font-weight:600;
+}
+
+.colon{
+  font-size:var(--numero-size);
+  font-weight:700;
+  line-height:1;
+  color:var(--numero-color);
+}
+
+@media (max-width:480px){
+
+  .countdown{
+    --numero-size:28px;
+    --texto-size:10px;
+  }
+
+}
+
+/* =====================================================
+OFERTA FIXED
+===================================================== */
+
+#offer-sticky{
+position:fixed;
+top:0;
+left:50%;
+transform:translateX(-50%);
+width:100%;
+max-width:768px;
+z-index:9999;
+}
+
+.offer-inner{
+width:100%;
+max-width:768px;
+padding:5px 5px;
+}
+
+.offer-button{
+display:block;
+background:#ffcc00;
+color:#000; /* color del texto del botón de oferta */
+text-decoration:none;
+text-align:center;
+padding:4px 4px;
+border-radius:25px;
+box-shadow:0 6px 20px rgba(0,0,0,.3);
+}
+
+.offer-top{
+
+font-weight:800;
+font-size:20px;
+
+}
+
+.offer-bottom{
+  
+font-size:16px;
+margin-top:4px;
+color:#0000ff; /* color del enlace del botón de oferta */
+word-break:break-all;
+
+}
+
+@media(max-width:480px){
+
+.offer-top{
+font-size:18px;
+}
+
+.offer-bottom{
+font-size:14px;
+}
+
+}
+
+.evento-cerrado{
+text-align:center;
+padding:40px;
+}
