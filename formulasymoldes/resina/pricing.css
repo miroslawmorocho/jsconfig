@@ -1,3 +1,5 @@
+/* TABLA DE PRECIOS */
+
 .pricing-box {
   background:#3b0764;
   color:#fff;
@@ -171,4 +173,46 @@ text-align:center;
 padding:10px;
 background:#ffffff;
 color:#000;
+}
+
+/* CONTADOR */
+.countdown-container{
+display:flex;
+justify-content:center;
+margin:30px 0;
+}
+
+.countdown{
+display:flex;
+align-items:center;
+gap:8px;
+font-family:system-ui,Arial,sans-serif;
+font-weight:700;
+}
+
+.unit{
+display:flex;
+flex-direction:column;
+align-items:center;
+background:#111;
+color:#fff;
+padding:10px 12px;
+border-radius:6px;
+min-width:60px;
+}
+
+.number{
+font-size:26px;
+line-height:1;
+}
+
+.label{
+font-size:10px;
+letter-spacing:1px;
+opacity:.8;
+}
+
+.colon{
+font-size:22px;
+font-weight:700;
 }
