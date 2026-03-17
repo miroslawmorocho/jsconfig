@@ -91,7 +91,8 @@ align-items:center;
 }
 
 .clase-boton a{
-background:var(--button-bg);
+background: none !important;
+color: #000 !important;
 color:var(--button-text);
 padding:10px 12px;
 text-decoration:none;
@@ -108,12 +109,14 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
 
 .calendar-dropdown-inline {
   position: relative;
-  width: 220px;
+  width: 100%;
+  max-width: 220px;
 }
 
 /* BOTÓN VERDE (igual al original) */
 .calendar-toggle {
-  width: 220px;
+  width: 100%;
+  max-width: 220px;
   background: var(--button-bg);
   color: var(--button-text);
   padding: 10px 12px;
@@ -139,7 +142,8 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
   left: 50%;
   transform: translate(-50%, -120%);
 
-  width: 240px;
+  width: 100%;
+  max-width: 240px;
   background: #f2f2f2;
   border-radius: 14px;
 
@@ -157,14 +161,22 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
   padding: 12px 16px;
 
   text-decoration: none;
-  color: #000;
   font-size: 14px;
   cursor: pointer;
+
+  background: none !important;
+  color: #000 !important;
 }
 
 /* SEPARADOR */
 .calendar-menu-inline a + a {
   border-top: 1px solid #ddd;
+}
+
+/* TAMAÑO DEL SVG DEL CALENDARIO */
+.calendar-toggle svg{
+  width:20px;
+  height:20px;
 }
 
 
@@ -201,11 +213,12 @@ align-items:flex-start;
 }
 
 .clase-boton{
-width:90%;
+width:100%;
+justify-content:center;
 }
 
 .clase-boton a{
-width:90%;
+width:100%;
 }
 
 }
