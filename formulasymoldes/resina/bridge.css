@@ -114,10 +114,10 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
 
 /* BOTÓN VERDE (igual al original) */
 .calendar-toggle {
-  width: 100%;
+  width: 90%;
   background: var(--button-bg);
   color: var(--button-text);
-  padding: 10px 6px;
+  padding: 10px 12px;
   border-radius: 25px;
   border: none;
   font-weight: bold;
@@ -219,7 +219,7 @@ align-items:flex-start;
 }
 
 .clase-boton{
-width:100%;
+width:90%;
 justify-content:center;
 }
 
