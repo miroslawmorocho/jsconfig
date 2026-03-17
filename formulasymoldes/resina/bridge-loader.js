@@ -4,7 +4,7 @@ const root = document.getElementById("launch-engine-root");
 
 if(!root) return;
 
-const base = "https://miroslawmorocho.github.io/jsconfig/formulasymoldes/";
+const base = "https://miroslawmorocho.github.io/jsconfig/formulasymoldes/resina/";
 
 try{
 
