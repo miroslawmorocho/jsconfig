@@ -110,13 +110,11 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
 .calendar-dropdown-inline {
   position: relative;
   width: 100%;
-  max-width: 220px;
 }
 
 /* BOTÓN VERDE (igual al original) */
 .calendar-toggle {
   width: 100%;
-  max-width: 220px;
   background: var(--button-bg);
   color: var(--button-text);
   padding: 10px 6px;
@@ -131,6 +129,11 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
   align-items: center;
   justify-content: center;
   gap: 8px;
+  text-align: center;
+}
+
+.calendar-toggle span{
+  display:inline-block;
 }
 
 /* TARJETA DROPDOWN */
@@ -178,7 +181,8 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
   width:20px;
   height:20px;
   flex-shrink:0;
-  display:block;
+  display:inline-block;
+  vertical-align:middle;
 }
 
 
