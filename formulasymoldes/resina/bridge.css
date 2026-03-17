@@ -105,21 +105,39 @@ text-align:center;
 /* BOTON SELECTOR CALENDARIO */
 .calendar-dropdown {
   margin-top: 20px;
+  text-align: center;
+}
+
+.calendar-dropdown button {
+  background: #f2f2f2;
+  color: #000;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 #calendar-menu {
   margin-top: 10px;
-  display: flex;
+  display: none;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  align-items: center;
 }
 
 #calendar-menu a {
-  background: #222;
-  padding: 8px;
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  color: #000;
+  padding: 10px 14px;
+  border-radius: 12px;
   text-decoration: none;
-  color: white;
+  width: 260px;
+  justify-content: flex-start;
+  font-weight: 500;
 }
 
 /* =====================================================
