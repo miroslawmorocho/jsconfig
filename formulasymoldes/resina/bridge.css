@@ -36,22 +36,6 @@ margin-bottom:var(--space-md);
 margin-bottom:var(--space-xl);
 }
 
-/*#launch-live-button{
-margin-bottom:var(--space-xl);
-display:flex;
-justify-content:center;
-}
-
-#launch-live-button .clase-boton{
-flex:none;
-width:auto;
-justify-content:center;
-}
-
-#launch-live-button .clase-boton a{
-width:220px;
-}*/
-
 #launch-info{
 font-size:var(--text-size);
 margin-bottom:var(--space-xl);
@@ -119,6 +103,29 @@ text-align:center;
 }
 
 /* BOTON SELECTOR CALENDARIO */
+.btn-calendar-google,
+.btn-calendar-ics{
+  display:block;
+  width:220px;
+  text-align:center;
+  padding:8px;
+  border-radius:20px;
+  font-size:14px;
+  text-decoration:none;
+}
+
+/* Google */
+.btn-calendar-google{
+  background:#4285f4;
+  color:white;
+}
+
+/* Apple / Outlook */
+.btn-calendar-ics{
+  background:#111;
+  color:white;
+}
+
 .calendar-dropdown {
   margin-top: 20px;
 }
