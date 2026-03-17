@@ -91,19 +91,16 @@ align-items:center;
 }
 
 .clase-boton a{
-background: var(--button-bg);
-color: var(--button-text);
-color:var(--button-text);
-padding:10px 12px;
-text-decoration:none;
-font-weight:bold;
-border-radius:25px;
-display:block;
-/* width:220px;*/
-width:auto;
-min-width:200px;
-max-width:260px;
-text-align:center;
+  background: var(--button-bg);
+  color: var(--button-text);
+  padding:10px 12px;
+  text-decoration:none;
+  font-weight:bold;
+  border-radius:25px;
+  display:block;
+  width:100%;              /* 🔥 desktop full */
+  max-width:320px;         /* 🔥 límite elegante */
+  text-align:center;
 }
 
 /* =====================================================
@@ -119,9 +116,8 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
 
 /* BOTÓN VERDE (igual al original) */
 .calendar-toggle {
-  width: auto;              /* 🔥 quitar 90% */
-  min-width:200px;
-  max-width:260px;
+  width:100%;              /* 🔥 igual que el otro */
+  max-width:320px;
   background: var(--button-bg);
   color: var(--button-text);
   padding: 10px 12px;
@@ -224,14 +220,15 @@ align-items:flex-start;
 }
 
 .clase-boton{
-width:90%;
+width:100%;
 justify-content:center;
 }
 
-.clase-boton a{
-width:auto;
-justify-content:center;
-}
+.clase-boton a,
+  .calendar-toggle{
+    width:90%;              /* 🔥 AQUÍ lo que querías */
+    max-width:none;         /* opcional */
+  }
 
 }
 
