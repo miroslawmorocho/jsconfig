@@ -6,11 +6,17 @@ function applyMode(isDark) {
   toggle.checked = isDark;
 }
 
+/* Detectar preferencia del usuario SOLO si no hay storage */
+const saved = localStorage.getItem("darkMode");
+
+if (saved !== null) {
+  applyMode(saved === "true");
+} else {
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyMode(prefersDark);
+}
+
+/* Escuchar cambio manual */
 toggle.addEventListener("change", () => {
   applyMode(toggle.checked);
 });
-
-/* Mantener preferencia */
-if (localStorage.getItem("darkMode") === "true") {
-  applyMode(true);
-}
