@@ -42,10 +42,20 @@ async function init(){
      PRICING (WORKER)
   ========================= */
 
-  if(document.getElementById("pricing")){
+  const pricingRoot = document.getElementById("pricing-root");
 
+  if(pricingRoot){
+  
+    /* 1. insertar HTML base */
+    const html = await fetch(BASE+"formulasymoldes/resina/pricing.html").then(r=>r.text());
+    pricingRoot.innerHTML = html;
+  
+    /* 2. cargar estilos */
     await cargarCSS(BASE+"formulasymoldes/resina/pricing.css");
+  
+    /* 3. cargar lógica */
     await cargarScript(BASE+"formulasymoldes/resina/pricing.js");
+  
   }
 
 
