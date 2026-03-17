@@ -1,6 +1,12 @@
 /* TEXTO DE CIERRE */
-.texto-cierre {
+#texto-cierre {
   font-size:18px;
+}
+
+@media (min-width:768px){
+  #texto-cierre {
+    font-size:20px;
+  }
 }
 
 /* TABLA DE PRECIOS */
