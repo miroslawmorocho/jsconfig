@@ -130,4 +130,8 @@ function iniciarCountdown(target){
 }
 
 /* cargar tabla */
-document.addEventListener("DOMContentLoaded", cargarPricing);
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", cargarPricing);
+} else {
+  cargarPricing();
+}
