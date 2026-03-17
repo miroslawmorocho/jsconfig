@@ -1,6 +1,20 @@
 // OJO que la etiqueta a buscar con este scroll es SIEMPRE "#comprar"
 
-function scrollToHash(){
+/* SCROLL RÁPIDO (inmediato) */
+function scrollToHashFast(){
+
+  if(window.location.hash !== "#comprar") return;
+
+  const el = document.getElementById("comprar");
+
+  if(el){
+    el.scrollIntoView({ behavior: "auto", block: "start" });
+  }
+}
+
+
+/* SCROLL DE CORRECCIÓN (preciso) */
+function scrollToHashFix(){
 
   if(window.location.hash !== "#comprar") return;
 
@@ -8,37 +22,26 @@ function scrollToHash(){
 
   const interval = setInterval(()=>{
 
-    const anchor = document.getElementById("comprar");
-    const pricing = document.getElementById("pricing");
+    const el = document.getElementById("comprar");
 
-    const ready =
-      anchor &&
-      pricing &&
-      pricing.innerHTML.trim().length > 0;
-
-    if(ready){
-
-      anchor.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-
-      clearInterval(interval);
+    if(el){
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     attempts++;
 
-    if(attempts > 30){
+    if(attempts > 10){
       clearInterval(interval);
     }
 
   }, 300);
+
 }
 
 
-/* ejecutar SIEMPRE */
+/* EJECUTAR AL INICIO */
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", scrollToHash);
+  document.addEventListener("DOMContentLoaded", scrollToHashFast);
 } else {
-  scrollToHash();
+  scrollToHashFast();
 }
