@@ -2,53 +2,101 @@
 
 const BASE = "https://miroslawmorocho.github.io/jsconfig/";
 
-/* ===== CARGAR CSS GLOBAL ===== */
-const css = document.createElement("link");
-css.rel = "stylesheet";
-css.href = BASE + "global.css";
-document.head.appendChild(css);
-
-/* ===== DETECCIÓN DE MÓDULOS ===== */
-
-if(document.getElementById("darkToggle") || document.querySelector(".switch")){
-  cargarScript(BASE+"modules/darkmode/darkmode.js");
-  cargarCSS(BASE+"modules/darkmode/darkmode.css");
-  cargarHTML(BASE+"modules/darkmode/darkmode.html", "body");
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
 }
 
-if(document.getElementById("pricing")){
-  cargarScript(BASE+"formulasymoldes/resina/pricing.js");
-  cargarCSS(BASE+"formulasymoldes/resina/pricing.css");
+async function init(){
+
+  /* =========================
+     DARK MODE (GLOBAL)
+  ========================= */
+
+  await cargarCSS(BASE+"modules/darkmode/darkmode.css");
+
+  const darkHTML = await fetch(BASE+"modules/darkmode/darkmode.html").then(r=>r.text());
+  document.body.insertAdjacentHTML("beforeend", darkHTML);
+
+  await cargarScript(BASE+"modules/darkmode/darkmode.js");
+
+
+  /* =========================
+     CAROUSEL
+  ========================= */
+
+  const carouselContainer = document.getElementById("pricing-carousel");
+
+  if(carouselContainer){
+
+    const html = await fetch(BASE+"formulasymoldes/resina/carousel.html").then(r=>r.text());
+    carouselContainer.innerHTML = html;
+
+    await cargarCSS(BASE+"modules/carousel/carousel.css");
+    await cargarScript(BASE+"modules/carousel/carousel.js");
+  }
+
+
+  /* =========================
+     PRICING (WORKER)
+  ========================= */
+
+  if(document.getElementById("pricing")){
+
+    await cargarCSS(BASE+"formulasymoldes/resina/pricing.css");
+    await cargarScript(BASE+"formulasymoldes/resina/pricing.js");
+  }
+
+
+  /* =========================
+     SCROLL FIX (#comprar)
+  ========================= */
+
+  if(window.location.hash === "#comprar"){
+    await cargarScript(BASE+"modules/scroll/scroll.js");
+  }
+
 }
 
-if(document.getElementById("pricing-carousel")){
-  cargarScript(BASE+"modules/carousel/carousel.js");
-  cargarCSS(BASE+"modules/carousel/carousel.css");
-  cargarHTML(BASE+"formulasymoldes/resina/carousel.html", "#pricing-carousel");
-}
 
-if(window.location.hash === "#comprar"){
-  cargarScript(BASE+"modules/scroll/scroll.js");
-}
-
-/* ===== HELPERS ===== */
+/* =========================
+   HELPERS (ANTI DUPLICADOS)
+========================= */
 
 function cargarScript(src){
-  const s=document.createElement("script");
-  s.src=src;
-  document.body.appendChild(s);
+  return new Promise((resolve)=>{
+
+    if(document.querySelector(`script[src="${src}"]`)){
+      resolve();
+      return;
+    }
+
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+
+    document.body.appendChild(s);
+
+  });
 }
 
 function cargarCSS(href){
-  const l=document.createElement("link");
-  l.rel="stylesheet";
-  l.href=href;
-  document.head.appendChild(l);
-}
+  return new Promise((resolve)=>{
 
-async function cargarHTML(url, target){
-  const html = await fetch(url).then(r=>r.text());
-  document.querySelector(target).insertAdjacentHTML("beforeend", html);
+    if(document.querySelector(`link[href="${href}"]`)){
+      resolve();
+      return;
+    }
+
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = href;
+    l.onload = resolve;
+
+    document.head.appendChild(l);
+
+  });
 }
 
 })();
