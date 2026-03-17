@@ -236,3 +236,30 @@ async function initLaunchEngine() {
   
     initLaunchEngine();
   });
+
+   // botones de calendario
+   document.addEventListener("click", function(e) {
+
+     const toggle = e.target.closest(".calendar-toggle");
+   
+     if (toggle) {
+       const container = toggle.parentElement;
+       const menu = container.querySelector(".calendar-menu-inline");
+   
+       if (!menu) return;
+   
+       const isOpen = getComputedStyle(menu).display === "flex";
+   
+       // cerrar todos
+       document.querySelectorAll(".calendar-menu-inline")
+         .forEach(m => m.style.display = "none");
+   
+       menu.style.display = isOpen ? "none" : "flex";
+       return;
+     }
+   
+     // cerrar si clic fuera
+     document.querySelectorAll(".calendar-menu-inline")
+       .forEach(m => m.style.display = "none");
+   
+   });
