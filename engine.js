@@ -63,9 +63,7 @@ async function init(){
      SCROLL FIX (#comprar)
   ========================= */
 
-  if(window.location.hash === "#comprar"){
-    await cargarScript(BASE+"modules/scroll/scroll.js");
-  }
+  await cargarScript(BASE+"modules/scroll/scroll.js");
 
 }
 
