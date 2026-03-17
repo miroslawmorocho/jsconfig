@@ -13,14 +13,14 @@ async function cargarPricing(){
 
   const wrapper = document.getElementById("contador-wrapper");
 
-  if (data.countdownTarget) {
+  if (wrapper) {
   
-    wrapper.style.display = "flex";
-    iniciarCountdown(data.countdownTarget);
-  
-  } else {
-  
-    wrapper.style.display = "none";
+    if (data.countdownTarget) {
+      wrapper.style.display = "flex";
+      iniciarCountdown(data.countdownTarget);
+    } else {
+      wrapper.style.display = "none";
+    }
   
   }
 
