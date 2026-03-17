@@ -118,6 +118,26 @@ width:220px;
 text-align:center;
 }
 
+/* BOTON SELECTOR CALENDARIO */
+.calendar-dropdown {
+  margin-top: 20px;
+}
+
+#calendar-menu {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#calendar-menu a {
+  background: #222;
+  padding: 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: white;
+}
+
 /* =====================================================
 LIVE DOT
 ===================================================== */
