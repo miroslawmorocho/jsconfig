@@ -130,6 +130,17 @@ async function initLaunchEngine() {
     
     }
 
+   // 🔥 BOTONES CALENDARIO
+   if (data.calendarLinks) {
+   
+     const btnGoogle = document.getElementById("btn-google");
+     const btnICS = document.getElementById("btn-ics");
+   
+     if (btnGoogle) btnGoogle.href = data.calendarLinks.google;
+     if (btnICS) btnICS.href = data.calendarLinks.ics;
+   
+   }
+
     // 8. Programar siguiente actualización (despertador automático)
     if (data.intervaloRevisionMs) intervaloRevisionDin = data.intervaloRevisionMs;
     
