@@ -8,23 +8,31 @@ function scrollToHash(){
 
   const interval = setInterval(()=>{
 
-    const el = document.getElementById("comprar");
+    const anchor = document.getElementById("comprar");
+    const pricing = document.getElementById("pricing");
 
-    if(el){
+    const ready =
+      anchor &&
+      pricing &&
+      pricing.innerHTML.trim().length > 0;
 
-      el.scrollIntoView({behavior:"smooth", block:"start"});
+    if(ready){
+
+      anchor.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
       clearInterval(interval);
-
     }
 
     attempts++;
 
-    if(attempts > 20){
+    if(attempts > 30){
       clearInterval(interval);
     }
 
   }, 300);
-
 }
 
 
