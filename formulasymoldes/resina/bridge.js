@@ -195,6 +195,12 @@ async function initLaunchEngine() {
     COUNTDOWN_DOM.minutes.textContent = String(minutos).padStart(2, "0");
     COUNTDOWN_DOM.seconds.textContent = String(segundos).padStart(2, "0");
   }
+
+   /* FUNCIÓN PARA EL BOTÓN DEL CALENDARIO */
+   function toggleCalendarMenu() {
+     const menu = document.getElementById("calendar-menu");
+     menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+   }
   
   /* =====================================================
      REPROGRAMACIÓN (Despertador)
