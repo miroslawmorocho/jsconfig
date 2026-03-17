@@ -1,26 +1,36 @@
 // OJO que la etiqueta a buscar con este scroll es SIEMPRE "#comprar"
 
-window.addEventListener("load", function(){
+function scrollToHash(){
 
-  if(window.location.hash === "#comprar"){
+  if(window.location.hash !== "#comprar") return;
+
+  let attempts = 0;
+
+  const interval = setInterval(()=>{
 
     const el = document.getElementById("comprar");
-    if(!el) return;
 
-    let attempts = 0;
-
-    const scrollFix = setInterval(function(){
+    if(el){
 
       el.scrollIntoView({behavior:"smooth", block:"start"});
+      clearInterval(interval);
 
-      attempts++;
+    }
 
-      if(attempts > 5){
-        clearInterval(scrollFix);
-      }
+    attempts++;
 
-    }, 400);
+    if(attempts > 20){
+      clearInterval(interval);
+    }
 
-  }
+  }, 300);
 
-});
+}
+
+
+/* ejecutar SIEMPRE */
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", scrollToHash);
+} else {
+  scrollToHash();
+}
