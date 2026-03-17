@@ -103,7 +103,47 @@ text-align:center;
 }
 
 /* BOTON SELECTOR CALENDARIO */
-.calendar-dropdown {
+.calendar-dropdown-inline {
+  position: relative;
+  width: 220px;
+}
+
+.calendar-toggle {
+  width: 100%;
+  background: var(--button-bg);
+  color: var(--button-text);
+  padding: 10px 12px;
+  border-radius: 25px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.calendar-menu-inline {
+  display: none;
+  position: absolute;
+  top: 110%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 999;
+}
+
+.calendar-menu-inline a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #000;
+  font-size: 14px;
+}
+
+
+/*.calendar-dropdown {
   margin-top: 20px;
   text-align: center;
 }
@@ -138,7 +178,7 @@ text-align:center;
   width: 260px;
   justify-content: flex-start;
   font-weight: 500;
-}
+} */
 
 /* =====================================================
 LIVE DOT
