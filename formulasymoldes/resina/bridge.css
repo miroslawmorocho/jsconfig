@@ -99,7 +99,10 @@ text-decoration:none;
 font-weight:bold;
 border-radius:25px;
 display:block;
-width:220px;
+/* width:220px;*/
+width:auto;
+min-width:200px;
+max-width:260px;
 text-align:center;
 }
 
@@ -110,11 +113,15 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
 .calendar-dropdown-inline {
   position: relative;
   width: 100%;
+  display:flex;              /* 🔥 */
+  justify-content:center;
 }
 
 /* BOTÓN VERDE (igual al original) */
 .calendar-toggle {
-  width: 90%;
+  width: auto;              /* 🔥 quitar 90% */
+  min-width:200px;
+  max-width:260px;
   background: var(--button-bg);
   color: var(--button-text);
   padding: 10px 12px;
@@ -180,8 +187,7 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
   width:20px;
   height:20px;
   flex-shrink:0;
-  display:inline-block;
-  vertical-align:middle;
+  display:block; /* 🔥 */
 }
 
 
@@ -223,7 +229,8 @@ justify-content:center;
 }
 
 .clase-boton a{
-width:100%;
+width:auto;
+justify-content:center;
 }
 
 }
