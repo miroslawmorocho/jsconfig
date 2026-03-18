@@ -13,7 +13,7 @@ async function cargarPricing(){
   
     if (data.countdownTarget) {
       wrapper.style.display = "flex";
-      iniciarCountdown(data.countdownTarget);
+      LaunchCore.countdown.start(data.countdownTarget);
     } else {
       wrapper.style.display = "none";
     }
