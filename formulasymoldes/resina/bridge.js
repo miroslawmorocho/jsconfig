@@ -119,12 +119,6 @@ async function initLaunchEngine() {
     
     let delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
-    // jitter proporcional (hasta 20% del delay)
-    const jitter = delay * 0.2 * Math.random();
-    delay += jitter;
-    
-    if (delay < 2000) delay = 2000;
-    
     LaunchCore.scheduler.programar(initLaunchEngine, delay);
 
     ultimaRevision = Date.now();

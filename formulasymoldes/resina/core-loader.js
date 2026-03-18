@@ -90,7 +90,12 @@ LaunchCore.scheduler = (function(){
 
     if(!delay) return;
 
+    // mínimo
     if(delay < 2000) delay = 2000;
+
+    // jitter (hasta 20%)
+    const jitter = delay * 0.2 * Math.random();
+    delay += jitter;
 
     timeout = setTimeout(()=>{
       fn();
