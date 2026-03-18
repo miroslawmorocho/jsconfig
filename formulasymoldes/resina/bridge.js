@@ -9,9 +9,7 @@
 
 let workerBusy = false;
 let ultimaRevision = 0;
-let countdownInterval = null;
 let schedulerTimeout = null;
-let targetTiempo = null; // Guardará el timestamp objetivo para el contador
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 
 /* =====================================================
@@ -88,21 +86,6 @@ async function initLaunchEngine() {
       
     }
     
-    /*if (data.countdownDisplay !== "none" && data.countdownTarget) {
-
-      if (targetTiempo !== data.countdownTarget) {
-        targetTiempo = data.countdownTarget;
-        iniciarCountdown();
-        
-      }
-    
-    } else {
-    
-      detenerCountdown();
-      targetTiempo = null;
-    
-    }*/
-
     if (data.countdownDisplay !== "none" && data.countdownTarget) {
 
       LaunchCore.countdown.start(data.countdownTarget);
@@ -152,51 +135,6 @@ async function initLaunchEngine() {
     }
   }
 
-  /* =====================================================
-     FUNCIONES PARA EL CONTADOR (Única lógica de cálculo)
-  ===================================================== */
-  function iniciarCountdown() {
-    if (countdownInterval) return;
-    actualizarCountdown(); // Llamada inmediata para no esperar 1 seg
-    countdownInterval = setInterval(actualizarCountdown, 1000);
-  }
-  
-  function detenerCountdown() {
-    if (!countdownInterval) return;
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-  
-  const COUNTDOWN_DOM = {
-    days: document.getElementById("days"),
-    hours: document.getElementById("hours"),
-    minutes: document.getElementById("minutes"),
-    seconds: document.getElementById("seconds")
-  };
-  
-  function actualizarCountdown() {
-    if (!targetTiempo) return;
-  
-    const ahora = new Date().getTime();
-    const diferencia = targetTiempo - ahora;
-  
-    if (diferencia <= 0) {
-    detenerCountdown();
-    //initLaunchEngine(); // volver a consultar al worker
-    return;
-  }
-  
-    const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
-    const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
-    const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
-  
-    COUNTDOWN_DOM.days.textContent = String(dias).padStart(2, "0");
-    COUNTDOWN_DOM.hours.textContent = String(horas).padStart(2, "0");
-    COUNTDOWN_DOM.minutes.textContent = String(minutos).padStart(2, "0");
-    COUNTDOWN_DOM.seconds.textContent = String(segundos).padStart(2, "0");
-  }
-  
   /* =====================================================
      REPROGRAMACIÓN (Despertador)
   ===================================================== */
