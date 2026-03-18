@@ -19,7 +19,7 @@ async function init(){
   const darkHTML = await fetch(BASE+"modules/darkmode/darkmode.html").then(r=>r.text());
   document.body.insertAdjacentHTML("beforeend", darkHTML);
 
-  await cargarScript(BASE+"modules/darkmode/darkmode.js");
+  await LaunchCore.loadScript(BASE+"modules/darkmode/darkmode.js");
 
 
   /* =========================
@@ -34,7 +34,7 @@ async function init(){
     carouselContainer.innerHTML = html;
 
     await LaunchCore.loadCSS(BASE+"modules/carousel/carousel.css");
-    await cargarScript(BASE+"modules/carousel/carousel.js");
+    await LaunchCore.loadScript(BASE+"modules/carousel/carousel.js");
   }
 
 
@@ -54,7 +54,7 @@ async function init(){
     await LaunchCore.loadCSS(BASE+"formulasymoldes/resina/pricing.css");
   
     /* 3. cargar lógica */
-    await cargarScript(BASE+"formulasymoldes/resina/pricing.js");
+    await LaunchCore.loadScript(BASE+"formulasymoldes/resina/pricing.js");
   
   }
 
@@ -63,48 +63,8 @@ async function init(){
      SCROLL FIX (#comprar)
   ========================= */
 
-  await cargarScript(BASE+"modules/scroll/scroll.js");
+  await LaunchCore.loadScript(BASE+"modules/scroll/scroll.js");
 
-}
-
-
-/* =========================
-   HELPERS (ANTI DUPLICADOS)
-========================= */
-
-function cargarScript(src){
-  return new Promise((resolve)=>{
-
-    if(document.querySelector(`script[src="${src}"]`)){
-      resolve();
-      return;
-    }
-
-    const s = document.createElement("script");
-    s.src = src;
-    s.onload = resolve;
-
-    document.body.appendChild(s);
-
-  });
-}
-
-function cargarCSS(href){
-  return new Promise((resolve)=>{
-
-    if(document.querySelector(`link[href="${href}"]`)){
-      resolve();
-      return;
-    }
-
-    const l = document.createElement("link");
-    l.rel = "stylesheet";
-    l.href = href;
-    l.onload = resolve;
-
-    document.head.appendChild(l);
-
-  });
 }
 
 })();
