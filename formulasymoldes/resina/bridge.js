@@ -125,7 +125,7 @@ async function initLaunchEngine() {
     
     if (delay < 2000) delay = 2000;
     
-    programarSiguienteActualizacion(delay);
+    LaunchCore.scheduler.programar(initLaunchEngine, delay);
 
     ultimaRevision = Date.now();
 
