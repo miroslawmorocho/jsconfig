@@ -33,7 +33,7 @@ async function init(){
     const html = await fetch(BASE+"formulasymoldes/resina/carousel.html").then(r=>r.text());
     carouselContainer.innerHTML = html;
 
-    await cargarCSS(BASE+"modules/carousel/carousel.css");
+    await LaunchCore.loadCSS(BASE+"modules/carousel/carousel.css");
     await cargarScript(BASE+"modules/carousel/carousel.js");
   }
 
@@ -51,7 +51,7 @@ async function init(){
     pricingRoot.innerHTML = html;
   
     /* 2. cargar estilos */
-    await cargarCSS(BASE+"formulasymoldes/resina/pricing.css");
+    await LaunchCore.loadCSS(BASE+"formulasymoldes/resina/pricing.css");
   
     /* 3. cargar lógica */
     await cargarScript(BASE+"formulasymoldes/resina/pricing.js");
