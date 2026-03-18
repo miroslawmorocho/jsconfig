@@ -5,8 +5,6 @@
 ===================================================== */
 
 const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
-const BASE = "https://miroslawmorocho.github.io/jsconfig/"; // carpeta por defecto
-// donde se buscarán los módulos (darkmode, carousel, etc.)
 
 /* =====================================================
    CORE GLOBAL
@@ -306,6 +304,8 @@ LaunchCore.use = async function(name){
 
 LaunchCore.globals.darkmode = async function(){
 
+  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
+
   await LaunchCore.loadCSS(BASE+"modules/darkmode/darkmode.css");
 
   const darkHTML = await fetch(BASE+"modules/darkmode/darkmode.html").then(r=>r.text());
@@ -317,7 +317,7 @@ LaunchCore.globals.darkmode = async function(){
 
 LaunchCore.globals.carousel = async function(){
 
-  /*const BASE = "https://miroslawmorocho.github.io/jsconfig/";*/
+  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
 
   const container = document.getElementById("pricing-carousel");
 
@@ -333,7 +333,7 @@ LaunchCore.globals.carousel = async function(){
 
 LaunchCore.globals.scroll = async function(){
 
-  /*const BASE = "https://miroslawmorocho.github.io/jsconfig/";*/
+  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
 
   await LaunchCore.loadScript(BASE+"modules/scroll/scroll.js");
 
