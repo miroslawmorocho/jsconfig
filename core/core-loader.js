@@ -280,7 +280,7 @@ LaunchCore.init = async function(){
     const module = LaunchCore.modules[config.page];
 
     if(!module){
-      console.warn("Módulo no registrado:", page);
+      console.warn("Módulo no registrado:", config.page);
       return;
     }
 
