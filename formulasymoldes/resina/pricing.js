@@ -3,6 +3,9 @@ let scrollYaEjecutado = false;
 
 async function cargarPricing(){
 
+  if(loading) return;
+  loading = true;
+
   const data = await LaunchCore.fetchWorker("/pricing");
 
   if (data.intervaloRevisionMs) {
