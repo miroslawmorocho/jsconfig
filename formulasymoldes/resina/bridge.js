@@ -87,7 +87,8 @@ async function initLaunchEngine() {
       DOM.countdown.style.display = data.countdownDisplay;
       
     }
-    if (data.countdownDisplay !== "none" && data.countdownTarget) {
+    
+    /*if (data.countdownDisplay !== "none" && data.countdownTarget) {
 
       if (targetTiempo !== data.countdownTarget) {
         targetTiempo = data.countdownTarget;
@@ -100,6 +101,16 @@ async function initLaunchEngine() {
       detenerCountdown();
       targetTiempo = null;
     
+    }*/
+
+    if (data.countdownDisplay !== "none" && data.countdownTarget) {
+
+      LaunchCore.countdown.start(data.countdownTarget);
+
+    } else {
+
+      LaunchCore.countdown.stop();
+
     }
     
     workerBusy = false;
