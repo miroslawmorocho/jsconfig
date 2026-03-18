@@ -1,0 +1,38 @@
+# =========================
+# DEPENDENCIAS (NO SUBIR)
+# =========================
+# Carpeta donde npm instala paquetes
+node_modules/
+
+# =========================
+# BUILD / OUTPUT
+# =========================
+# Archivos generados (minificados, compilados, etc.)
+dist/
+build/
+
+# =========================
+# VARIABLES SENSIBLES
+# =========================
+# Archivos con claves, tokens, etc.
+.env
+
+# =========================
+# SISTEMA / BASURA
+# =========================
+# Archivos ocultos del sistema (Windows / Mac)
+.DS_Store
+Thumbs.db
+
+# =========================
+# LOGS
+# =========================
+# Archivos de logs
+*.log
+
+# =========================
+# OPCIONAL (por si luego creces)
+# =========================
+# Config local de editores
+.vscode/
+.idea/

@@ -1,0 +1,23 @@
+{
+  "name": "jsconfig",
+  "version": "1.0.0",
+  "description": "**Configuraciones JS para mis proyectos web.**",
+  "main": "engine.js",
+  "scripts": {
+  "minify": "terser ./js -o ./dist --compress --mangle"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/miroslawmorocho/jsconfig.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/miroslawmorocho/jsconfig/issues"
+  },
+  "homepage": "https://github.com/miroslawmorocho/jsconfig#readme",
+  "devDependencies": {
+    "terser": "^5.46.1"
+  }
+}
