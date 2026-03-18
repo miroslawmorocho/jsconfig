@@ -2,10 +2,8 @@ let intervaloRevisionDin = 60000; // default
 let scrollYaEjecutado = false;
 
 async function cargarPricing(){
-  console.log("🔥 cargarPricing ejecutándose");
-  
+    
   const data = await LaunchCore.fetchWorker("/pricing");
-  console.log("📦 data:", data);
 
   if (!data) {
     console.warn("❌ No hay data del worker");
