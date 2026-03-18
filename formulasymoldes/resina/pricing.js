@@ -3,11 +3,7 @@ let countdownInterval = null;
 
 async function cargarPricing(){
 
-  const res = await fetch(
-  `https://launch-engine.miroslaw-mm.workers.dev/pricing${window.location.search}`
-  );
-
-  const data = await res.json();
+  const data = await LaunchCore.fetchWorker("/pricing");
 
   document.getElementById("pricing").innerHTML = data.pricingHtml;
 
