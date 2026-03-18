@@ -15,5 +15,6 @@ LaunchCore.register("pricing", async function(){
   // 🔥 estilos y lógica propia
   await LaunchCore.loadCSS(BASE+"formulasymoldes/resina/pricing.css");
   await LaunchCore.loadScript(BASE+"formulasymoldes/resina/pricing.js");
+  console.log("📥 cargando script:", src);
 
 });
