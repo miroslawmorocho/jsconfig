@@ -4,10 +4,30 @@ function scrollToHash(){
 
   if(window.location.hash !== "#comprar") return;
 
-  const el = document.getElementById("comprar");
+  let attempts = 0;
 
-  if(el){
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  const interval = setInterval(()=>{
 
+    const el = document.getElementById("comprar");
+
+    if(el){
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    attempts++;
+
+    if(attempts > 5){
+      clearInterval(interval);
+    }
+
+  }, 300);
+
+}
+
+
+/* EJECUTAR AL INICIO */
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", scrollToHashFast);
+} else {
+  scrollToHashFast();
 }
