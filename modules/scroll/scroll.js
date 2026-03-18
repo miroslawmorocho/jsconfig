@@ -23,11 +23,3 @@ function scrollToHash(){
   }, 300);
 
 }
-
-
-/* EJECUTAR AL INICIO */
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", scrollToHashFast);
-} else {
-  scrollToHashFast();
-}
