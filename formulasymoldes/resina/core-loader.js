@@ -257,18 +257,31 @@ LaunchCore.init = async function(){
   if(!root) return;
 
   const page = root.dataset.page;
-
-  const module = LaunchCore.modules[page];
-
-  if(!module){
-    console.warn("No module registered for:", page);
+  if(!page){
+    console.warn("No data-page definido");
     return;
   }
 
+  // 🔥 construir ruta del módulo
+  const base = "https://miroslawmorocho.github.io/jsconfig/formulasymoldes/resina/";
+  const moduleUrl = base + page + "-module.js";
+
   try{
+
+    // 🔥 cargar módulo dinámicamente
+    await LaunchCore.loadScript(moduleUrl);
+
+    const module = LaunchCore.modules[page];
+
+    if(!module){
+      console.warn("Módulo no registrado:", page);
+      return;
+    }
+
     await module();
+
   }catch(e){
-    console.error("Module init error:", e);
+    console.error("Auto-init error:", e);
   }
 
 };
