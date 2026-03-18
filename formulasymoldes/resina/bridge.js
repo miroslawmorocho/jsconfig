@@ -40,13 +40,8 @@ async function initLaunchEngine() {
   
   try {
     // 1. Consultar al cerebro (Worker)
-    const data = await LaunchCore.fetchWorker("/");
+    const data = await LaunchCore.fetchWorker("");
 
-    if(!data){
-      console.warn("No data from worker");
-      return;
-    }
-    
     // 2. Verificar cierre absoluto del evento
     if (data.eventoCerrado) {
       if (DOM.root) DOM.root.innerHTML = data.htmlEventoCerrado;
