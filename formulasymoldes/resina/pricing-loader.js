@@ -14,7 +14,7 @@ async function init(){
      DARK MODE (GLOBAL)
   ========================= */
 
-  await cargarCSS(BASE+"modules/darkmode/darkmode.css");
+  await LaunchCore.loadCSS(BASE+"modules/darkmode/darkmode.css");
 
   const darkHTML = await fetch(BASE+"modules/darkmode/darkmode.html").then(r=>r.text());
   document.body.insertAdjacentHTML("beforeend", darkHTML);
