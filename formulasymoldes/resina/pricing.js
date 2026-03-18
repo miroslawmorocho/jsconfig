@@ -1,4 +1,5 @@
 let intervaloRevisionDin = 60000; // default
+let scrollYaEjecutado = false;
 
 async function cargarPricing(){
 
@@ -46,11 +47,17 @@ if(el){
 
 }
 
-  setTimeout(() => {
-    if(typeof scrollToHashFix === "function"){
-      scrollToHashFix();
-    }
-  }, 100);
+  if(!scrollYaEjecutado){
+
+    scrollYaEjecutado = true;
+
+    setTimeout(() => {
+      if(typeof scrollToHashFix === "function"){
+        scrollToHashFix();
+      }
+    }, 100);
+
+  }
 }
 
 /* cargar tabla */
