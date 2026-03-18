@@ -1,8 +1,13 @@
-let schedulerTimeout = null;
+let intervaloRevisionDin = 60000; // default
 
 async function cargarPricing(){
 
   const data = await LaunchCore.fetchWorker("/pricing");
+
+  if (data.intervaloRevisionMs) {
+    intervaloRevisionDin = data.intervaloRevisionMs;
+    LaunchCore.visibility.updateInterval(intervaloRevisionDin);
+  }
 
   document.getElementById("pricing").innerHTML = data.pricingHtml;
 
@@ -23,9 +28,7 @@ async function cargarPricing(){
 
     let delay = data.siguienteActualizacionMs + 4000;
 
-    if (delay < 2000) delay = 2000;
-
-    programarSiguienteActualizacion(delay);
+    LaunchCore.scheduler.programar(cargarPricing, delay);
 
   }
   
@@ -50,22 +53,11 @@ if(el){
   }, 100);
 }
 
-
-function programarSiguienteActualizacion(delay){
-
-  if(schedulerTimeout){
-    clearTimeout(schedulerTimeout);
-  }
-
-  schedulerTimeout = setTimeout(()=>{
-    cargarPricing();
-  }, delay);
-
-}
-
 /* cargar tabla */
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", cargarPricing);
 } else {
   cargarPricing();
 }
+
+LaunchCore.visibility.init(cargarPricing, intervaloRevisionDin);
