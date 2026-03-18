@@ -1,3 +1,5 @@
+window.LaunchCore = window.LaunchCore || {};
+
 LaunchCore.paths = {
   base: "https://miroslawmorocho.github.io/jsconfig/",
   projects: "https://miroslawmorocho.github.io/jsconfig/projects/"
@@ -15,7 +17,6 @@ LaunchCore.paths = {
     CORE GLOBAL
   ===================================================== */
 
-  window.LaunchCore = window.LaunchCore || {};
   LaunchCore.globals = LaunchCore.globals || {};
 
   /* =====================================================
