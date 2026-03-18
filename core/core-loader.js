@@ -277,7 +277,7 @@ LaunchCore.init = async function(){
     // 🔥 cargar módulo dinámicamente
     await LaunchCore.loadScript(moduleUrl);
 
-    const module = LaunchCore.modules[page];
+    const module = LaunchCore.modules[config.page];
 
     if(!module){
       console.warn("Módulo no registrado:", page);
