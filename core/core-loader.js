@@ -329,7 +329,13 @@ LaunchCore.globals.carousel = async function(){
 
   if(!container) return; // 🔥 importante
 
-  const html = await fetch(BASE+"formulasymoldes/resina/carousel.html").then(r=>r.text());
+  const root = document.getElementById("launch-engine-root");
+  const { project, product } = root.dataset;
+
+  const html = await fetch(
+    `https://miroslawmorocho.github.io/jsconfig/projects/${project}/${product}/carousel.html`
+  ).then(r=>r.text());
+
   container.innerHTML = html;
 
   await LaunchCore.loadCSS(BASE+"modules/carousel/carousel.css");
