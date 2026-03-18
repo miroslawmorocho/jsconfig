@@ -56,11 +56,9 @@ if(el){
 
     scrollYaEjecutado = true;
 
-    setTimeout(() => {
-      if(typeof scrollToHashFix === "function"){
-        scrollToHashFix();
-      }
-    }, 100);
+    if(typeof scrollToHash === "function"){
+      scrollToHash();
+    }
 
   }
 }
