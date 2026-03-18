@@ -9,7 +9,6 @@
 
 let workerBusy = false;
 let ultimaRevision = 0;
-let schedulerTimeout = null;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 
 /* =====================================================
@@ -116,6 +115,7 @@ async function initLaunchEngine() {
 
     // 8. Programar siguiente actualización (despertador automático)
     if (data.intervaloRevisionMs) intervaloRevisionDin = data.intervaloRevisionMs;
+    LaunchCore.visibility.updateInterval(intervaloRevisionDin);
     
     let delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
@@ -134,21 +134,6 @@ async function initLaunchEngine() {
       console.warn("Fallo temporal cargando Launch Engine:", error);
     }
   }
-
-  /* =====================================================
-     REPROGRAMACIÓN (Despertador)
-  ===================================================== */
-  function programarSiguienteActualizacion(delay) {
-    if (schedulerTimeout) {
-      clearTimeout(schedulerTimeout);
-    }
-    
-    if (!delay) return;
-  
-    schedulerTimeout = setTimeout(() => {
-      initLaunchEngine();
-    }, delay);
-  }
   
   /* =====================================================
      EVENT LISTENERS (Manejo de visibilidad y caché)
@@ -165,16 +150,7 @@ async function initLaunchEngine() {
     }
   });
   
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) return;
-  
-    const ahora = Date.now();
-    if (ahora - ultimaRevision < intervaloRevisionDin) {
-      return; // Aún no toca revisar
-    }
-  
-    initLaunchEngine();
-  });
+  LaunchCore.visibility.init(initLaunchEngine, intervaloRevisionDin);
 
    // botones de calendario
    document.addEventListener("click", function(e) {

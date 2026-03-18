@@ -105,6 +105,57 @@ LaunchCore.scheduler = (function(){
 })();
 
 /* =====================================================
+   VISIBILITY CONTROL (GLOBAL)
+===================================================== */
+
+LaunchCore.visibility = (function(){
+
+  let lastCheck = 0;
+  let minInterval = 60000; // default 1 min
+  let callback = null;
+
+  function init(fn, interval){
+
+    callback = fn;
+
+    if(interval){
+      minInterval = interval;
+    }
+
+    document.addEventListener("visibilitychange", () => {
+
+      if(document.hidden) return;
+
+      const now = Date.now();
+
+      if(now - lastCheck < minInterval){
+        return;
+      }
+
+      if(typeof callback === "function"){
+        callback();
+      }
+
+      lastCheck = now;
+
+    });
+
+  }
+
+  function updateInterval(newInterval){
+    if(newInterval){
+      minInterval = newInterval;
+    }
+  }
+
+  return {
+    init,
+    updateInterval
+  };
+
+})();
+
+/* =====================================================
    COUNTDOWN (GLOBAL)
 ===================================================== */
 
