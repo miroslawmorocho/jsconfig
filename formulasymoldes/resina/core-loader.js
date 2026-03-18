@@ -11,6 +11,7 @@ const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
 ===================================================== */
 
 window.LaunchCore = {};
+LaunchCore.globals = {};
 
 /* =====================================================
    HELPERS (CSS / JS)
