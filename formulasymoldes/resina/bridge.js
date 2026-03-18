@@ -7,9 +7,6 @@
  * ============================================================================
  */
 
-// ¡IMPORTANTE! Reemplaza esto con la URL real de tu Cloudflare Worker
-const WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev/";
-
 let workerBusy = false;
 let ultimaRevision = 0;
 let countdownInterval = null;
@@ -43,14 +40,7 @@ async function initLaunchEngine() {
   
   try {
     // 1. Consultar al cerebro (Worker)
-    const params = new URLSearchParams(window.location.search);
-    
-    //const respuesta = await fetch(WORKER_URL + "?" + params.toString());
-    const respuesta = await fetch(WORKER_URL + window.location.search);
-    
-    if (!respuesta.ok) throw new Error("Error conectando con el Worker");
-    
-    const data = await respuesta.json();
+    const data = await LaunchCore.fetchWorker("");
     
     // 2. Verificar cierre absoluto del evento
     if (data.eventoCerrado) {
