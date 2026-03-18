@@ -310,7 +310,7 @@ LaunchCore.use = async function(name){
 
 LaunchCore.globals.darkmode = async function(){
 
-  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
+  const BASE = "https://miroslawmorocho.github.io/jsconfig/projects/";
 
   await LaunchCore.loadCSS(BASE+"modules/darkmode/darkmode.css");
 
@@ -323,7 +323,7 @@ LaunchCore.globals.darkmode = async function(){
 
 LaunchCore.globals.carousel = async function(){
 
-  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
+  const BASE = "https://miroslawmorocho.github.io/jsconfig/projects";
 
   const container = document.getElementById("pricing-carousel");
 
@@ -339,7 +339,7 @@ LaunchCore.globals.carousel = async function(){
 
 LaunchCore.globals.scroll = async function(){
 
-  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
+  const BASE = "https://miroslawmorocho.github.io/jsconfig/projects/";
 
   await LaunchCore.loadScript(BASE+"modules/scroll/scroll.js");
 
