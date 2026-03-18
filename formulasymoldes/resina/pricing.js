@@ -54,10 +54,6 @@ if(el){
 }
 
 /* cargar tabla */
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", cargarPricing);
-} else {
-  cargarPricing();
-}
+LaunchCore.onReady(cargarPricing);
 
 LaunchCore.visibility.init(cargarPricing, intervaloRevisionDin);

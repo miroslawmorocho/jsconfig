@@ -285,3 +285,13 @@ LaunchCore.init = async function(){
   }
 
 };
+
+/* =====================================================
+   MÓDULOS GLOBALES (darkmode, carousel, etc.)
+===================================================== */
+LaunchCore.globals = {};
+
+LaunchCore.use = function(name){
+  const fn = LaunchCore.globals[name];
+  if(fn) return fn();
+};
