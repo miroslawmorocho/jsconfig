@@ -12,15 +12,8 @@ const html = await fetch(base + "bridge.html").then(r => r.text());
 
 root.innerHTML = html;
 
-const css = document.createElement("link");
-css.rel = "stylesheet";
-css.href = base + "bridge.css";
-document.head.appendChild(css);
-
-const script = document.createElement("script");
-script.src = base + "bridge.js";
-script.defer = true;
-document.body.appendChild(script);
+await LaunchCore.loadCSS(base + "bridge.css");
+await LaunchCore.loadScript(base + "bridge.js");
 
 }catch(e){
 
