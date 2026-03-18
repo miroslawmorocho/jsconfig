@@ -5,8 +5,8 @@ async function cargarPricing(){
     
   const data = await LaunchCore.fetchWorker("/pricing");
 
-  if (!data) {
-    console.warn("❌ No hay data del worker");
+  if (!data || !data.pricingHtml) {
+    console.warn("⚠️ Data incompleta");
     return;
   }
 

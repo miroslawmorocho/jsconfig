@@ -1,244 +1,249 @@
+LaunchCore.paths = {
+  base: "https://miroslawmorocho.github.io/jsconfig/",
+  projects: "https://miroslawmorocho.github.io/jsconfig/projects/"
+};
+
 (function(){
 
-/* =====================================================
-   CONFIG BASE
-===================================================== */
+  /* =====================================================
+    CONFIG BASE
+  ===================================================== */
 
-const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
+  const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
 
-/* =====================================================
-   CORE GLOBAL
-===================================================== */
+  /* =====================================================
+    CORE GLOBAL
+  ===================================================== */
 
-window.LaunchCore = {};
-LaunchCore.globals = {};
+  window.LaunchCore = window.LaunchCore || {};
+  LaunchCore.globals = LaunchCore.globals || {};
 
-/* =====================================================
-   HELPERS (CSS / JS)
-===================================================== */
+  /* =====================================================
+    HELPERS (CSS / JS)
+  ===================================================== */
 
-LaunchCore.loadScript = function(src){
-  return new Promise((resolve)=>{
+  LaunchCore.loadScript = function(src){
+    return new Promise((resolve)=>{
 
-    if(document.querySelector(`script[src="${src}"]`)){
-      resolve();
-      return;
-    }
-
-    const s = document.createElement("script");
-    s.src = src;
-    s.onload = resolve;
-
-    document.body.appendChild(s);
-  });
-};
-
-LaunchCore.loadCSS = function(href){
-  return new Promise((resolve)=>{
-
-    if(document.querySelector(`link[href="${href}"]`)){
-      resolve();
-      return;
-    }
-
-    const l = document.createElement("link");
-    l.rel = "stylesheet";
-    l.href = href;
-    l.onload = resolve;
-
-    document.head.appendChild(l);
-  });
-};
-
-/* =====================================================
-   FETCH WORKER (UNIFICADO)
-===================================================== */
-
-LaunchCore.fetchWorker = async function(endpoint = ""){
-
-  try{
-
-    const url = BASE_WORKER_URL + endpoint + window.location.search;
-
-    const res = await fetch(url);
-
-    if(!res.ok) throw new Error("Worker error");
-
-    return await res.json();
-
-  }catch(e){
-
-    console.warn("LaunchCore fetch error:", e);
-    return null;
-
-  }
-
-};
-
-/* =====================================================
-   SCHEDULER (REPROGRAMACIÓN)
-===================================================== */
-
-LaunchCore.scheduler = (function(){
-
-  let timeout = null;
-
-  function programar(fn, delay){
-
-    if(timeout){
-      clearTimeout(timeout);
-    }
-
-    if(!delay) return;
-
-    // mínimo
-    if(delay < 2000) delay = 2000;
-
-    // jitter (hasta 20%)
-    const jitter = delay * 0.2 * Math.random();
-    delay += jitter;
-
-    timeout = setTimeout(()=>{
-      fn();
-    }, delay);
-
-  }
-
-  return {
-    programar
-  };
-
-})();
-
-/* =====================================================
-   VISIBILITY CONTROL (GLOBAL)
-===================================================== */
-
-LaunchCore.visibility = (function(){
-
-  let lastCheck = 0;
-  let minInterval = 60000; // default 1 min
-  let callback = null;
-
-  function init(fn, interval){
-
-    callback = fn;
-
-    if(interval){
-      minInterval = interval;
-    }
-
-    document.addEventListener("visibilitychange", () => {
-
-      if(document.hidden) return;
-
-      const now = Date.now();
-
-      if(now - lastCheck < minInterval){
+      if(document.querySelector(`script[src="${src}"]`)){
+        resolve();
         return;
       }
 
-      if(typeof callback === "function"){
-        callback();
-      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
 
-      lastCheck = now;
-
+      document.body.appendChild(s);
     });
-
-  }
-
-  function updateInterval(newInterval){
-    if(newInterval){
-      minInterval = newInterval;
-    }
-  }
-
-  return {
-    init,
-    updateInterval
   };
 
-})();
+  LaunchCore.loadCSS = function(href){
+    return new Promise((resolve)=>{
 
-/* =====================================================
-   COUNTDOWN (GLOBAL)
-===================================================== */
-
-LaunchCore.countdown = (function(){
-
-  let interval = null;
-  let targetTime = null;
-
-  const DOM = {
-    days: () => document.getElementById("days"),
-    hours: () => document.getElementById("hours"),
-    minutes: () => document.getElementById("minutes"),
-    seconds: () => document.getElementById("seconds")
-  };
-
-  function start(target){
-
-    stop();
-
-    targetTime = Number(target);
-
-    function update(){
-
-      const now = Date.now();
-      const diff = targetTime - now;
-
-      if(diff <= 0){
-        stop();
+      if(document.querySelector(`link[href="${href}"]`)){
+        resolve();
         return;
       }
 
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
+      const l = document.createElement("link");
+      l.rel = "stylesheet";
+      l.href = href;
+      l.onload = resolve;
 
-      if(DOM.days()) DOM.days().textContent = String(d).padStart(2,"0");
-      if(DOM.hours()) DOM.hours().textContent = String(h).padStart(2,"0");
-      if(DOM.minutes()) DOM.minutes().textContent = String(m).padStart(2,"0");
-      if(DOM.seconds()) DOM.seconds().textContent = String(s).padStart(2,"0");
-
-    }
-
-    update();
-    interval = setInterval(update, 1000);
-
-  }
-
-  function stop(){
-
-    if(interval){
-      clearInterval(interval);
-      interval = null;
-    }
-
-  }
-
-  return {
-    start,
-    stop
+      document.head.appendChild(l);
+    });
   };
 
-})();
+  /* =====================================================
+    FETCH WORKER (UNIFICADO)
+  ===================================================== */
 
-/* =====================================================
-   READY (opcional, útil luego)
-===================================================== */
+  LaunchCore.fetchWorker = async function(endpoint = ""){
 
-LaunchCore.onReady = function(fn){
+    try{
 
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", fn);
-  }else{
-    fn();
-  }
+      const url = BASE_WORKER_URL + endpoint + window.location.search;
 
-};
+      const res = await fetch(url);
+
+      if(!res.ok) throw new Error("Worker error");
+
+      return await res.json();
+
+    }catch(e){
+
+      console.warn("LaunchCore fetch error:", e);
+      return null;
+
+    }
+
+  };
+
+  /* =====================================================
+    SCHEDULER (REPROGRAMACIÓN)
+  ===================================================== */
+
+  LaunchCore.scheduler = (function(){
+
+    let timeout = null;
+
+    function programar(fn, delay){
+
+      if(timeout){
+        clearTimeout(timeout);
+      }
+
+      if(!delay) return;
+
+      // mínimo
+      if(delay < 2000) delay = 2000;
+
+      // jitter (hasta 20%)
+      const jitter = delay * 0.2 * Math.random();
+      delay += jitter;
+
+      timeout = setTimeout(()=>{
+        fn();
+      }, delay);
+
+    }
+
+    return {
+      programar
+    };
+
+  })();
+
+  /* =====================================================
+    VISIBILITY CONTROL (GLOBAL)
+  ===================================================== */
+
+  LaunchCore.visibility = (function(){
+
+    let lastCheck = 0;
+    let minInterval = 60000; // default 1 min
+    let callback = null;
+
+    function init(fn, interval){
+
+      callback = fn;
+
+      if(interval){
+        minInterval = interval;
+      }
+
+      document.addEventListener("visibilitychange", () => {
+
+        if(document.hidden) return;
+
+        const now = Date.now();
+
+        if(now - lastCheck < minInterval){
+          return;
+        }
+
+        if(typeof callback === "function"){
+          callback();
+        }
+
+        lastCheck = now;
+
+      });
+
+    }
+
+    function updateInterval(newInterval){
+      if(newInterval){
+        minInterval = newInterval;
+      }
+    }
+
+    return {
+      init,
+      updateInterval
+    };
+
+  })();
+
+  /* =====================================================
+    COUNTDOWN (GLOBAL)
+  ===================================================== */
+
+  LaunchCore.countdown = (function(){
+
+    let interval = null;
+    let targetTime = null;
+
+    const DOM = {
+      days: () => document.getElementById("days"),
+      hours: () => document.getElementById("hours"),
+      minutes: () => document.getElementById("minutes"),
+      seconds: () => document.getElementById("seconds")
+    };
+
+    function start(target){
+
+      stop();
+
+      targetTime = Number(target);
+
+      function update(){
+
+        const now = Date.now();
+        const diff = targetTime - now;
+
+        if(diff <= 0){
+          stop();
+          return;
+        }
+
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+
+        if(DOM.days()) DOM.days().textContent = String(d).padStart(2,"0");
+        if(DOM.hours()) DOM.hours().textContent = String(h).padStart(2,"0");
+        if(DOM.minutes()) DOM.minutes().textContent = String(m).padStart(2,"0");
+        if(DOM.seconds()) DOM.seconds().textContent = String(s).padStart(2,"0");
+
+      }
+
+      update();
+      interval = setInterval(update, 1000);
+
+    }
+
+    function stop(){
+
+      if(interval){
+        clearInterval(interval);
+        interval = null;
+      }
+
+    }
+
+    return {
+      start,
+      stop
+    };
+
+  })();
+
+  /* =====================================================
+    READY (opcional, útil luego)
+  ===================================================== */
+
+  LaunchCore.onReady = function(fn){
+
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", fn);
+    }else{
+      fn();
+    }
+
+  };
 
 })();
 
@@ -268,7 +273,7 @@ LaunchCore.init = async function(){
     return;
   }
 
-  const base = `https://miroslawmorocho.github.io/jsconfig/projects/${config.project}/${config.product}/`;
+  const base = LaunchCore.paths.projects + `${config.project}/${config.product}/`;
 
   const moduleUrl = base + config.page + "-module.js";
 
@@ -310,20 +315,18 @@ LaunchCore.use = async function(name){
 
 LaunchCore.globals.darkmode = async function(){
 
-  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
+  await LaunchCore.loadCSS(LaunchCore.paths.base +"modules/darkmode/darkmode.css");
 
-  await LaunchCore.loadCSS(BASE+"modules/darkmode/darkmode.css");
-
-  const darkHTML = await fetch(BASE+"modules/darkmode/darkmode.html").then(r=>r.text());
+  const darkHTML = await fetch(
+    LaunchCore.paths.base +"modules/darkmode/darkmode.html"
+  ).then(r=>r.text());
   document.body.insertAdjacentHTML("beforeend", darkHTML);
 
-  await LaunchCore.loadScript(BASE+"modules/darkmode/darkmode.js");
+  await LaunchCore.loadScript(LaunchCore.paths.base +"modules/darkmode/darkmode.js");
 
 };
 
 LaunchCore.globals.carousel = async function(){
-
-  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
 
   const container = document.getElementById("pricing-carousel");
 
@@ -332,21 +335,19 @@ LaunchCore.globals.carousel = async function(){
   const root = document.getElementById("launch-engine-root");
   const { project, product } = root.dataset;
 
-  const html = await fetch(
-    `https://miroslawmorocho.github.io/jsconfig/projects/${project}/${product}/carousel.html`
+  const html = await fetch(    
+    LaunchCore.paths.projects + `${project}/${product}/carousel.html`
   ).then(r=>r.text());
 
   container.innerHTML = html;
 
-  await LaunchCore.loadCSS(BASE+"modules/carousel/carousel.css");
-  await LaunchCore.loadScript(BASE+"modules/carousel/carousel.js");
+  await LaunchCore.loadCSS(LaunchCore.paths.base + "modules/carousel/carousel.css");
+  await LaunchCore.loadScript(LaunchCore.paths.base + "modules/carousel/carousel.js");
 
 };
 
 LaunchCore.globals.scroll = async function(){
 
-  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
-
-  await LaunchCore.loadScript(BASE+"modules/scroll/scroll.js");
+  await LaunchCore.loadScript(LaunchCore.paths.base + "modules/scroll/scroll.js");
 
 };
