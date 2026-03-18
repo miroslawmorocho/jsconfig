@@ -240,3 +240,35 @@ LaunchCore.onReady = function(fn){
 };
 
 })();
+
+/* =====================================================
+   MODULE REGISTRY (AUTO INIT)
+===================================================== */
+
+LaunchCore.modules = {};
+
+LaunchCore.register = function(name, fn){
+  LaunchCore.modules[name] = fn;
+};
+
+LaunchCore.init = async function(){
+
+  const root = document.getElementById("launch-engine-root");
+  if(!root) return;
+
+  const page = root.dataset.page;
+
+  const module = LaunchCore.modules[page];
+
+  if(!module){
+    console.warn("No module registered for:", page);
+    return;
+  }
+
+  try{
+    await module();
+  }catch(e){
+    console.error("Module init error:", e);
+  }
+
+};
