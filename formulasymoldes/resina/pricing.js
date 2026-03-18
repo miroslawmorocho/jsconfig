@@ -1,5 +1,4 @@
 let schedulerTimeout = null;
-let countdownInterval = null;
 
 async function cargarPricing(){
 
@@ -61,45 +60,6 @@ function programarSiguienteActualizacion(delay){
   schedulerTimeout = setTimeout(()=>{
     cargarPricing();
   }, delay);
-
-}
-
-function iniciarCountdown(target){
-
-  if(countdownInterval){
-    clearInterval(countdownInterval);
-    countdownInterval = null;
-  }
-
-  const targetTime = Number(target);
-
-  function actualizar(){
-
-    const ahora = Date.now();
-    const diff = targetTime - ahora;
-
-    if(diff <= 0){
-
-      clearInterval(countdownInterval);
-      countdownInterval = null;
-    
-      return;
-    }
-
-    const dias = Math.floor(diff / 86400000);
-    const horas = Math.floor((diff % 86400000) / 3600000);
-    const minutos = Math.floor((diff % 3600000) / 60000);
-    const segundos = Math.floor((diff % 60000) / 1000);
-
-    document.getElementById("days").textContent = String(dias).padStart(2,"0");
-    document.getElementById("hours").textContent = String(horas).padStart(2,"0");
-    document.getElementById("minutes").textContent = String(minutos).padStart(2,"0");
-    document.getElementById("seconds").textContent = String(segundos).padStart(2,"0");
-
-  }
-
-  actualizar();
-  countdownInterval = setInterval(actualizar,1000);
 
 }
 
