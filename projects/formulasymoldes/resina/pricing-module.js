@@ -1,6 +1,6 @@
 LaunchCore.register("pricing", async function(){
 
-  const BASE = "https://miroslawmorocho.github.io/jsconfig/";
+  const BASE = "https://miroslawmorocho.github.io/jsconfig/projects/";
   const root = document.getElementById("launch-engine-root");
 
   // 🔥 cargar HTML principal
