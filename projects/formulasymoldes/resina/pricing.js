@@ -56,8 +56,8 @@ if(el){
 
     scrollYaEjecutado = true;
 
-    if(typeof scrollToHashFix === "function"){
-      scrollToHashFix();
+    if(typeof scrollToHashObserver === "function"){
+      scrollToHashObserver();
     }
 
   }
