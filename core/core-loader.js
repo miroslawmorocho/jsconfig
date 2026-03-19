@@ -348,11 +348,12 @@ LaunchCore.globals.darkmode = async function(){
 
 LaunchCore.globals.carousel = async function(){
 
+  const carouselPath = "modules/carousel/carousel";
   const container = document.getElementById("pricing-carousel");
 
   if(!container) return; // 🔥 importante
 
-  const root = LaunchCore.root;
+  //const root = LaunchCore.root;
   const { project, product } = LaunchCore.config;
 
   const html = await fetch(
@@ -361,8 +362,8 @@ LaunchCore.globals.carousel = async function(){
 
   container.innerHTML = html;
 
-  await LaunchCore.loadCSS(LaunchCore.paths.base + "modules/carousel/carousel.css");
-  await LaunchCore.loadScript(LaunchCore.paths.base + "modules/carousel/carousel.js");
+  await LaunchCore.loadCSS(LaunchCore.paths.base + carouselPath + ".css");
+  await LaunchCore.loadScript(LaunchCore.paths.base + carouselPath + ".js");
 
 };
 
