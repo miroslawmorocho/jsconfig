@@ -57,7 +57,7 @@ if(el){
     scrollYaEjecutado = true;
 
     if(typeof scrollToHash === "function"){
-      scrollToHashFix();
+      scrollToHash();
     }
 
   }
