@@ -4,45 +4,18 @@ function scrollToHashObserver(){
 
   if(window.location.hash !== "#comprar") return;
 
-  const tryScroll = () => {
+  const observer = new MutationObserver(() => {
 
     const el = document.getElementById("comprar");
-    if(!el) return false;
 
-    const rect = el.getBoundingClientRect();
+    if(el){
 
-    const inViewport = rect.top < window.innerHeight;
-
-    // 🎯 YA ESTÁ → AJUSTE FINAL
-    if(inViewport){
-
-      el.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-
-      return true;
-    }
-
-    // 🧠 SOLO BAJA SI ESTÁ MUY LEJOS
-    if(rect.top > window.innerHeight * 1.5){
-
-      window.scrollBy({
-        top: window.innerHeight,
+      // 💥 TELETRANSPORTE DIRECTO (sin animación)
+      window.scrollTo({
+        top: el.offsetTop,
         behavior: "auto"
       });
 
-    }
-
-    return false;
-  };
-
-
-  const observer = new MutationObserver(() => {
-
-    const done = tryScroll();
-
-    if(done){
       observer.disconnect();
     }
 
@@ -53,7 +26,4 @@ function scrollToHashObserver(){
     subtree: true
   });
 
-  tryScroll();
 }
-
-LaunchCore.onReady(scrollToHashObserver);
