@@ -4,40 +4,59 @@ function scrollToHash(){
 
   if(window.location.hash !== "#comprar") return;
 
-  const el = document.getElementById("comprar");
-  if(!el) return;
-
-  let fixed = false;
   let observer = null;
+  let fixed = false;
 
-  observer = new IntersectionObserver((entries)=>{
+  function intentarScroll(){
 
-    const entry = entries[0];
+    const el = document.getElementById("comprar");
 
-    if(entry.isIntersecting){
+    if(!el) return;
 
-      if(!fixed){
-        fixed = true;
+    // 👇 hacer scroll una vez
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
 
-        setTimeout(()=>{
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
+    // 👇 observar si realmente queda visible
+    observer = new IntersectionObserver((entries)=>{
 
-          // 🔥 aquí lo matamos
-          observer.disconnect();
+      const entry = entries[0];
 
-        }, 300);
+      if(entry.isIntersecting){
 
+        // ✅ ya está visible
+        if(!fixed){
+          fixed = true;
+
+          // 👇 pequeño delay por si el layout sigue moviéndose
+          setTimeout(()=>{
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 300);
+
+        }
+
+      }else{
+        // ❗ si se salió (por empuje del DOM), lo volvemos a centrar
+        el.scrollIntoView({ behavior: "auto", block: "start" });
       }
 
-    }else{
-      el.scrollIntoView({ behavior: "auto", block: "start" });
+    }, {
+      threshold: 0.6 // 60% visible = suficiente
+    });
+
+    observer.observe(el);
+
+  }
+
+  // 👇 esperar a que el DOM lo tenga (sin intentos limitados)
+  const wait = setInterval(()=>{
+
+    const el = document.getElementById("comprar");
+
+    if(el){
+      clearInterval(wait);
+      intentarScroll();
     }
 
-  }, {
-    threshold: 0.6
-  });
-
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-  observer.observe(el);
+  }, 200);
 
 }
