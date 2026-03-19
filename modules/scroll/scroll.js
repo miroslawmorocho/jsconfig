@@ -1,44 +1,47 @@
-// Esta función está diseñada para ir al hashtag #comprar
-// de la carta de ventas
+// OJO que la etiqueta a buscar con este scroll es SIEMPRE "#comprar"
 
-function scrollToHash(){
+/* SCROLL RÁPIDO (inmediato) */
+function scrollToHashFast(){
 
   if(window.location.hash !== "#comprar") return;
 
   const el = document.getElementById("comprar");
-  if(!el) return;
 
-  let lastHeight = 0;
-  let stableCount = 0;
-  let maxChecks = 30;
-
-  function checkLayout(){
-
-    const currentHeight = document.body.scrollHeight;
-
-    if(Math.abs(currentHeight - lastHeight) < 5){
-      stableCount++;
-    }else{
-      stableCount = 0;
-    }
-
-    lastHeight = currentHeight;
-
-    // ✅ cuando la página deja de crecer → scroll final
-    if(stableCount >= 3 || maxChecks <= 0){
-
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-
-    }
-
-    maxChecks--;
-
-    setTimeout(checkLayout, 100);
-
+  if(el){
+    el.scrollIntoView({ behavior: "auto", block: "start" });
   }
+}
 
-  // 👇 arranca el proceso
-  checkLayout();
 
+/* SCROLL DE CORRECCIÓN (preciso) */
+function scrollToHashFix(){
+
+  if(window.location.hash !== "#comprar") return;
+
+  let attempts = 0;
+
+  const interval = setInterval(()=>{
+
+    const el = document.getElementById("comprar");
+
+    if(el){
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    attempts++;
+
+    if(attempts > 10){
+      clearInterval(interval);
+    }
+
+  }, 300);
+
+}
+
+
+/* EJECUTAR AL INICIO */
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", scrollToHashFast);
+} else {
+  scrollToHashFast();
 }
