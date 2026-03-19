@@ -5,21 +5,24 @@ function scrollToHashFix(){
 
   if(window.location.hash !== "#comprar") return;
 
-  const el = document.getElementById("comprar");
-  if(!el) return;
-
   let attempts = 0;
 
   const interval = setInterval(()=>{
 
+    const el = document.getElementById("comprar");
+
+    // 🧠 PRIMERO: esperar a que exista
+    if(!el){
+      attempts++;
+      if(attempts > 30) clearInterval(interval);
+      return;
+    }
+
     const rect = el.getBoundingClientRect();
 
-    const inViewport = (
-      rect.top >= 0 &&
-      rect.bottom <= window.innerHeight
-    );
+    const inViewport = rect.top < window.innerHeight;
 
-    // 🧠 SI YA ESTÁ EN VIEWPORT → AJUSTE FINAL FINO
+    // ✅ YA APARECIÓ → AJUSTE FINO Y SALIR
     if(inViewport){
 
       el.scrollIntoView({
@@ -31,15 +34,15 @@ function scrollToHashFix(){
       return;
     }
 
-    // 💀 SI NO ESTÁ → BAJA COMO BESTIA
+    // 💀 NO APARECE → BAJA
     window.scrollBy({
-      top: window.innerHeight * 0.8,
+      top: window.innerHeight * 0.9,
       behavior: "auto"
     });
 
     attempts++;
 
-    if(attempts > 20){
+    if(attempts > 30){
       clearInterval(interval);
     }
 
