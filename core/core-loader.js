@@ -335,14 +335,15 @@ LaunchCore.use = async function(name){
 
 LaunchCore.globals.darkmode = async function(){
 
-  await LaunchCore.loadCSS(LaunchCore.paths.base +"modules/darkmode/darkmode.css");
+  const darkmodePath = "modules/darkmode/darkmode"
+  await LaunchCore.loadCSS(LaunchCore.paths.base + darkmodePath + ".css");
 
   const darkHTML = await fetch(
-    LaunchCore.paths.base +"modules/darkmode/darkmode.html"
+    LaunchCore.paths.base + darkmodePath + ".html"
   ).then(r=>r.text());
   document.body.insertAdjacentHTML("beforeend", darkHTML);
 
-  await LaunchCore.loadScript(LaunchCore.paths.base +"modules/darkmode/darkmode.js");
+  await LaunchCore.loadScript(LaunchCore.paths.base + darkmodePath + ".js");
 
 };
 
@@ -354,10 +355,15 @@ LaunchCore.globals.carousel = async function(){
   if(!container) return; // 🔥 importante
 
   //const root = LaunchCore.root;
-  const { project, product } = LaunchCore.config;
+  const { project, product, page } = LaunchCore.config;
 
   const html = await fetch(
-    LaunchCore.paths.projects + `${project}/${product}/carousel.html`
+    LaunchCore.paths.projects + `${project}/${product}/${page}.html`
+    // Esto debemos estandarizar de alguna forma. La idea es que el
+    // carrusel corresponde EXACTAMENTE al path que se genera aquí
+    // https://miroslawmorocho.github.io/jsconfig/projects/formulasymoldes/resina/carousel.html
+    // es decir, es distinto de la FUNCIÓN carousel que vive en "modules"
+    // Este html es EXCLUSIVO del PROYECTO. Y se usa solamente dentro de la carta de ventas!
   ).then(r=>r.text());
 
   container.innerHTML = html;
@@ -369,6 +375,7 @@ LaunchCore.globals.carousel = async function(){
 
 LaunchCore.globals.scroll = async function(){
 
-  await LaunchCore.loadScript(LaunchCore.paths.base + "modules/scroll/scroll.js");
+  const scrollPath = "modules/scroll/scroll"
+  await LaunchCore.loadScript(LaunchCore.paths.base + scrollPath + ".js");
 
 };
