@@ -1,4 +1,4 @@
-export function initVersionChecker(config) {
+function initVersionChecker(config) {
 
   let currentVersion = null;
 
@@ -200,3 +200,5 @@ export function initVersionChecker(config) {
   // primera ejecución
   check();
 }
+
+window.initVersionChecker = initVersionChecker;
