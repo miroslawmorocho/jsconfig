@@ -1,20 +1,53 @@
 // OJO que la etiqueta a buscar con este scroll es SIEMPRE "#comprar"
 
-function scrollToHashTeleport(){
+function scrollToHashObserver(){
 
   if(window.location.hash !== "#comprar") return;
 
-  const observer = new MutationObserver(() => {
+  let scrolling = false;
+
+  const tryScroll = () => {
 
     const el = document.getElementById("comprar");
+    if(!el) return;
 
-    if(el){
+    const rect = el.getBoundingClientRect();
+    const inViewport = rect.top < window.innerHeight;
 
-      // 💥 RESET + RE-TRIGGER HASH
-      history.replaceState(null, null, " ");
-      location.hash = "#comprar";
+    // 🎯 SI YA ESTÁ VISIBLE → AJUSTE FINAL
+    if(inViewport){
 
-      observer.disconnect();
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
+      return true;
+    }
+
+    // ⚡ SI NO → BAJAR FUERTE SOLO UNA VEZ POR CAMBIO
+    if(!scrolling){
+      scrolling = true;
+
+      window.scrollTo(0, document.body.scrollHeight);
+
+      // pequeño unlock para próximos cambios
+      setTimeout(()=>{
+        scrolling = false;
+      }, 200);
+    }
+
+    return false;
+  };
+
+
+  // 👁️ OBSERVAR CAMBIOS EN TODO EL DOM
+  const observer = new MutationObserver(() => {
+
+    const done = tryScroll();
+
+    if(done){
+      observer.disconnect(); // 💀 se acabó, misión cumplida
     }
 
   });
@@ -24,4 +57,6 @@ function scrollToHashTeleport(){
     subtree: true
   });
 
+  // 🔥 intento inicial por si ya existe algo
+  tryScroll();
 }
