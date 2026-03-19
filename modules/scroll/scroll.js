@@ -10,11 +10,13 @@ function scrollToHashObserver(){
 
     if(el){
 
-      // 💥 TELETRANSPORTE DIRECTO (sin animación)
-      window.scrollTo({
-        top: el.offsetTop,
-        behavior: "auto"
-      });
+      // 💥 FORZAR AL NAVEGADOR A RE-EJECUTAR EL HASH
+      const id = el.id;
+
+      el.id = ""; // quitar temporalmente
+      el.id = id; // restaurar
+
+      location.hash = "#comprar"; // 🔥 trigger nativo REAL
 
       observer.disconnect();
     }
