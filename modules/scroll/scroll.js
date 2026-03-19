@@ -1,62 +1,43 @@
 // OJO que la etiqueta a buscar con este scroll es SIEMPRE "#comprar"
 
-function scrollToHashObserver(){
+/* SCROLL RÁPIDO (inmediato) */
+function scrollToHashFast(){
 
   if(window.location.hash !== "#comprar") return;
 
-  let scrolling = false;
+  const el = document.getElementById("comprar");
 
-  const tryScroll = () => {
+  if(el){
+    el.scrollIntoView({ behavior: "auto", block: "start" });
+  }
+}
+
+
+/* SCROLL DE CORRECCIÓN (preciso) */
+function scrollToHashFix(){
+
+  if(window.location.hash !== "#comprar") return;
+
+  let attempts = 0;
+
+  const interval = setInterval(()=>{
 
     const el = document.getElementById("comprar");
-    if(!el) return;
 
-    const rect = el.getBoundingClientRect();
-    const inViewport = rect.top < window.innerHeight;
-
-    // 🎯 SI YA ESTÁ VISIBLE → AJUSTE FINAL
-    if(inViewport){
-
-      el.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-
-      return true;
+    if(el){
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    // ⚡ SI NO → BAJAR FUERTE SOLO UNA VEZ POR CAMBIO
-    if(!scrolling){
-      scrolling = true;
+    attempts++;
 
-      window.scrollTo(0, document.body.scrollHeight);
-
-      // pequeño unlock para próximos cambios
-      setTimeout(()=>{
-        scrolling = false;
-      }, 200);
+    if(attempts > 10){
+      clearInterval(interval);
     }
 
-    return false;
-  };
+  }, 300);
 
-
-  // 👁️ OBSERVAR CAMBIOS EN TODO EL DOM
-  const observer = new MutationObserver(() => {
-
-    const done = tryScroll();
-
-    if(done){
-      observer.disconnect(); // 💀 se acabó, misión cumplida
-    }
-
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-
-  // 🔥 intento inicial por si ya existe algo
-  tryScroll();
 }
+
+
+/* EJECUTAR AL INICIO */
+LaunchCore.onReady(scrollToHashFast);
