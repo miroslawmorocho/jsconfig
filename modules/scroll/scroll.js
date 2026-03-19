@@ -8,24 +8,23 @@ function scrollToHash(){
   const el = document.getElementById("comprar");
   if(!el) return;
 
-  let lastTop = null;
+  let lastHeight = 0;
   let stableCount = 0;
-  let maxChecks = 20;
+  let maxChecks = 30;
 
-  function checkPosition(){
+  function checkLayout(){
 
-    const rect = el.getBoundingClientRect();
-    const currentTop = rect.top;
+    const currentHeight = document.body.scrollHeight;
 
-    if(lastTop !== null && Math.abs(currentTop - lastTop) < 2){
+    if(Math.abs(currentHeight - lastHeight) < 5){
       stableCount++;
     }else{
       stableCount = 0;
     }
 
-    lastTop = currentTop;
+    lastHeight = currentHeight;
 
-    // 👇 si está estable por varios checks → FINAL
+    // ✅ cuando la página deja de crecer → scroll final
     if(stableCount >= 3 || maxChecks <= 0){
 
       el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -35,16 +34,11 @@ function scrollToHash(){
 
     maxChecks--;
 
-    // 👇 seguimos corrigiendo mientras se mueve
-    el.scrollIntoView({ behavior: "auto", block: "start" });
-
-    setTimeout(checkPosition, 100);
+    setTimeout(checkLayout, 100);
 
   }
 
-  // 🔥 primer scroll
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  setTimeout(checkPosition, 100);
+  // 👇 arranca el proceso
+  checkLayout();
 
 }
