@@ -2,9 +2,9 @@ LaunchCore.register("pricing", async function(){
 
 const root = LaunchCore.root;
 
-  const BASE = LaunchCore.paths.projects;
-  const {project, product, page} = LaunchCore.config;
-  const url = `${BASE}${project}/${product}/${page}`;
+  const { project, product, page } = LaunchCore.config;
+
+  const url = LaunchCore.paths.projects + `${project}/${product}/${page}`;
 
   // 🔥 CSS primero
   await LaunchCore.loadCSS(url + ".css");
@@ -24,6 +24,7 @@ const root = LaunchCore.root;
   await LaunchCore.use("darkmode");
   await LaunchCore.use("carousel");
   await LaunchCore.use("scroll");
+  await LaunchCore.use("versionChecker");
 
   // 🔥 lógica propia
   await LaunchCore.loadScript(url + ".js");

@@ -239,7 +239,8 @@ LaunchCore.config = {
   })();
 
   /* =====================================================
-    READY (opcional, útil luego)
+    READY (espera a que responda el worker y carga el div
+    donde se inyecta la tabla de precios de pricing)
   ===================================================== */
 
   LaunchCore.onReady = function(fn){
@@ -377,5 +378,29 @@ LaunchCore.globals.scroll = async function(){
 
   const scrollPath = "modules/scroll/scroll"
   await LaunchCore.loadScript(LaunchCore.paths.base + scrollPath + ".js");
+
+};
+
+LaunchCore.globals.versionChecker = async function(){
+
+  const { project, product } = LaunchCore.config;
+
+  const url = LaunchCore.paths.projects +
+    `${project}/${product}/launch-config.json`;
+
+  const config = await fetch(url).then(r=>r.json());
+
+  await LaunchCore.loadScript(
+    LaunchCore.paths.base + "modules/version-checker/version-checker.js"
+  );
+
+  window.initVersionChecker({
+    versionUrl: url,
+    workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
+    cierreEvento: config.cierreEvento,
+    modoCierre: config.modoCierre,
+    checkInterval: 900000, // 15 min
+    autoReload: true
+  });
 
 };
