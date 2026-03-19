@@ -49,6 +49,8 @@ export function initVersionChecker(config) {
 
   async function check(){
 
+    console.log("🔍 Version check ejecutándose");
+
     // 🔥 SOLO corre fuera de lanzamiento
     if(eventoActivo()) return;
 
@@ -59,6 +61,9 @@ export function initVersionChecker(config) {
       });
 
       const data = await res.json();
+
+      console.log("📦 Version guardada:", currentVersion);
+      console.log("🌐 Version nueva:", data.version);
 
       const nuevaVersion = data.version;
 
@@ -91,7 +96,7 @@ export function initVersionChecker(config) {
               console.log("✅ Worker sincronizado → recargando");
 
               if(config.autoReload){
-                location.reload();
+                location.href = location.pathname + "?v=" + Date.now();
               }
 
             } else {
@@ -128,7 +133,7 @@ export function initVersionChecker(config) {
             console.log("✅ Sync OK → reload");
 
             if(config.autoReload){
-              location.reload();
+              location.href = location.pathname + "?v=" + Date.now();
             }
 
           } else {
