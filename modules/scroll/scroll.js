@@ -1,43 +1,48 @@
 // OJO que la etiqueta a buscar con este scroll es SIEMPRE "#comprar"
 
 /* SCROLL RÁPIDO (inmediato) */
-function scrollToHashFast(){
+function scrollToHashFix(){
 
   if(window.location.hash !== "#comprar") return;
 
   const el = document.getElementById("comprar");
-
-  if(el){
-    el.scrollIntoView({ behavior: "auto", block: "start" });
-  }
-}
-
-
-/* SCROLL DE CORRECCIÓN (preciso) */
-function scrollToHashFix(){
-
-  if(window.location.hash !== "#comprar") return;
+  if(!el) return;
 
   let attempts = 0;
 
   const interval = setInterval(()=>{
 
-    const el = document.getElementById("comprar");
+    const rect = el.getBoundingClientRect();
 
-    if(el){
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const inViewport = (
+      rect.top >= 0 &&
+      rect.bottom <= window.innerHeight
+    );
+
+    // 🧠 SI YA ESTÁ EN VIEWPORT → AJUSTE FINAL FINO
+    if(inViewport){
+
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
+      clearInterval(interval);
+      return;
     }
+
+    // 💀 SI NO ESTÁ → BAJA COMO BESTIA
+    window.scrollBy({
+      top: window.innerHeight * 0.8,
+      behavior: "auto"
+    });
 
     attempts++;
 
-    if(attempts > 10){
+    if(attempts > 20){
       clearInterval(interval);
     }
 
   }, 300);
 
 }
-
-
-/* EJECUTAR AL INICIO */
-LaunchCore.onReady(scrollToHashFast);
