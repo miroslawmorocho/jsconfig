@@ -358,7 +358,7 @@ LaunchCore.globals.carousel = async function(){
   const { project, product, page } = LaunchCore.config;
 
   const html = await fetch(
-    LaunchCore.paths.projects + `${project}/${product}/${page}.html`
+    LaunchCore.paths.projects + `${project}/${product}/carousel.html`
     // Esto debemos estandarizar de alguna forma. La idea es que el
     // carrusel corresponde EXACTAMENTE al path que se genera aquí
     // https://miroslawmorocho.github.io/jsconfig/projects/formulasymoldes/resina/carousel.html
