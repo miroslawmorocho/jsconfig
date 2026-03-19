@@ -8,37 +8,43 @@ function scrollToHash(){
   const el = document.getElementById("comprar");
   if(!el) return;
 
-  let fixed = false;
-  let observer = null;
+  let lastTop = null;
+  let stableCount = 0;
+  let maxChecks = 20;
 
-  observer = new IntersectionObserver((entries)=>{
+  function checkPosition(){
 
-    const entry = entries[0];
+    const rect = el.getBoundingClientRect();
+    const currentTop = rect.top;
 
-    if(entry.isIntersecting){
-
-      if(!fixed){
-        fixed = true;
-
-        setTimeout(()=>{
-          el.scrollIntoView({ behavior: "smooth", block: "start" });
-
-          // 🔥 aquí lo matamos
-          observer.disconnect();
-
-        }, 300);
-
-      }
-
+    if(lastTop !== null && Math.abs(currentTop - lastTop) < 2){
+      stableCount++;
     }else{
-      el.scrollIntoView({ behavior: "auto", block: "start" });
+      stableCount = 0;
     }
 
-  }, {
-    threshold: 0.6
-  });
+    lastTop = currentTop;
 
+    // 👇 si está estable por varios checks → FINAL
+    if(stableCount >= 3 || maxChecks <= 0){
+
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+
+    }
+
+    maxChecks--;
+
+    // 👇 seguimos corrigiendo mientras se mueve
+    el.scrollIntoView({ behavior: "auto", block: "start" });
+
+    setTimeout(checkPosition, 100);
+
+  }
+
+  // 🔥 primer scroll
   el.scrollIntoView({ behavior: "smooth", block: "start" });
-  observer.observe(el);
+
+  setTimeout(checkPosition, 100);
 
 }
