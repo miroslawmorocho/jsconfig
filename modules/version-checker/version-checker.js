@@ -43,6 +43,23 @@ export function initVersionChecker(config) {
     return false;
   }
 
+  function versionHumana(){
+    const d = new Date();
+    const pad = n => String(n).padStart(2, "0");
+
+    return (
+      d.getFullYear() +
+      pad(d.getMonth()+1) +
+      pad(d.getDate()) +
+      pad(d.getHours()) +
+      pad(d.getMinutes())
+    );
+  }
+
+  function buildUrl(){
+    return location.origin + location.pathname + "?v=" + versionHumana();
+  }
+
   /* =====================================================
      CORE CHECK
   ===================================================== */
@@ -51,8 +68,11 @@ export function initVersionChecker(config) {
 
     console.log("🔍 Version check ejecutándose");
 
-    // 🔥 SOLO corre fuera de lanzamiento
-    if(eventoActivo()) return;
+    // 🔥 SOLO fuera de lanzamiento
+    if(eventoActivo()){
+      console.log("🚫 Evento activo → no se chequea versión");
+      return;
+    }
 
     try {
 
@@ -61,29 +81,27 @@ export function initVersionChecker(config) {
       });
 
       const data = await res.json();
-
-      console.log("📦 Version guardada:", currentVersion);
-      console.log("🌐 Version nueva:", data.version);
-
       const nuevaVersion = data.version;
 
       const savedVersion = localStorage.getItem("lc_version");
 
+      console.log("📦 LocalStorage:", savedVersion);
+      console.log("🌐 GitHub:", nuevaVersion);
+
       /* =====================================================
-         PRIMERA EJECUCIÓN (AL ENTRAR A LA PÁGINA)
+         PRIMERA EJECUCIÓN (AL ENTRAR)
       ===================================================== */
 
       if(!currentVersion){
 
         currentVersion = nuevaVersion;
 
-        // guardar siempre versión actual
+        // guardar siempre
         localStorage.setItem("lc_version", nuevaVersion);
 
-        // 🔥 CASO CRÍTICO: usuario volvió días después
         if(savedVersion && savedVersion !== nuevaVersion){
 
-          console.log("🆕 Usuario regresó → nueva versión detectada");
+          console.log("🧟 Usuario regresó → versión vieja detectada");
 
           try {
 
@@ -96,7 +114,12 @@ export function initVersionChecker(config) {
               console.log("✅ Worker sincronizado → recargando");
 
               if(config.autoReload){
-                location.href = location.pathname + "?v=" + Date.now();
+
+                const newUrl = buildUrl();
+
+                console.log("🔄 Redirect →", newUrl);
+
+                location.href = newUrl;
               }
 
             } else {
@@ -106,7 +129,7 @@ export function initVersionChecker(config) {
             }
 
           } catch(e){
-            console.warn("Error confirmando con worker", e);
+            console.warn("❌ Error confirmando worker", e);
           }
 
         }
@@ -115,12 +138,12 @@ export function initVersionChecker(config) {
       }
 
       /* =====================================================
-         CAMBIO DURANTE SESIÓN (TAB ABIERTA)
+         CAMBIO EN VIVO (TAB ABIERTA)
       ===================================================== */
 
       if(currentVersion !== nuevaVersion){
 
-        console.log("🆕 Nueva versión detectada (en vivo)");
+        console.log("🆕 Nueva versión detectada en vivo");
 
         try {
 
@@ -133,7 +156,12 @@ export function initVersionChecker(config) {
             console.log("✅ Sync OK → reload");
 
             if(config.autoReload){
-              location.href = location.pathname + "?v=" + Date.now();
+
+              const newUrl = buildUrl();
+
+              console.log("🔄 Redirect →", newUrl);
+
+              location.href = newUrl;
             }
 
           } else {
@@ -143,7 +171,7 @@ export function initVersionChecker(config) {
           }
 
         } catch(e){
-          console.warn("Error confirmando versión", e);
+          console.warn("❌ Error confirmando versión", e);
         }
 
       }
@@ -153,7 +181,7 @@ export function initVersionChecker(config) {
       localStorage.setItem("lc_version", nuevaVersion);
 
     } catch (e) {
-      console.warn("Error version check", e);
+      console.warn("❌ Error version check", e);
     }
   }
 
@@ -161,13 +189,14 @@ export function initVersionChecker(config) {
      INIT
   ===================================================== */
 
-  // intervalo (usa el del core)
+  console.log("🚀 VersionChecker iniciado");
+
+  // intervalo (controlado desde core)
   setInterval(check, config.checkInterval);
 
-  // cuando vuelve a la pestaña
+  // visibilidad (reusa tu core 🔥)
   LaunchCore.visibility.init(check, config.checkInterval);
 
-  // 🔥 ejecutar una vez al iniciar
+  // primera ejecución
   check();
-
 }
