@@ -1,25 +1,44 @@
-// OJO que la etiqueta a buscar con este scroll es SIEMPRE "#comprar"
+// Esta función está diseñada para ir al hashtag #comprar
+// de la carta de ventas
 
 function scrollToHash(){
 
   if(window.location.hash !== "#comprar") return;
 
-  let attempts = 0;
+  const el = document.getElementById("comprar");
+  if(!el) return;
 
-  const interval = setInterval(()=>{
+  let fixed = false;
+  let observer = null;
 
-    const el = document.getElementById("comprar");
+  observer = new IntersectionObserver((entries)=>{
 
-    if(el){
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const entry = entries[0];
+
+    if(entry.isIntersecting){
+
+      if(!fixed){
+        fixed = true;
+
+        setTimeout(()=>{
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+          // 🔥 aquí lo matamos
+          observer.disconnect();
+
+        }, 300);
+
+      }
+
+    }else{
+      el.scrollIntoView({ behavior: "auto", block: "start" });
     }
 
-    attempts++;
+  }, {
+    threshold: 0.6
+  });
 
-    if(attempts > 5){
-      clearInterval(interval);
-    }
-
-  }, 300);
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  observer.observe(el);
 
 }
