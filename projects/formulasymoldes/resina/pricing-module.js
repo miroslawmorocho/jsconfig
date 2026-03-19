@@ -1,11 +1,23 @@
 LaunchCore.register("pricing", async function(){
 
-  //const BASE = "https://miroslawmorocho.github.io/jsconfig/projects/";
-  const BASE = LaunchCore.paths.projects;
-  const root = document.getElementById("launch-engine-root");
+const root = LaunchCore.root;
 
-  // 🔥 cargar HTML principal
-  const html = await fetch(BASE+"formulasymoldes/resina/pricing.html").then(r=>r.text());
+  const BASE = LaunchCore.paths.projects;
+  const {project, product, page} = LaunchCore.config;
+  const url = `${BASE}${project}/${product}/${page}`;
+
+  // 🔥 CSS primero
+  await LaunchCore.loadCSS(url + ".css");
+
+  // 🔥 HTML
+  let html = "";
+  try{
+    html = await fetch(url + ".html").then(r=>r.text());
+  }catch(e){
+    console.error("Error cargando HTML:", e);
+    return;
+  }
+
   root.innerHTML = html;
 
   // 🔥 módulos globales
@@ -13,8 +25,7 @@ LaunchCore.register("pricing", async function(){
   await LaunchCore.use("carousel");
   await LaunchCore.use("scroll");
 
-  // 🔥 estilos y lógica propia
-  await LaunchCore.loadCSS(BASE+"formulasymoldes/resina/pricing.css");
-  await LaunchCore.loadScript(BASE+"formulasymoldes/resina/pricing.js");
+  // 🔥 lógica propia
+  await LaunchCore.loadScript(url + ".js");
 
 });

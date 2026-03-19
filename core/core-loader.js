@@ -5,6 +5,12 @@ LaunchCore.paths = {
   projects: "https://miroslawmorocho.github.io/jsconfig/projects/"
 };
 
+LaunchCore.config = {
+  project: null,
+  product: null,
+  page: null
+};
+
 (function(){
 
   /* =====================================================
@@ -261,32 +267,45 @@ LaunchCore.register = function(name, fn){
 LaunchCore.init = async function(){
 
   const root = document.getElementById("launch-engine-root");
-  if(!root) return;
+  LaunchCore.root = root;
 
-  const config = {
-    project: root.dataset.project,
-    product: root.dataset.product,
-    page: root.dataset.page
-  };
-
-  if(!config.page){
-    console.warn("No data-page definido");
+  if(!root){
+    console.error(
+      "LaunchCore: Falta #launch-engine-root en el HTML del frontend.\n" +
+      "Debes agregar:\n" +
+      '<div id="launch-engine-root" data-project="..." data-product="..." data-page="..."></div>'
+    );
     return;
   }
 
-  const base = LaunchCore.paths.projects + `${config.project}/${config.product}/`;
+  // 🔥 guardar config global
+  LaunchCore.config.project = root.dataset.project;
+  LaunchCore.config.product = root.dataset.product;
+  LaunchCore.config.page = root.dataset.page;
 
-  const moduleUrl = base + config.page + "-module.js";
+  if(!LaunchCore.config.project || !LaunchCore.config.product || !LaunchCore.config.page){
+    console.error(
+      "LaunchCore: Faltan atributos data-* en #launch-engine-root",
+      LaunchCore.config
+    );
+    return;
+  }
+
+  const { project, product, page } = LaunchCore.config;
+
+  const base = LaunchCore.paths.projects + `${project}/${product}/`;
+
+  const moduleUrl = base + page + "-module.js";
 
   try{
 
     // 🔥 cargar módulo dinámicamente
     await LaunchCore.loadScript(moduleUrl);
 
-    const module = LaunchCore.modules[config.page];
+    const module = LaunchCore.modules[page];
 
     if(!module){
-      console.warn("Módulo no registrado:", config.page);
+      console.warn("Módulo no registrado:", page);
       return;
     }
 
@@ -333,10 +352,10 @@ LaunchCore.globals.carousel = async function(){
 
   if(!container) return; // 🔥 importante
 
-  const root = document.getElementById("launch-engine-root");
-  const { project, product } = root.dataset;
+  const root = LaunchCore.root;
+  const { project, product } = LaunchCore.config;
 
-  const html = await fetch(    
+  const html = await fetch(
     LaunchCore.paths.projects + `${project}/${product}/carousel.html`
   ).then(r=>r.text());
 
