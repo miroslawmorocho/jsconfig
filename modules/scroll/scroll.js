@@ -1,6 +1,6 @@
 // OJO que la etiqueta a buscar con este scroll es SIEMPRE "#comprar"
 
-function scrollToHashObserver(){
+function scrollToHashTeleport(){
 
   if(window.location.hash !== "#comprar") return;
 
@@ -10,13 +10,9 @@ function scrollToHashObserver(){
 
     if(el){
 
-      // 💥 FORZAR AL NAVEGADOR A RE-EJECUTAR EL HASH
-      const id = el.id;
-
-      el.id = ""; // quitar temporalmente
-      el.id = id; // restaurar
-
-      location.hash = "#comprar"; // 🔥 trigger nativo REAL
+      // 💥 RESET + RE-TRIGGER HASH
+      history.replaceState(null, null, " ");
+      location.hash = "#comprar";
 
       observer.disconnect();
     }
