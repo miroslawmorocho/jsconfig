@@ -1,5 +1,7 @@
 function initVersionChecker(config) {
 
+  console.log("🔥 VERSION CHECKER FILE CARGADO");
+
   let currentVersion = null;
   let confirmTimeout = null;
 

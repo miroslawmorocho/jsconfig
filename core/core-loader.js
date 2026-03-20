@@ -316,6 +316,9 @@ LaunchCore.init = async function(){
 
     await module();
 
+    await LaunchCore.use("versionChecker");
+    console.log("🔥 LLAMANDO VERSION CHECKER...");
+
   }catch(e){
     console.error("Auto-init error:", e);
   }
