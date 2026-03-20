@@ -79,6 +79,7 @@ async function initLaunchEngine() {
     if (DOM.header) DOM.header.innerHTML = data.headerText;
     if (DOM.clases) DOM.clases.innerHTML = data.clasesHtml;
     await renderBotones();
+    await renderFlags();
     
     // 7. Configurar el Contador Local
     if (DOM.countdown) {
@@ -105,6 +106,7 @@ async function initLaunchEngine() {
     
         DOM.proxima.innerHTML = data.proximaClaseHtml;
         await renderBotones();
+        await renderFlags();
         DOM.proxima.style.display = "block";
     
       } else {
@@ -179,6 +181,31 @@ async function initLaunchEngine() {
       }
 
     }
+
+  }
+
+
+  let flagTemplateCache = null;
+
+  async function renderFlags() {
+
+    const flags = document.querySelectorAll(".flag");
+
+    if (!flagTemplateCache) {
+      flagTemplateCache = await fetch(
+        LaunchCore.paths.components + "flag.html"
+      ).then(r => r.text());
+    }
+
+    flags.forEach(el => {
+
+      const cc = el.dataset.cc;
+      if (!cc) return;
+
+      el.innerHTML = flagTemplateCache
+        .replace("{{cc}}", cc);
+
+    });
 
   }
 
