@@ -7,7 +7,7 @@
  * ============================================================================
  */
 
-let workerBusy = false;
+let currentExecution = null;
 let ultimaRevision = 0;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 
@@ -32,123 +32,117 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false) {
 
+  if (currentExecution) {
+    console.warn("⛔ Ya hay una ejecución en curso");
+    return currentExecution;
+  }
+
   const ahora = Date.now();
 
   if (!force && (ahora - ultimaRevision < intervaloRevisionDin)) {
+    console.log("⏳ Skip por intervalo");
     return;
   }
-  
-  if (workerBusy) return;
-  workerBusy = true;
-  
-  try {
-    // 1. Consultar al cerebro (Worker)
-    const data = await LaunchCore.fetchWorker("").catch(() => null);
 
-    if (!data) {
-      workerBusy = false;
-      return;
-    }
+  currentExecution = (async () => {
 
-    // 2. Verificar cierre absoluto del evento
-    if (data.eventoCerrado) {
-      if (DOM.root) DOM.root.innerHTML = data.htmlEventoCerrado;
-      workerBusy = false; // 🔥 IMPORTANTE
-      return;
-    }
+    try {
 
-    // 3. Pintar textos de oferta superior
-    if (DOM.offerText) {
-      DOM.offerText.innerText = data.offerText;
-      DOM.offerText.style.display = data.offerTextDisplay;
-    }
+      console.log("🚀 Fetching worker...");
 
-    // 4. Pintar oferta Sticky y ajustar padding
-    if (DOM.offerSticky) {
-      DOM.offerSticky.style.display = data.offerStickyDisplay;
-      DOM.offerSticky.innerHTML = data.offerStickyHtml;
-      
-      if (data.offerStickyDisplay === "block" && DOM.sectionPadding) {
-        if (window.innerWidth < 480) {
-          DOM.sectionPadding.style.paddingTop = "50px";
-        } else {
-          DOM.sectionPadding.style.paddingTop = "70px";
-        }
-      } else if (DOM.sectionPadding) {
-        // Opcional: reiniciar padding si se oculta
-        // DOM.sectionPadding.style.paddingTop = "0px";
+      const data = await LaunchCore.fetchWorker("").catch(() => null);
+
+      if (!data) return;
+
+      // 🔥 EVENTO CERRADO
+      if (data.eventoCerrado) {
+        if (DOM.root) DOM.root.innerHTML = data.htmlEventoCerrado;
+        return;
       }
-    }
 
-    // 5. Título del Calendario
-  if (DOM.calendarTitle) {
-    DOM.calendarTitle.innerHTML = data.calendarTitleHtml;
-  }
+      // 🔥 OFFER TEXT
+      if (DOM.offerText) {
+        DOM.offerText.innerText = data.offerText;
+        DOM.offerText.style.display = data.offerTextDisplay;
+      }
 
-  if (DOM.info) DOM.info.innerHTML = data.infoPaginaHtml;
+      // 🔥 STICKY
+      if (DOM.offerSticky) {
+        DOM.offerSticky.style.display = data.offerStickyDisplay;
+        DOM.offerSticky.innerHTML = data.offerStickyHtml;
 
-  // 6. Header y Clases
-  if (DOM.header) DOM.header.innerHTML = data.headerText;
+        if (data.offerStickyDisplay === "block" && DOM.sectionPadding) {
+          DOM.sectionPadding.style.paddingTop =
+            window.innerWidth < 480 ? "50px" : "70px";
+        }
+      }
 
-  if (DOM.clases) {
-    const html = await renderClases(data.clases);
-    DOM.clases.innerHTML = html;
-  }
+      // 🔥 TITULO
+      if (DOM.calendarTitle) {
+        DOM.calendarTitle.innerHTML = data.calendarTitleHtml;
+      }
 
-  // Clon de info de próxima clase (ANTES del render de componentes)
-  if (DOM.proxima) {
+      if (DOM.info) DOM.info.innerHTML = data.infoPaginaHtml;
+      if (DOM.header) DOM.header.innerHTML = data.headerText;
 
-    if (data.proximaClase) {
+      // 🔥 CLASES
+      if (DOM.clases) {
+        const html = await renderClases(data.clases);
+        DOM.clases.innerHTML = html;
+      }
 
-      const html = await renderClases([data.proximaClase]);
-      DOM.proxima.innerHTML = html;
-      DOM.proxima.style.display = "block";
+      // 🔥 PROXIMA
+      if (DOM.proxima) {
+        if (data.proximaClase) {
+          const html = await renderClases([data.proximaClase]);
+          DOM.proxima.innerHTML = html;
+          DOM.proxima.style.display = "block";
+        } else {
+          DOM.proxima.style.display = "none";
+        }
+      }
 
-    } else {
+      // 🔥 COMPONENTES
+      await renderComponentes();
 
-      DOM.proxima.style.display = "none";
+      // 🔥 COUNTDOWN
+      if (DOM.countdown) {
+        DOM.countdown.style.display = data.countdownDisplay;
+      }
 
-    }
+      if (data.countdownDisplay !== "none" && data.countdownTarget) {
+        LaunchCore.countdown.start(data.countdownTarget);
+      } else {
+        LaunchCore.countdown.stop();
+      }
 
-  }
+      // 🔥 INTERVALOS DINÁMICOS
+      if (data.intervaloRevisionMs) {
+        intervaloRevisionDin = data.intervaloRevisionMs;
+      }
 
-  // 🔥 RENDER GLOBAL DE COMPONENTES (UNA SOLA VEZ)
-  await renderComponentes();
+      LaunchCore.visibility.updateInterval(intervaloRevisionDin);
 
-  // 7. Configurar el Contador Local
-  if (DOM.countdown) {
-    DOM.countdown.style.display = data.countdownDisplay;
-  }
+      const delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
-  if (data.countdownDisplay !== "none" && data.countdownTarget) {
+      console.log("⏰ next run in", delay);
 
-    LaunchCore.countdown.start(data.countdownTarget);
+      LaunchCore.scheduler.programar(() => {
+        initLaunchEngine();
+      }, delay);
 
-  } else {
-
-    LaunchCore.countdown.stop();
-
-  }
-
-  // 🔥 liberar lock AL FINAL (importante)
-  workerBusy = false;
-
-    // 8. Programar siguiente actualización (despertador automático)
-    if (data.intervaloRevisionMs) intervaloRevisionDin = data.intervaloRevisionMs;
-    LaunchCore.visibility.updateInterval(intervaloRevisionDin);
-    
-    let delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
-
-    LaunchCore.scheduler.programar(initLaunchEngine, delay);
-    console.log("⏰ next run in", delay);
-
-    ultimaRevision = Date.now();
+      ultimaRevision = Date.now();
 
     } catch (error) {
-      workerBusy = false;
-      console.warn("Fallo temporal cargando Launch Engine:", error);
+      console.warn("💥 Error en engine:", error);
+    } finally {
+      currentExecution = null;
     }
-  }
+
+  })();
+
+  return currentExecution;
+}
 
 
   let calendarTemplateCache = null;
