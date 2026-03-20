@@ -36,3 +36,4 @@ Thumbs.db
 # Config local de editores
 .vscode/
 .idea/
+worker.js
