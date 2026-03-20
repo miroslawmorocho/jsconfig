@@ -21,29 +21,30 @@ async function cargarPricing(){
   // 🔥 DETECTAR CAMBIO DE ESTADO (PRE → OPEN)
   // usamos textoCierre como señal
   // =====================================================
-  const nuevoEstado = data.textoCierre ? "open" : "pre";
+  const contenedor = document.getElementById("pricing");
+  const nuevoEstado = data.estado;
 
-  if (estadoPricingActual !== nuevoEstado) {
+  // 🔥 PRIMER RENDER
+  if (estadoPricingActual === null) {
+
+    contenedor.innerHTML = data.pricingHtml;
+    estadoPricingActual = nuevoEstado;
+
+  } 
+  // 🔥 SOLO si cambia estado → re-render
+  else if (estadoPricingActual !== nuevoEstado) {
 
     console.log("🔥 CAMBIO DE ESTADO PRICING:", nuevoEstado);
 
-    const contenedor = document.getElementById("pricing");
-
-    // fade out
     contenedor.style.opacity = 0;
 
-    // esperar un poquito
     setTimeout(() => {
-
-      // cambiar contenido
       contenedor.innerHTML = data.pricingHtml;
-
-      // fade in
       contenedor.style.opacity = 1;
-
     }, 200);
 
     estadoPricingActual = nuevoEstado;
+
   }
 
   // =====================================================
@@ -106,5 +107,3 @@ async function cargarPricing(){
 
 /* cargar tabla */
 LaunchCore.onReady(cargarPricing);
-
-LaunchCore.visibility.init(cargarPricing, intervaloRevisionDin);
