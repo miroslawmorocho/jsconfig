@@ -27,7 +27,21 @@ async function cargarPricing(){
 
     console.log("🔥 CAMBIO DE ESTADO PRICING:", nuevoEstado);
 
-    document.getElementById("pricing").innerHTML = data.pricingHtml;
+    const contenedor = document.getElementById("pricing");
+
+    // fade out
+    contenedor.style.opacity = 0;
+
+    // esperar un poquito
+    setTimeout(() => {
+
+      // cambiar contenido
+      contenedor.innerHTML = data.pricingHtml;
+
+      // fade in
+      contenedor.style.opacity = 1;
+
+    }, 200);
 
     estadoPricingActual = nuevoEstado;
   }

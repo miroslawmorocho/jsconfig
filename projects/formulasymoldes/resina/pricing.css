@@ -63,6 +63,10 @@
   text-align:center;
 }
 
+#pricing{
+  transition: opacity 0.3s ease;
+}
+
 @media (min-width:768px) {
 
   .pricing-box {
