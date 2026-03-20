@@ -2,20 +2,19 @@ LaunchCore.register("capture", async function(){
 
   const root = LaunchCore.root;
 
-  // 🔥 query params
-  const params = new URLSearchParams(window.location.search);
-  const country = params.get("country") || "";
-  const tz = params.get("tz") || "";
+  const { project, product, page } = LaunchCore.config;
 
-  // 🔥 pedir al worker
-  const data = await LaunchCore.fetchWorker(
-    `/captura?country=${country}&tz=${tz}`
-  );
+  const url = LaunchCore.paths.projects + `${project}/${product}/${page}`;
+
+  // 🔥 pedir al worker (SIN PARAMS)
+  const data = await LaunchCore.fetchWorker("/captura");
 
   if(!data){
     console.warn("No data from worker");
     return;
   }
+
+  await LaunchCore.loadCSS(url + ".css");
 
   // 🔥 inyectar HTML dinámico
   root.innerHTML = `
@@ -23,13 +22,5 @@ LaunchCore.register("capture", async function(){
       ${data.capturaHtml}
     </div>
   `;
-
-  // 🔥 cargar CSS de la página
-  const { project, product } = LaunchCore.config;
-  const base = LaunchCore.paths.projects;
-
-  await LaunchCore.loadCSS(
-    `${base}${project}/${product}/capture.css`
-  );
 
 });
