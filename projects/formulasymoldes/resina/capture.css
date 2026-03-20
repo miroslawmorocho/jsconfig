@@ -1,0 +1,15 @@
+.evento-info{
+  line-height:1.5;
+}
+
+@media (max-width:480px){
+  .evento-info{
+    font-size:18px;
+  }
+}
+
+@media (min-width:481px){
+  .evento-info{
+    font-size:20px;
+  }
+}
