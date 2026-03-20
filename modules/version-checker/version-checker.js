@@ -1,49 +1,9 @@
 function initVersionChecker(config) {
 
   let currentVersion = null;
+  let confirmTimeout = null;
 
-  /* =====================================================
-     HELPERS
-  ===================================================== */
-
-  function yaCerroLocal(cierreEvento){
-
-    const fecha = new Date(cierreEvento);
-
-    const cierreDia = new Date(
-      fecha.getFullYear(),
-      fecha.getMonth(),
-      fecha.getDate()
-    );
-
-    const hoy = new Date();
-
-    const hoyDia = new Date(
-      hoy.getFullYear(),
-      hoy.getMonth(),
-      hoy.getDate()
-    );
-
-    return hoyDia > cierreDia;
-  }
-
-  function eventoActivo(){
-
-    const ahora = Date.now();
-
-    if(config.modoCierre === "global"){
-      const cierre = new Date(config.cierreEvento).getTime();
-      return ahora < cierre;
-    }
-
-    if(config.modoCierre === "medianoche_local"){
-      return !yaCerroLocal(config.cierreEvento);
-    }
-
-    return false;
-  }
-
-  function versionHumana(){
+  function fechaHumana(){
     const d = new Date();
     const pad = n => String(n).padStart(2, "0");
 
@@ -57,25 +17,47 @@ function initVersionChecker(config) {
   }
 
   function buildUrl(){
-    return location.origin + location.pathname + "?v=" + versionHumana();
+    return location.origin + location.pathname + "?v=" + fechaHumana();
   }
 
-  /* =====================================================
-     CORE CHECK
-  ===================================================== */
+  async function confirmarConWorker(nuevaVersion){
 
-  async function check(){
-
-    console.log("🔍 Version check ejecutándose");
-
-    // 🔥 SOLO fuera de lanzamiento
-    if(eventoActivo()){
-      console.log("🚫 Evento activo → no se chequea versión");
-      return;
-    }
+    console.log("⏳ [VC] Confirmando con worker...");
 
     try {
 
+      const res = await fetch(config.workerUrl + "/status", {
+        cache: "no-store"
+      });
+
+      const data = await res.json();
+
+      console.log("🛰️ [VC] Worker version:", data.version);
+
+      if(data.version === nuevaVersion){
+
+        console.log("✅ [VC] Worker OK → reload");
+
+        if(config.autoReload){
+          location.href = buildUrl();
+        }
+
+      } else {
+        console.log("⌛ [VC] Worker aún no sincronizado");
+      }
+
+    } catch(e){
+      console.warn("❌ [VC] Error worker", e);
+    }
+  }
+
+  async function check(){
+
+    console.log("🔍 [VC] Check...");
+
+    try {
+
+      // 🔥 GITHUB PRIMERO
       const res = await fetch(config.versionUrl, {
         cache: "no-store"
       });
@@ -85,120 +67,81 @@ function initVersionChecker(config) {
 
       const savedVersion = localStorage.getItem("lc_version");
 
-      console.log("📦 LocalStorage:", savedVersion);
+      console.log("📦 Local:", savedVersion);
       console.log("🌐 GitHub:", nuevaVersion);
-
-      /* =====================================================
-         PRIMERA EJECUCIÓN (AL ENTRAR)
-      ===================================================== */
 
       if(!currentVersion){
 
         currentVersion = nuevaVersion;
-
-        // guardar siempre
         localStorage.setItem("lc_version", nuevaVersion);
 
         if(savedVersion && savedVersion !== nuevaVersion){
 
-          console.log("🧟 Usuario regresó → versión vieja detectada");
+          console.log("🧟 Usuario volvió → versión vieja");
 
-          try {
-
-            const confirm = await fetch(
-              config.workerUrl + "/version-check"
-            ).then(r=>r.json());
-
-            if(confirm?.ready && confirm.version === nuevaVersion){
-
-              console.log("✅ Worker sincronizado → recargando");
-
-              if(config.autoReload){
-
-                const newUrl = buildUrl();
-
-                console.log("🔄 Redirect →", newUrl);
-
-                location.href = newUrl;
-              }
-
-            } else {
-
-              console.log("⏳ Worker aún no listo");
-
-            }
-
-          } catch(e){
-            console.warn("❌ Error confirmando worker", e);
-          }
+          confirmTimeout = setTimeout(()=>{
+            confirmarConWorker(nuevaVersion);
+          }, config.confirmDelay);
 
         }
 
         return;
       }
 
-      /* =====================================================
-         CAMBIO EN VIVO (TAB ABIERTA)
-      ===================================================== */
-
       if(currentVersion !== nuevaVersion){
 
-        console.log("🆕 Nueva versión detectada en vivo");
+        console.log("🆕 Nueva versión detectada");
 
-        try {
-
-          const confirm = await fetch(
-            config.workerUrl + "/version-check"
-          ).then(r=>r.json());
-
-          if(confirm?.ready && confirm.version === nuevaVersion){
-
-            console.log("✅ Sync OK → reload");
-
-            if(config.autoReload){
-
-              const newUrl = buildUrl();
-
-              console.log("🔄 Redirect →", newUrl);
-
-              location.href = newUrl;
-            }
-
-          } else {
-
-            console.log("⏳ Esperando sincronización del worker");
-
-          }
-
-        } catch(e){
-          console.warn("❌ Error confirmando versión", e);
-        }
+        confirmTimeout = setTimeout(()=>{
+          confirmarConWorker(nuevaVersion);
+        }, config.confirmDelay);
 
       }
 
-      // 🔥 actualizar siempre
       currentVersion = nuevaVersion;
       localStorage.setItem("lc_version", nuevaVersion);
 
-    } catch (e) {
-      console.warn("❌ Error version check", e);
+    } catch(e){
+      console.warn("❌ [VC] Error", e);
     }
   }
 
-  /* =====================================================
-     INIT
-  ===================================================== */
+  async function init(){
 
-  console.log("🚀 VersionChecker iniciado");
+    console.log("🚀 [VC] INIT");
 
-  // intervalo (controlado desde core)
-  setInterval(check, config.checkInterval);
+    try {
 
-  // visibilidad (reusa tu core 🔥)
-  LaunchCore.visibility.init(check, config.checkInterval);
+      // 🔥 PRIMERA DECISIÓN → WORKER MANDA
+      const res = await fetch(config.workerUrl + "/status", {
+        cache: "no-store"
+      });
 
-  // primera ejecución
-  check();
+      const status = await res.json();
+
+      console.log("📡 [VC] STATUS:", status);
+
+      if(status.eventoActivo){
+
+        console.log("🚫 Evento ACTIVO → version checker DESACTIVADO");
+        return;
+
+      }
+
+      console.log("✅ Evento CERRADO → activar version checker");
+
+      setInterval(check, config.checkInterval);
+      LaunchCore.visibility.init(check, config.checkInterval);
+
+      check();
+
+    } catch(e){
+      console.warn("❌ [VC] Error init", e);
+    }
+
+  }
+
+  init();
 }
 
 window.initVersionChecker = initVersionChecker;

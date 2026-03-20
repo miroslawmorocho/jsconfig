@@ -404,6 +404,7 @@ LaunchCore.globals.versionChecker = async function(){
     cierreEvento: config.cierreEvento,
     modoCierre: config.modoCierre,
     checkInterval: 60000, // PRODUCCIÓN 15*60*1000, // 15 min
+    confirmDelay: 3 * 60 * 1000,
     autoReload: true
   });
 
