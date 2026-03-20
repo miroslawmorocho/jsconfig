@@ -36,6 +36,7 @@ async function cargarPricing(){
 
     console.log("🔥 CAMBIO DE ESTADO PRICING:", nuevoEstado);
 
+    contenedor.style.transition = "opacity 0.4s ease";
     contenedor.style.opacity = 0;
 
     setTimeout(() => {
@@ -66,7 +67,7 @@ async function cargarPricing(){
   // =====================================================
   // 🧠 SCHEDULER INTELIGENTE (apertura / cierre)
   // =====================================================
-  if (data.siguienteActualizacionMs) {
+  if (data.siguienteActualizacionMs != null) {
 
     let delay = data.siguienteActualizacionMs + 4000;
 
