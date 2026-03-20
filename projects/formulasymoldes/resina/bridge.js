@@ -32,6 +32,12 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine() {
 
+  const ahora = Date.now();
+
+  if (ahora - ultimaRevision < intervaloRevisionDin) {
+    return;
+  }
+
   if (workerBusy) return;
   workerBusy = true;
   
