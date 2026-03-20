@@ -301,6 +301,9 @@ LaunchCore.init = async function(){
 
   try{
 
+    // 🔥 cargar CSS globales base
+    await LaunchCore.globals.flag();
+
     // 🔥 cargar módulo dinámicamente
     await LaunchCore.loadScript(moduleUrl);
 
@@ -403,5 +406,14 @@ LaunchCore.globals.versionChecker = async function(){
     checkInterval: 60000, // PRODUCCIÓN 15*60*1000, // 15 min
     autoReload: true
   });
+
+};
+
+
+LaunchCore.globals.flag = async function(){
+
+  await LaunchCore.loadCSS(
+    LaunchCore.paths.components + "flag.css"
+  );
 
 };
