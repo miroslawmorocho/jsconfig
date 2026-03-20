@@ -201,31 +201,6 @@ async function initLaunchEngine() {
   }
 
 
-  let flagTemplateCache = null;
-
-  async function renderFlags() {
-
-    const flags = document.querySelectorAll(".flag");
-
-    if (!flagTemplateCache) {
-      flagTemplateCache = await fetch(
-        LaunchCore.paths.components + "flag.html"
-      ).then(r => r.text());
-    }
-
-    flags.forEach(el => {
-
-      const cc = el.dataset.cc;
-      if (!cc) return;
-
-      el.innerHTML = flagTemplateCache
-        .replace("{{cc}}", cc);
-
-    });
-
-  }
-
-
   let messageTemplateCache = null;
 
   async function renderClases(clases) {
@@ -255,7 +230,7 @@ async function initLaunchEngine() {
 
   async function renderComponentes() {
     await renderBotones();
-    await renderFlags();
+    //await renderFlags();
   }
 
   
