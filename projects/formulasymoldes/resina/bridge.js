@@ -78,6 +78,7 @@ async function initLaunchEngine() {
     // 6. Header, Clases y Botón Live
     if (DOM.header) DOM.header.innerHTML = data.headerText;
     if (DOM.clases) DOM.clases.innerHTML = data.clasesHtml;
+    await renderBotones();
     
     // 7. Configurar el Contador Local
     if (DOM.countdown) {
@@ -103,6 +104,7 @@ async function initLaunchEngine() {
       if (data.proximaClaseHtml) {
     
         DOM.proxima.innerHTML = data.proximaClaseHtml;
+        await renderBotones();
         DOM.proxima.style.display = "block";
     
       } else {
@@ -128,6 +130,58 @@ async function initLaunchEngine() {
       console.warn("Fallo temporal cargando Launch Engine:", error);
     }
   }
+
+
+  let calendarTemplateCache = null;
+
+  async function renderBotones() {
+
+    const botones = document.querySelectorAll(".clase-boton");
+
+    for (const el of botones) {
+
+      const raw = el.dataset.boton;
+      if (!raw) continue;
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch (e) {
+        console.warn("JSON inválido en data-boton", raw);
+        continue;
+      }
+
+      // 🔥 CALENDAR
+      if (data.tipo === "calendar") {
+
+        if (!calendarTemplateCache) {
+          calendarTemplateCache = await fetch(
+            LaunchCore.paths.components + "calendar-button.html"
+          ).then(r => r.text());
+        }
+
+        el.innerHTML = calendarTemplateCache
+          .replace("{{texto}}", data.texto)
+          .replace("{{google}}", data.google)
+          .replace("{{ics}}", data.ics);
+
+      }
+
+      // 🔥 LINK NORMAL
+      if (data.tipo === "link") {
+
+        el.innerHTML = `
+          <a href="${data.url}" target="_blank">
+            ${data.texto}
+          </a>
+        `;
+
+      }
+
+    }
+
+  }
+
   
   /* =====================================================
      EVENT LISTENERS (Manejo de visibilidad y caché)

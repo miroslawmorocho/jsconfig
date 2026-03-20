@@ -2,6 +2,7 @@ window.LaunchCore = window.LaunchCore || {};
 
 LaunchCore.paths = {
   base: "https://miroslawmorocho.github.io/jsconfig/",
+  components: "https://miroslawmorocho.github.io/jsconfig/components/",
   projects: "https://miroslawmorocho.github.io/jsconfig/projects/"
 };
 
