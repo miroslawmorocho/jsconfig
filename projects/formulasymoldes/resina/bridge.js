@@ -30,14 +30,14 @@ const DOM = {
 /* =====================================================
    ENGINE INICIALIZADOR
 ===================================================== */
-async function initLaunchEngine() {
+async function initLaunchEngine(force = false) {
 
   const ahora = Date.now();
 
-  if (ahora - ultimaRevision < intervaloRevisionDin) {
+  if (!force && (ahora - ultimaRevision < intervaloRevisionDin)) {
     return;
   }
-
+  
   if (workerBusy) return;
   workerBusy = true;
   
@@ -140,6 +140,7 @@ async function initLaunchEngine() {
     let delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
     LaunchCore.scheduler.programar(initLaunchEngine, delay);
+    console.log("⏰ next run in", delay);
 
     ultimaRevision = Date.now();
 
@@ -245,11 +246,14 @@ async function initLaunchEngine() {
   
   window.addEventListener("pageshow", function(e) {
     if (e.persisted) {
-      initLaunchEngine();
+      initLaunchEngine(true);
     }
   });
   
-  LaunchCore.visibility.init(initLaunchEngine, intervaloRevisionDin);
+  LaunchCore.visibility.init(() => {
+    console.log("👁️ visibility → forcing refresh");
+    initLaunchEngine(true);
+  }, intervaloRevisionDin);
 
    // botones de calendario
    document.addEventListener("click", function(e) {
