@@ -37,11 +37,17 @@ async function initLaunchEngine() {
   
   try {
     // 1. Consultar al cerebro (Worker)
-    const data = await LaunchCore.fetchWorker("");
+    const data = await LaunchCore.fetchWorker("").catch(() => null);
+
+    if (!data) {
+      workerBusy = false;
+      return;
+    }
 
     // 2. Verificar cierre absoluto del evento
     if (data.eventoCerrado) {
       if (DOM.root) DOM.root.innerHTML = data.htmlEventoCerrado;
+      workerBusy = false; // 🔥 IMPORTANTE
       return;
     }
 
@@ -69,59 +75,57 @@ async function initLaunchEngine() {
     }
 
     // 5. Título del Calendario
-    if (DOM.calendarTitle) {
-      DOM.calendarTitle.innerHTML = data.calendarTitleHtml;
-    }
+  if (DOM.calendarTitle) {
+    DOM.calendarTitle.innerHTML = data.calendarTitleHtml;
+  }
 
-    if (DOM.info) DOM.info.innerHTML = data.infoPaginaHtml;
+  if (DOM.info) DOM.info.innerHTML = data.infoPaginaHtml;
 
-    // 6. Header, Clases y Botón Live
-    if (DOM.header) DOM.header.innerHTML = data.headerText;
-    if (DOM.clases) {
-      const html = await renderClases(data.clases);
-      DOM.clases.innerHTML = html;
-    }
-    
-    await renderBotones();
-    await renderFlags();
-    
-    // 7. Configurar el Contador Local
-    if (DOM.countdown) {
-      DOM.countdown.style.display = data.countdownDisplay;
-      
-    }
-    
-    if (data.countdownDisplay !== "none" && data.countdownTarget) {
+  // 6. Header y Clases
+  if (DOM.header) DOM.header.innerHTML = data.headerText;
 
-      LaunchCore.countdown.start(data.countdownTarget);
+  if (DOM.clases) {
+    const html = await renderClases(data.clases);
+    DOM.clases.innerHTML = html;
+  }
+
+  // Clon de info de próxima clase (ANTES del render de componentes)
+  if (DOM.proxima) {
+
+    if (data.proximaClase) {
+
+      const html = await renderClases([data.proximaClase]);
+      DOM.proxima.innerHTML = html;
+      DOM.proxima.style.display = "block";
 
     } else {
 
-      LaunchCore.countdown.stop();
+      DOM.proxima.style.display = "none";
 
     }
-    
-    workerBusy = false;
-    
-    // Clon de info de próxima clase
-    if (DOM.proxima) {
 
-      if (data.proximaClase) {
+  }
 
-        const html = await renderClases([data.proximaClase]);
-        DOM.proxima.innerHTML = html;
-        DOM.proxima.style.display = "block";
+  // 🔥 RENDER GLOBAL DE COMPONENTES (UNA SOLA VEZ)
+  await renderComponentes();
 
-        await renderBotones();
-        await renderFlags();
+  // 7. Configurar el Contador Local
+  if (DOM.countdown) {
+    DOM.countdown.style.display = data.countdownDisplay;
+  }
 
-      } else {
+  if (data.countdownDisplay !== "none" && data.countdownTarget) {
 
-        DOM.proxima.style.display = "none";
+    LaunchCore.countdown.start(data.countdownTarget);
 
-      }
+  } else {
 
-    } 
+    LaunchCore.countdown.stop();
+
+  }
+
+  // 🔥 liberar lock AL FINAL (importante)
+  workerBusy = false;
 
     // 8. Programar siguiente actualización (despertador automático)
     if (data.intervaloRevisionMs) intervaloRevisionDin = data.intervaloRevisionMs;
@@ -153,7 +157,7 @@ async function initLaunchEngine() {
 
       let data;
       try {
-        data = JSON.parse(raw);
+        data = JSON.parse(decodeURIComponent(raw));
       } catch (e) {
         console.warn("JSON inválido en data-boton", raw);
         continue;
@@ -230,7 +234,7 @@ async function initLaunchEngine() {
 
     clases.forEach(c => {
 
-      const botonJSON = JSON.stringify(c.boton);
+      const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
 
       html += messageTemplateCache
         .replace("{{titulo}}", c.titulo)
@@ -240,6 +244,12 @@ async function initLaunchEngine() {
     });
 
     return html;
+  }
+
+
+  async function renderComponentes() {
+    await renderBotones();
+    await renderFlags();
   }
 
   
