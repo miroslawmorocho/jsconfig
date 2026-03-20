@@ -77,7 +77,11 @@ async function initLaunchEngine() {
 
     // 6. Header, Clases y Botón Live
     if (DOM.header) DOM.header.innerHTML = data.headerText;
-    if (DOM.clases) DOM.clases.innerHTML = data.clasesHtml;
+    if (DOM.clases) {
+      const html = await renderClases(data.clases);
+      DOM.clases.innerHTML = html;
+    }
+    
     await renderBotones();
     await renderFlags();
     
@@ -102,20 +106,22 @@ async function initLaunchEngine() {
     // Clon de info de próxima clase
     if (DOM.proxima) {
 
-      if (data.proximaClaseHtml) {
-    
-        DOM.proxima.innerHTML = data.proximaClaseHtml;
+      if (data.proximaClase) {
+
+        const html = await renderClases([data.proximaClase]);
+        DOM.proxima.innerHTML = html;
+        DOM.proxima.style.display = "block";
+
         await renderBotones();
         await renderFlags();
-        DOM.proxima.style.display = "block";
-    
+
       } else {
-    
+
         DOM.proxima.style.display = "none";
-    
+
       }
-    
-    }   
+
+    } 
 
     // 8. Programar siguiente actualización (despertador automático)
     if (data.intervaloRevisionMs) intervaloRevisionDin = data.intervaloRevisionMs;
@@ -207,6 +213,33 @@ async function initLaunchEngine() {
 
     });
 
+  }
+
+
+  let messageTemplateCache = null;
+
+  async function renderClases(clases) {
+
+    if (!messageTemplateCache) {
+      messageTemplateCache = await fetch(
+        LaunchCore.paths.components + "messages.html"
+      ).then(r => r.text());
+    }
+
+    let html = "";
+
+    clases.forEach(c => {
+
+      const botonJSON = JSON.stringify(c.boton);
+
+      html += messageTemplateCache
+        .replace("{{titulo}}", c.titulo)
+        .replace("{{mensaje}}", c.mensaje)
+        .replace("{{boton}}", botonJSON);
+
+    });
+
+    return html;
   }
 
   
