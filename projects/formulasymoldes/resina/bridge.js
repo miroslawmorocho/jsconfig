@@ -239,10 +239,10 @@ async function initLaunchEngine(force = false) {
     }
   });
   
-  LaunchCore.visibility.init(() => {
+  /*LaunchCore.visibility.init(() => {
     console.log("👁️ visibility → forcing refresh");
     initLaunchEngine(true);
-  }, intervaloRevisionDin);
+  }, intervaloRevisionDin);*/
 
    // botones de calendario
    document.addEventListener("click", function(e) {
