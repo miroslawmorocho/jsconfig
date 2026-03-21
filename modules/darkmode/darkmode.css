@@ -22,6 +22,10 @@ html {
   filter: invert(1) hue-rotate(180deg);
 }
 
+.force-dark {
+   background-color: #ccc;
+}
+
 /* ====== SWITCH ====== */
 .switch {
   position: fixed;
