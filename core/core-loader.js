@@ -413,7 +413,7 @@ LaunchCore.globals.versionChecker = async function(){
     workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
     cierreEvento: config.cierreEvento,
     modoCierre: config.modoCierre,
-    checkInterval: 60000, // PRODUCCIÓN 15*60*1000, // 15 min
+    checkInterval: 15*60*1000, // PRODUCCIÓN 15*60*1000, // 15 min
     confirmDelay: 3 * 60 * 1000,
     autoReload: true
   });
