@@ -116,7 +116,7 @@ async function initLaunchEngine(force = false) {
         intervaloRevisionDin = data.intervaloRevisionMs;
       }
 
-      LaunchCore.visibility.updateInterval(intervaloRevisionDin);
+      //LaunchCore.visibility.updateInterval(intervaloRevisionDin);
 
       const delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
