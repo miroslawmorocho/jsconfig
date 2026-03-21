@@ -1,4 +1,3 @@
-let intervaloRevisionDin = 60000; // default
 let scrollYaEjecutado = false;
 let estadoPricingActual = null; // 🔥 detecta cambios PRE → OPEN
 
@@ -9,12 +8,6 @@ async function cargarPricing(){
   if (!data || !data.pricingHtml) {
     console.warn("⚠️ Data incompleta");
     return;
-  }
-
-  // 🔥 intervalo dinámico (igual que antes)
-  if (data.intervaloRevisionMs) {
-    intervaloRevisionDin = data.intervaloRevisionMs;
-    LaunchCore.visibility.updateInterval(intervaloRevisionDin);
   }
 
   // =====================================================
@@ -71,7 +64,11 @@ async function cargarPricing(){
 
     let delay = data.siguienteActualizacionMs + 4000;
 
-    LaunchCore.scheduler.programar(cargarPricing, delay);
+    LaunchCore.scheduler.programar(
+      "pricing-main",
+      cargarPricing,
+      delay
+    );
 
   }
 

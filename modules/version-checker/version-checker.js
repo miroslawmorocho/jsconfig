@@ -110,6 +110,16 @@ function initVersionChecker(config) {
       if(currentVersion !== nuevaVersion){
 
         console.log("🆕 Nueva versión detectada");
+        console.log(
+          `⏳ Nueva versión detectada. Confirmando en ${Math.round(config.confirmDelay / 60000)} min...`
+        );
+
+        const eta = new Date(Date.now() + config.confirmDelay);
+
+        console.log(
+          "⏳ Confirmación programada para:",
+          eta.toLocaleTimeString()
+        );
 
         LaunchCore.scheduler.programar(
           "vc-confirm",
