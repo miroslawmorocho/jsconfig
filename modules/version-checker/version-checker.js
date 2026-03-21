@@ -3,7 +3,7 @@ function initVersionChecker(config) {
   console.log("🔥 VERSION CHECKER FILE CARGADO");
 
   let currentVersion = null;
-  let confirmTimeout = null;
+  let visibilityInitialized = false;
 
   function fechaHumana(){
     const d = new Date();
@@ -53,9 +53,18 @@ function initVersionChecker(config) {
     }
   }
 
+  let checking = false;
+
   async function check(){
 
     console.log("🔍 [VC] Check...");
+
+    if(checking){
+      console.log("⛔ VC busy");
+      return;
+    }
+
+    checking = true;
 
     try {
 
@@ -81,11 +90,13 @@ function initVersionChecker(config) {
 
           console.log("🧟 Usuario volvió → versión vieja");
 
-          confirmTimeout = setTimeout(()=>{
+          LaunchCore.scheduler.programar(()=>{
             confirmarConWorker(nuevaVersion);
           }, config.confirmDelay);
 
         }
+
+        LaunchCore.scheduler.programar(check, config.checkInterval);
 
         return;
       }
@@ -94,7 +105,7 @@ function initVersionChecker(config) {
 
         console.log("🆕 Nueva versión detectada");
 
-        confirmTimeout = setTimeout(()=>{
+        LaunchCore.scheduler.programar(()=>{
           confirmarConWorker(nuevaVersion);
         }, config.confirmDelay);
 
@@ -103,9 +114,12 @@ function initVersionChecker(config) {
       currentVersion = nuevaVersion;
       localStorage.setItem("lc_version", nuevaVersion);
 
-    } catch(e){
-      console.warn("❌ [VC] Error", e);
+    } finally {
+      checking = false;
     }
+
+    LaunchCore.scheduler.programar(check, config.checkInterval);
+
   }
 
   async function init(){
@@ -125,15 +139,23 @@ function initVersionChecker(config) {
 
       if(status.eventoActivo){
 
-        console.log("🚫 Evento ACTIVO → version checker DESACTIVADO");
+        console.log("🚫 Evento ACTIVO → VC en pausa...");
+
+        const delay = status.siguienteCambioMs || 60000;
+
+        LaunchCore.scheduler.programar(init, delay);
+
         return;
 
       }
 
       console.log("✅ Evento CERRADO → activar version checker");
 
-      setInterval(check, config.checkInterval);
-      LaunchCore.visibility.init(check, config.checkInterval);
+      // 🔥 SOLO visibility + primer check
+      if(!visibilityInitialized){
+        LaunchCore.visibility.init(check, config.checkInterval);
+        visibilityInitialized = true;
+      }
 
       check();
 
