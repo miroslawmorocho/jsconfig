@@ -39,11 +39,6 @@ async function initLaunchEngine(force = false) {
 
   const ahora = Date.now();
 
-  if (!force && (ahora - ultimaRevision < intervaloRevisionDin)) {
-    console.log("⏳ Skip por intervalo");
-    return;
-  }
-
   currentExecution = (async () => {
 
     try {
