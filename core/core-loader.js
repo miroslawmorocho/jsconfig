@@ -94,24 +94,27 @@ LaunchCore.config = {
 
   LaunchCore.scheduler = (function(){
 
-    let timeout = null;
+    let timers = {};
 
-    function programar(fn, delay){
+    function programar(key, fn, delay){
 
-      if(timeout){
-        clearTimeout(timeout);
+      if(!key){
+        console.warn("Scheduler requiere key");
+        return;
+      }
+
+      if(timers[key]){
+        clearTimeout(timers[key]);
       }
 
       if(!delay) return;
 
-      // mínimo
       if(delay < 2000) delay = 2000;
 
-      // jitter (hasta 20%)
       const jitter = delay * 0.2 * Math.random();
       delay += jitter;
 
-      timeout = setTimeout(()=>{
+      timers[key] = setTimeout(()=>{
         fn();
       }, delay);
 

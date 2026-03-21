@@ -90,13 +90,19 @@ function initVersionChecker(config) {
 
           console.log("🧟 Usuario volvió → versión vieja");
 
-          LaunchCore.scheduler.programar(()=>{
-            confirmarConWorker(nuevaVersion);
-          }, config.confirmDelay);
+          LaunchCore.scheduler.programar(
+            "vc-confirm",
+            ()=> confirmarConWorker(nuevaVersion),
+            config.confirmDelay
+          );
 
         }
 
-        LaunchCore.scheduler.programar(check, config.checkInterval);
+        LaunchCore.scheduler.programar(
+          "vc-check",
+          check,
+          config.checkInterval
+        );
 
         return;
       }
@@ -105,9 +111,11 @@ function initVersionChecker(config) {
 
         console.log("🆕 Nueva versión detectada");
 
-        LaunchCore.scheduler.programar(()=>{
-          confirmarConWorker(nuevaVersion);
-        }, config.confirmDelay);
+        LaunchCore.scheduler.programar(
+          "vc-confirm",
+          ()=> confirmarConWorker(nuevaVersion),
+          config.confirmDelay
+        );
 
       }
 
@@ -118,7 +126,11 @@ function initVersionChecker(config) {
       checking = false;
     }
 
-    LaunchCore.scheduler.programar(check, config.checkInterval);
+    LaunchCore.scheduler.programar(
+      "vc-check",
+      check,
+      config.checkInterval
+    );
 
   }
 
@@ -143,7 +155,11 @@ function initVersionChecker(config) {
 
         const delay = status.siguienteCambioMs || 60000;
 
-        LaunchCore.scheduler.programar(init, delay);
+        LaunchCore.scheduler.programar(
+          "vc-init",
+          init,
+          delay
+        );
 
         return;
 

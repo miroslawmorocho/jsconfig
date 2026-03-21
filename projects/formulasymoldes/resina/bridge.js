@@ -122,9 +122,11 @@ async function initLaunchEngine(force = false) {
 
       console.log("⏰ next run in", delay);
 
-      LaunchCore.scheduler.programar(() => {
-        initLaunchEngine();
-      }, delay);
+      LaunchCore.scheduler.programar(
+        "bridge-main",
+        () => initLaunchEngine(),
+        delay
+      );
 
       ultimaRevision = Date.now();
 
