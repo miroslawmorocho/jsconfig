@@ -131,11 +131,11 @@ LaunchCore.config = {
 
     let lastCheck = 0;
     let minInterval = 60000; // default 1 min
-    let callback = null;
+    let callbacks = [];
 
     function init(fn, interval){
 
-      callback = fn;
+      callbacks.push(fn);
 
       if(interval){
         minInterval = interval;
@@ -151,9 +151,13 @@ LaunchCore.config = {
           return;
         }
 
-        if(typeof callback === "function"){
-          callback();
-        }
+        callbacks.forEach(fn => {
+          try {
+            fn();
+          } catch(e){
+            console.warn("Visibility callback error:", e);
+          }
+        });
 
         lastCheck = now;
 
