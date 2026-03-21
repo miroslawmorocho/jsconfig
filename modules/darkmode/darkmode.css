@@ -22,8 +22,10 @@ html {
   filter: invert(1) hue-rotate(180deg);
 }
 
+/* Banderas que no quieres invertir */
 .force-dark {
-   background-color: #ccc;
+  filter: none;           /* quita la inversión asa as as as  */
+  background-color: #fff; /* fondo blanco detrás */
 }
 
 /* ====== SWITCH ====== */
