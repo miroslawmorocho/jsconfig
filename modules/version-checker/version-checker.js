@@ -1,9 +1,13 @@
 function initVersionChecker(config) {
 
-  console.log("🔥 VERSION CHECKER FILE CARGADO");
+  console.log("🔥 VERSION CHECKER INICIADO");
 
   let currentVersion = null;
-  let visibilityInitialized = false;
+  let checking = false;
+
+  /* =====================================================
+     HELPERS
+  ===================================================== */
 
   function fechaHumana(){
     const d = new Date();
@@ -22,6 +26,11 @@ function initVersionChecker(config) {
     return location.origin + location.pathname + "?v=" + fechaHumana();
   }
 
+  /* =====================================================
+     CONFIRMAR CON WORKER
+     (evita reload antes de que KV esté actualizado)
+  ===================================================== */
+
   async function confirmarConWorker(nuevaVersion){
 
     console.log("⏳ [VC] Confirmando con worker...");
@@ -38,26 +47,42 @@ function initVersionChecker(config) {
 
       if(data.version === nuevaVersion){
 
-        console.log("✅ [VC] Worker OK → reload");
+        console.log("✅ [VC] Worker sincronizado");
 
         if(config.autoReload){
-          location.href = buildUrl();
+
+          console.log("♻️ Soft refresh (sin reload)");
+
+          // 🔥 PRIORIDAD: refrescar engine sin recargar
+          if(window.initLaunchEngine){
+
+            console.log("🧨 Forzando fetch sin cache");
+
+            LaunchCore.forceFresh = true;
+
+            window.initLaunchEngine(true);
+
+          } else {
+            location.href = buildUrl();
+          }
+
         }
 
       } else {
-        console.log("⌛ [VC] Worker aún no sincronizado");
+        console.log("⌛ [VC] Worker aún no listo");
       }
 
     } catch(e){
       console.warn("❌ [VC] Error worker", e);
     }
+
   }
 
-  let checking = false;
+  /* =====================================================
+     CHECK PRINCIPAL
+  ===================================================== */
 
   async function check(){
-
-    console.log("🔍 [VC] Check...");
 
     if(checking){
       console.log("⛔ VC busy");
@@ -68,7 +93,8 @@ function initVersionChecker(config) {
 
     try {
 
-      // 🔥 GITHUB PRIMERO
+      console.log("🔍 [VC] Check...");
+
       const res = await fetch(config.versionUrl, {
         cache: "no-store"
       });
@@ -81,14 +107,18 @@ function initVersionChecker(config) {
       console.log("📦 Local:", savedVersion);
       console.log("🌐 GitHub:", nuevaVersion);
 
+      /* =====================================================
+         PRIMERA EJECUCIÓN
+      ===================================================== */
       if(!currentVersion){
 
         currentVersion = nuevaVersion;
         localStorage.setItem("lc_version", nuevaVersion);
 
+        // 🔥 usuario volvió con versión vieja
         if(savedVersion && savedVersion !== nuevaVersion){
 
-          console.log("🧟 Usuario volvió → versión vieja");
+          console.log("🧟 Usuario con versión vieja → actualizar");
 
           LaunchCore.scheduler.programar(
             "vc-confirm",
@@ -98,28 +128,15 @@ function initVersionChecker(config) {
 
         }
 
-        LaunchCore.scheduler.programar(
-          "vc-check",
-          check,
-          config.checkInterval
-        );
-
         return;
       }
 
+      /* =====================================================
+         NUEVA VERSIÓN DETECTADA
+      ===================================================== */
       if(currentVersion !== nuevaVersion){
 
         console.log("🆕 Nueva versión detectada");
-        console.log(
-          `⏳ Nueva versión detectada. Confirmando en ${Math.round(config.confirmDelay / 60000)} min...`
-        );
-
-        const eta = new Date(Date.now() + config.confirmDelay);
-
-        console.log(
-          "⏳ Confirmación programada para:",
-          eta.toLocaleTimeString()
-        );
 
         LaunchCore.scheduler.programar(
           "vc-confirm",
@@ -132,62 +149,41 @@ function initVersionChecker(config) {
       currentVersion = nuevaVersion;
       localStorage.setItem("lc_version", nuevaVersion);
 
+    } catch(e){
+      console.warn("❌ [VC] Error check", e);
     } finally {
       checking = false;
     }
 
-    LaunchCore.scheduler.programar(
-      "vc-check",
-      check,
-      config.checkInterval
-    );
-
   }
 
-  async function init(){
+  /* =====================================================
+     INIT
+  ===================================================== */
+
+  function init(){
 
     console.log("🚀 [VC] INIT");
 
-    try {
+    // 🔥 visibility inteligente
+    LaunchCore.visibility.init(check, config.checkInterval);
 
-      // 🔥 PRIMERA DECISIÓN → WORKER MANDA
-      const res = await fetch(config.workerUrl + "/status", {
-        cache: "no-store"
-      });
+    // 🔥 primer check inmediato
+    check();
 
-      const status = await res.json();
-
-      console.log("📡 [VC] STATUS:", status);
-
-      if(status.eventoActivo){
-
-        console.log("🚫 Evento ACTIVO → VC en pausa...");
-
-        const delay = status.siguienteCambioMs || 60000;
-
+    // 🔥 loop constante (backup del visibility)
+    LaunchCore.scheduler.programar(
+      "vc-check-loop",
+      function loop(){
+        check();
         LaunchCore.scheduler.programar(
-          "vc-init",
-          init,
-          delay
+          "vc-check-loop",
+          loop,
+          config.checkInterval
         );
-
-        return;
-
-      }
-
-      console.log("✅ Evento CERRADO → activar version checker");
-
-      // 🔥 SOLO visibility + primer check
-      if(!visibilityInitialized){
-        LaunchCore.visibility.init(check, config.checkInterval);
-        visibilityInitialized = true;
-      }
-
-      check();
-
-    } catch(e){
-      console.warn("❌ [VC] Error init", e);
-    }
+      },
+      config.checkInterval
+    );
 
   }
 

@@ -12,6 +12,8 @@ LaunchCore.config = {
   page: null
 };
 
+LaunchCore.forceFresh = false;
+
 (function(){
 
   /* =====================================================
@@ -73,7 +75,14 @@ LaunchCore.config = {
 
       const url = BASE_WORKER_URL + endpoint + window.location.search;
 
-      const res = await fetch(url);
+      const options = LaunchCore.forceFresh
+        ? { cache: "no-store" }
+        : {};
+
+      const res = await fetch(url, options);
+
+      // 🔥 reset después de usarlo
+      LaunchCore.forceFresh = false;
 
       if(!res.ok) throw new Error("Worker error");
 
@@ -103,21 +112,36 @@ LaunchCore.config = {
         return;
       }
 
+      const MAX_DELAY = 2147483647; // ~24.8 días
+
+      // 🔥 calcular tiempo objetivo REAL
+      const targetTime = Date.now() + delay;
+
+      // 🔥 guardar en localStorage (para sobrevivir reload)
+      localStorage.setItem("lc_timer_" + key, targetTime);
+
+      function tick(){
+
+        const now = Date.now();
+        const remaining = targetTime - now;
+
+        if(remaining <= 0){
+          localStorage.removeItem("lc_timer_" + key);
+          fn();
+          return;
+        }
+
+        const nextDelay = Math.min(remaining, MAX_DELAY);
+
+        timers[key] = setTimeout(tick, nextDelay);
+      }
+
+      // 🔥 limpiar timer previo
       if(timers[key]){
         clearTimeout(timers[key]);
       }
 
-      if(!delay) return;
-
-      if(delay < 2000) delay = 2000;
-
-      const jitter = delay * 0.2 * Math.random();
-      delay += jitter;
-
-      timers[key] = setTimeout(()=>{
-        fn();
-      }, delay);
-
+      tick();
     }
 
     return {
@@ -413,8 +437,8 @@ LaunchCore.globals.versionChecker = async function(){
     workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
     cierreEvento: config.cierreEvento,
     modoCierre: config.modoCierre,
-    checkInterval: 15*60*1000, // PRODUCCIÓN 15*60*1000, // 15 min
-    confirmDelay: 3 * 60 * 1000,
+    checkInterval: 1*60*1000, // PRODUCCIÓN 15*60*1000, // 15 min
+    confirmDelay: 1 * 60 * 1000, // PRODUCCIÓN 3 * 60 * 1000,
     autoReload: true
   });
 
