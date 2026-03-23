@@ -1,0 +1,28 @@
+name: Update version
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Get latest commit
+        run: |
+          echo "{ \"commit\": \"$(git rev-parse HEAD)\" }" > projects/formulasymoldes/resina/version.json
+
+      - name: Commit version.json
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add version.json
+          git commit -m "update version" || echo "no changes"
+
+      - name: Push changes
+        run: git push
