@@ -159,7 +159,7 @@ function initVersionChecker(config) {
   window.initVersionCheckerCheck = check;
 
   /* =====================================================
-     INIT
+     INICIAR LA FUNCIÓN
   ===================================================== */
 
   function init(){
