@@ -427,17 +427,17 @@ LaunchCore.globals.versionChecker = async function(){
   
   const { project, product } = LaunchCore.config;
 
-  const configJSONurl = LaunchCore.paths.projects +
-    `${project}/${product}/launch-config.json`;
+  const dataVersionUrl = LaunchCore.paths.projects +
+  `${project}/${product}/launch-version.json`;
 
   await LaunchCore.loadScript(url);
 
   window.initVersionChecker({
-    versionUrl: configJSONurl, // worker data version
+    versionUrl: dataVersionUrl, // worker data version
     codeVersionUrl: LaunchCore.paths.base + "version.json", // versión de código estático de Github
     workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
     checkInterval: 1*60*1000, // PRODUCCIÓN 15*60*1000,
-    confirmDelay: 1*60*1000, // PRODUCCIÓN 3 * 60 * 1000,
+    confirmDelay: 3*60*1000, // PRODUCCIÓN 3 * 60 * 1000,
     autoReload: true
   });
 

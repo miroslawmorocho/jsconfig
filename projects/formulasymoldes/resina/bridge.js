@@ -30,7 +30,7 @@ const DOM = {
 /* =====================================================
    ENGINE INICIALIZADOR
 ===================================================== */
-async function initLaunchEngine(force = false) {
+async function initLaunchEngine(force = false, externalData = null){
 
   if (currentExecution) {
     console.warn("⛔ Ya hay una ejecución en curso");
@@ -45,7 +45,14 @@ async function initLaunchEngine(force = false) {
 
       console.log("🚀 Fetching worker...");
 
-      const data = await LaunchCore.fetchWorker("").catch(() => null);
+      let data;
+
+      if(externalData){
+        console.log("⚡ Usando data externa (sin fetch)");
+        data = externalData;
+      } else {
+        data = await LaunchCore.fetchWorker("");
+      }
 
       if (!data) return;
 
@@ -124,7 +131,7 @@ async function initLaunchEngine(force = false) {
 
       LaunchCore.scheduler.programar(
         "bridge-main",
-        () => initLaunchEngine(),
+        () => initLaunchEngine(false),
         delay
       );
 
