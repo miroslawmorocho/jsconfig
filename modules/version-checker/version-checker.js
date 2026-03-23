@@ -2,7 +2,8 @@ function initVersionChecker(config) {
 
   console.log("🔥 VERSION CHECKER INICIADO");
 
-  let currentVersion = null;
+  let currentDataVersion = null;
+  let currentCodeVersion = null; // 🔥 FALTA ESTO
   let checking = false;
 
   /* =====================================================
@@ -92,6 +93,8 @@ function initVersionChecker(config) {
     checking = true;
 
     try {
+      // 🔥 PRIMERO código estático (CRÍTICO)
+      await checkCodeVersion();
 
       console.log("🔍 [VC] Check...");
 
@@ -100,28 +103,27 @@ function initVersionChecker(config) {
       });
 
       const data = await res.json();
-      const nuevaVersion = data.version;
+      const nuevaDataVersion = data.version;
+      const savedDataVersion = localStorage.getItem("lc_data_version");
 
-      const savedVersion = localStorage.getItem("lc_version");
-
-      console.log("📦 Local:", savedVersion);
-      console.log("🌐 GitHub:", nuevaVersion);
+      console.log("📦 Local:", savedDataVersion);
+      console.log("🌐 Data:", nuevaDataVersion);
 
       /* =====================================================
          PRIMERA EJECUCIÓN
       ===================================================== */
-      if(!currentVersion){
+      if(!currentDataVersion){
 
-        currentVersion = nuevaVersion;
-        localStorage.setItem("lc_version", nuevaVersion);
+        currentDataVersion = nuevaDataVersion;
+        localStorage.setItem("lc_data_version", nuevaDataVersion);
 
         // 🔥 usuario volvió con versión vieja
-        if(savedVersion && savedVersion !== nuevaVersion){
+        if(savedDataVersion && savedDataVersion !== nuevaDataVersion){
 
           console.log("🧟 Usuario volvió → actualización inmediata");
 
           // 🔥 NO esperar delay
-          confirmarConWorker(nuevaVersion);
+          confirmarConWorker(nuevaDataVersion);
 
           return;
         }
@@ -132,20 +134,20 @@ function initVersionChecker(config) {
       /* =====================================================
          NUEVA VERSIÓN DETECTADA
       ===================================================== */
-      if(currentVersion !== nuevaVersion){
+      if(currentDataVersion !== nuevaDataVersion){
 
-        console.log("🆕 Nueva versión detectada");
+        console.log("🆕 Nuevos datos detectados");
 
         LaunchCore.scheduler.programar(
           "vc-confirm",
-          ()=> confirmarConWorker(nuevaVersion),
+          ()=> confirmarConWorker(nuevaDataVersion),
           config.confirmDelay
         );
 
       }
 
-      currentVersion = nuevaVersion;
-      localStorage.setItem("lc_version", nuevaVersion);
+      currentDataVersion = nuevaDataVersion;
+      localStorage.setItem("lc_data_version", nuevaDataVersion);
 
     } catch(e){
       console.warn("❌ [VC] Error check", e);
@@ -158,6 +160,66 @@ function initVersionChecker(config) {
   // 🔥 EXPONER PARA QUE OTRAS PARTES LO PUEDAN LLAMAR
   window.initVersionCheckerCheck = check;
 
+
+  /* =====================================================
+     CHEQUEAR LA VERSIÓN DEL CÓDIGO ESTÁTICO EN GITHUB
+                  (css js html etc.)
+  ===================================================== */
+  async function checkCodeVersion(){
+
+    try {
+
+      console.log("🧠 [VC] Checking CODE version...");
+
+      const res = await fetch(config.codeVersionUrl, {
+        cache: "no-store"
+      });
+
+      const data = await res.json();
+      const nuevaCodeVersion = data.commit;
+
+      const savedCodeVersion = localStorage.getItem("lc_code_version");
+
+      console.log("💾 Code Local:", savedCodeVersion);
+      console.log("🌐 Code GitHub:", nuevaCodeVersion);
+
+      // 🔥 PRIMERA VEZ
+      if(!currentCodeVersion){
+
+        currentCodeVersion = nuevaCodeVersion;
+        localStorage.setItem("lc_code_version", nuevaCodeVersion);
+
+        // 🔥 usuario volvió con código viejo
+        if(savedCodeVersion && savedCodeVersion !== nuevaCodeVersion){
+
+          console.log("💥 Código actualizado → HARD RELOAD");
+
+          location.href = buildUrl(); // 🔥 F5 REAL
+        }
+
+        return;
+      }
+
+      // 🔥 CAMBIO DETECTADO
+      if(currentCodeVersion !== nuevaCodeVersion){
+
+        console.log("💥 Nuevo Github deploy detectado → HARD RELOAD");
+
+        localStorage.setItem("lc_code_version", nuevaCodeVersion);
+
+        location.href = buildUrl(); // 🔥 F5 REAL
+        return;
+      }
+
+      currentCodeVersion = nuevaCodeVersion;
+
+    } catch(e){
+      console.warn("❌ [VC] Error code version", e);
+    }
+
+  }
+
+  
   /* =====================================================
      INICIAR LA FUNCIÓN
   ===================================================== */

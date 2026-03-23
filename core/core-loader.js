@@ -421,24 +421,23 @@ LaunchCore.globals.scroll = async function(){
 
 LaunchCore.globals.versionChecker = async function(){
 
+  const vCheckPath = "modules/version-checker/version-checker";
+
+  const url = LaunchCore.paths.base + vCheckPath + ".js"
+  
   const { project, product } = LaunchCore.config;
 
-  const url = LaunchCore.paths.projects +
+  const configJSONurl = LaunchCore.paths.projects +
     `${project}/${product}/launch-config.json`;
 
-  const config = await fetch(url).then(r=>r.json());
-
-  await LaunchCore.loadScript(
-    LaunchCore.paths.base + "modules/version-checker/version-checker.js"
-  );
+  await LaunchCore.loadScript(url);
 
   window.initVersionChecker({
-    versionUrl: url,
+    versionUrl: configJSONurl, // worker data version
+    codeVersionUrl: LaunchCore.paths.base + "version.json", // versión de código estático de Github
     workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
-    cierreEvento: config.cierreEvento,
-    modoCierre: config.modoCierre,
-    checkInterval: 1*60*1000, // PRODUCCIÓN 15*60*1000, // 15 min
-    confirmDelay: 1 * 60 * 1000, // PRODUCCIÓN 3 * 60 * 1000,
+    checkInterval: 1*60*1000, // PRODUCCIÓN 15*60*1000,
+    confirmDelay: 1*60*1000, // PRODUCCIÓN 3 * 60 * 1000,
     autoReload: true
   });
 
