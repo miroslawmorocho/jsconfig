@@ -130,7 +130,7 @@ function initVersionChecker(config) {
       }
 
       /* =====================================================
-         NUEVA VERSIÓN DETECTADA
+         NUEVA VERSIÓN DETECTADA pruea
       ===================================================== */
       if(currentVersion !== nuevaVersion){
 
