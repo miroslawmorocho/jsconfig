@@ -118,14 +118,12 @@ function initVersionChecker(config) {
         // 🔥 usuario volvió con versión vieja
         if(savedVersion && savedVersion !== nuevaVersion){
 
-          console.log("🧟 Usuario con versión vieja → actualizar");
+          console.log("🧟 Usuario volvió → actualización inmediata");
 
-          LaunchCore.scheduler.programar(
-            "vc-confirm",
-            ()=> confirmarConWorker(nuevaVersion),
-            config.confirmDelay
-          );
+          // 🔥 NO esperar delay
+          confirmarConWorker(nuevaVersion);
 
+          return;
         }
 
         return;
@@ -156,6 +154,9 @@ function initVersionChecker(config) {
     }
 
   }
+
+  // 🔥 EXPONER PARA QUE OTRAS PARTES LO PUEDAN LLAMAR
+  window.initVersionCheckerCheck = check;
 
   /* =====================================================
      INIT

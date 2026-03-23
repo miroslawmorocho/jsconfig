@@ -240,6 +240,14 @@ async function initLaunchEngine(force = false) {
       initLaunchEngine(true);
     }
   });
+
+  window.addEventListener("pageshow", function() {
+  console.log("👁️ Usuario volvió → forzar check inmediato");
+
+  if(window.initVersionCheckerCheck){
+      window.initVersionCheckerCheck();
+    }
+  });
   
   /*LaunchCore.visibility.init(() => {
     console.log("👁️ visibility → forcing refresh");
