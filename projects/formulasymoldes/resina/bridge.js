@@ -31,7 +31,7 @@ const DOM = {
 /* =====================================================
    ENGINE INICIALIZADOR
 ===================================================== */
-async function initLaunchEngine(force = false, externalData = null){
+async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
   if (currentExecution) {
     console.warn("⛔ Ya hay una ejecución en curso");
@@ -52,7 +52,7 @@ async function initLaunchEngine(force = false, externalData = null){
         console.log("⚡ Usando data externa (sin fetch)");
         data = externalData;
       } else {
-        data = await LaunchCore.fetchWorker("");
+        data = await LaunchCore.fetchWorker("", forceFetch);
       }
 
       if (!data) return;
@@ -123,8 +123,6 @@ async function initLaunchEngine(force = false, externalData = null){
       if (data.intervaloRevisionMs) {
         intervaloRevisionDin = data.intervaloRevisionMs;
 
-        // 🔥 sincronizar visibility con worker
-        //LaunchCore.visibility.updateInterval(intervaloRevisionDin);
       }
 
       const delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
@@ -288,7 +286,7 @@ async function initLaunchEngine(force = false, externalData = null){
       LaunchCore.forceFresh = true;
       currentExecution = null;
 
-      initLaunchEngine(true);
+      initLaunchEngine(true, null, true);
 
       if(window.initVersionCheckerCheck){
         window.initVersionCheckerCheck();

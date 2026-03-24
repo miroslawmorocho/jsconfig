@@ -69,25 +69,22 @@ LaunchCore.forceFresh = false;
     FETCH WORKER (UNIFICADO)
   ===================================================== */
 
-  LaunchCore.fetchWorker = async function(endpoint = ""){
+  LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
     try{
 
       let url = BASE_WORKER_URL + endpoint + window.location.search;
 
-      // 🔥 FORZAR NO CACHE REAL
-      if(LaunchCore.forceFresh){
+      // 🔥 SIEMPRE romper cache si force = true
+      if(force){
         url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
       }
 
-      const options = LaunchCore.forceFresh
+      const options = force
         ? { cache: "no-store" }
         : {};
 
       const res = await fetch(url, options);
-
-      // 🔥 reset después de usarlo
-      LaunchCore.forceFresh = false;
 
       if(!res.ok) throw new Error("Worker error");
 

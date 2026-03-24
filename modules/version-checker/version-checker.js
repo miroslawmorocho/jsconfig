@@ -6,6 +6,7 @@ function initVersionChecker(config) {
   let currentCodeVersion = null;
   let checking = false;
   let pendingDataVersion = null;
+  let lastRenderedVersion = null;
 
   /* =====================================================
      HELPERS
@@ -89,9 +90,7 @@ function initVersionChecker(config) {
 
     try {
 
-      LaunchCore.forceFresh = true;
-
-      const data = await LaunchCore.fetchWorker("/status");
+      const data = await LaunchCore.fetchWorker("/status", true);
 
       logVC("🛰️ Worker version", data?.version);
 
@@ -99,21 +98,22 @@ function initVersionChecker(config) {
 
         logVC("✅ Worker sincronizado");
 
-        if(config.autoReload){
+        if(lastRenderedVersion !== String(versionToConfirm)){
 
-          logVC("♻️ Fetch data fresca");
+          logVC("🎨 Renderizando nueva versión");
 
-          LaunchCore.forceFresh = true;
-          const freshData = await LaunchCore.fetchWorker("");
+          const freshData = await LaunchCore.fetchWorker("", true);
 
           if(window.initLaunchEngine){
             window.initLaunchEngine(true, freshData);
           } else {
             logVC("⚠️ fallback reload");
-            //location.href = buildUrl();
             location.reload();
           }
 
+          lastRenderedVersion = String(versionToConfirm);
+        } else {
+          logVC("😴 Ya renderizado, skip");
         }
 
       } else {
@@ -122,6 +122,10 @@ function initVersionChecker(config) {
 
     } catch(e){
       console.warn("❌ [VC] Error worker", e);
+    }
+
+    finally {
+      pendingDataVersion = null;
     }
 
   }
