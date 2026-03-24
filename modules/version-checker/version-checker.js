@@ -1,5 +1,12 @@
 function initVersionChecker(config) {
 
+  if (window.__vcInitialized) {
+    console.log("⛔ VC ya inicializado");
+    return;
+  }
+
+  window.__vcInitialized = true;
+
   console.log("🔥 VERSION CHECKER INICIADO");
 
   let currentDataVersion = null;

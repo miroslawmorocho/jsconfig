@@ -11,6 +11,7 @@ let currentExecution = null;
 let ultimaRevision = 0;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 let nextScheduledUpdate = Number(localStorage.getItem("lc_next_update") || 0);
+let initialLoadExecuted = false;
 
 /* =====================================================
    DOM
@@ -291,10 +292,17 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
      EVENT LISTENERS (Manejo de visibilidad y caché)
   ===================================================== */
   if (document.readyState === "loading") {
-     document.addEventListener("DOMContentLoaded", initLaunchEngine);
-   } else {
-     initLaunchEngine();
-   }
+    document.addEventListener("DOMContentLoaded", () => {
+      if (initialLoadExecuted) return;
+      initialLoadExecuted = true;
+      initLaunchEngine();
+    });
+  } else {
+    if (!initialLoadExecuted) {
+      initialLoadExecuted = true;
+      initLaunchEngine();
+    }
+  }
    
    let pageshowRunning = false;
 
@@ -315,7 +323,9 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       // 💀 BF CACHE (MÓVIL)
       if (e.persisted) {
-        console.log("💀 bfcache detectado → refresh forzado");
+        console.log("💀 bfcache → bloquear init duplicado");
+
+        initialLoadExecuted = true; // 🔥 evita que DOMContentLoaded dispare init otra vez
 
         LaunchCore.scheduler.cancelar("bridge-main");
         currentExecution = null;
