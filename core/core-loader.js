@@ -73,7 +73,12 @@ LaunchCore.forceFresh = false;
 
     try{
 
-      const url = BASE_WORKER_URL + endpoint + window.location.search;
+      let url = BASE_WORKER_URL + endpoint + window.location.search;
+
+      // 🔥 FORZAR NO CACHE REAL
+      if(LaunchCore.forceFresh){
+        url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+      }
 
       const options = LaunchCore.forceFresh
         ? { cache: "no-store" }

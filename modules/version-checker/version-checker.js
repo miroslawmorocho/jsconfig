@@ -29,53 +29,94 @@ function initVersionChecker(config) {
   }
 
   /* =====================================================
+     DEBUG LOG PERSISTENTE
+  ===================================================== */
+
+  function logVC(msg, data = null){
+    const log = {
+      time: new Date().toISOString(),
+      msg,
+      data
+    };
+
+    console.log(msg, data || "");
+
+    let logs = JSON.parse(sessionStorage.getItem("vc_logs") || "[]");
+    logs.push(log);
+
+    sessionStorage.setItem("vc_logs", JSON.stringify(logs));
+  }
+
+  function renderDebugPanel(){
+
+    if(document.getElementById("vc-debug")) return;
+
+    const div = document.createElement("div");
+
+    div.id = "vc-debug";
+    div.style = `
+      position:fixed;
+      bottom:0;
+      left:0;
+      width:100%;
+      max-height:200px;
+      overflow:auto;
+      background:black;
+      color:#0f0;
+      font-size:10px;
+      z-index:9999;
+      padding:5px;
+    `;
+
+    document.body.appendChild(div);
+
+    setInterval(()=>{
+      const logs = JSON.parse(sessionStorage.getItem("vc_logs") || "[]");
+      div.innerHTML = logs
+        .slice(-20)
+        .map(l => `${l.time} → ${l.msg}`)
+        .join("<br>");
+    }, 1000);
+  }
+
+  /* =====================================================
      🔥 CONFIRMAR CON WORKER (DATA REAL)
   ===================================================== */
 
-  async function confirmarConWorker(nuevaDataVersion){
+  async function confirmarConWorker(versionToConfirm){
 
-    console.log("⏳ [VC] Confirmando con worker...");
+    logVC("⏳ Confirmando con worker...", versionToConfirm);
 
     try {
 
-      // 🔥 forzar sin cache
       LaunchCore.forceFresh = true;
 
       const data = await LaunchCore.fetchWorker("/status");
 
-      console.log("🛰️ [VC] Worker version:", data?.version);
+      logVC("🛰️ Worker version", data?.version);
 
-      console.log("🔬 [VC] Compare:",
-        typeof data?.version,
-        data?.version,
-        typeof nuevaDataVersion,
-        nuevaDataVersion
-      );
+      if(String(data?.version) === String(versionToConfirm)){
 
-      // 🔥 comparación segura prueba
-      if(String(data?.version) === String(nuevaDataVersion)){
-
-        console.log("✅ [VC] Worker sincronizado");
+        logVC("✅ Worker sincronizado");
 
         if(config.autoReload){
 
-          console.log("♻️ Refresh DATA (sin cache)");
+          logVC("♻️ Fetch data fresca");
 
-          // 🔥 traer data fresca REAL
           LaunchCore.forceFresh = true;
           const freshData = await LaunchCore.fetchWorker("");
 
           if(window.initLaunchEngine){
             window.initLaunchEngine(true, freshData);
           } else {
-            console.warn("⚠️ initLaunchEngine no existe → fallback reload");
+            logVC("⚠️ fallback reload");
             location.href = buildUrl();
           }
 
         }
 
       } else {
-        console.log("⌛ [VC] Worker aún no listo");
+        logVC("⌛ Worker aún no actualizado");
       }
 
     } catch(e){
@@ -85,12 +126,12 @@ function initVersionChecker(config) {
   }
 
   /* =====================================================
-     🔥 CHECK DATA VERSION (GitHub launch-version.json)
+     🔥 CHECK DATA VERSION
   ===================================================== */
 
   async function checkDataVersion(){
 
-    console.log("🔍 [VC] Checking DATA version...");
+    logVC("🔍 Checking DATA...");
 
     try {
 
@@ -99,12 +140,18 @@ function initVersionChecker(config) {
       });
 
       const data = await res.json();
-
       const nuevaDataVersion = String(data.version);
+
+      // 🔥 SI NO CAMBIÓ → NO HACER NADA
+      if(currentDataVersion === nuevaDataVersion){
+        logVC("😴 DATA sin cambios");
+        return;
+      }
+
       const savedDataVersion = localStorage.getItem("lc_data_version");
 
-      console.log("📦 Data Local:", savedDataVersion);
-      console.log("🌐 Data GitHub:", nuevaDataVersion);
+      logVC("📦 Local DATA", savedDataVersion);
+      logVC("🌐 GitHub DATA", nuevaDataVersion);
 
       /* =====================================================
          PRIMERA VEZ
@@ -116,9 +163,7 @@ function initVersionChecker(config) {
         localStorage.setItem("lc_data_version", nuevaDataVersion);
 
         if(savedDataVersion && savedDataVersion !== nuevaDataVersion){
-
-          console.log("🧟 Usuario volvió → refrescar DATA inmediata");
-
+          logVC("🧟 Usuario volvió → refresh inmediato");
           confirmarConWorker(nuevaDataVersion);
         }
 
@@ -129,19 +174,23 @@ function initVersionChecker(config) {
          CAMBIO DETECTADO
       ===================================================== */
 
-      if(currentDataVersion !== nuevaDataVersion){
-
-        console.log("🆕 Nueva DATA detectada");
-
-        pendingDataVersion = nuevaDataVersion;
-
-        LaunchCore.scheduler.programar(
-          "vc-confirm",
-          () => confirmarConWorker(pendingDataVersion),
-          config.confirmDelay
-        );
-
+      // 🔥 evitar duplicados
+      if(pendingDataVersion === nuevaDataVersion){
+        logVC("⏳ Confirmación ya en curso");
+        return;
       }
+
+      logVC("🆕 Nueva DATA detectada", nuevaDataVersion);
+
+      pendingDataVersion = nuevaDataVersion;
+
+      const versionToConfirm = nuevaDataVersion;
+
+      LaunchCore.scheduler.programar(
+        "vc-confirm",
+        () => confirmarConWorker(versionToConfirm),
+        config.confirmDelay
+      );
 
       currentDataVersion = nuevaDataVersion;
       localStorage.setItem("lc_data_version", nuevaDataVersion);
@@ -153,12 +202,12 @@ function initVersionChecker(config) {
   }
 
   /* =====================================================
-     🔥 CHECK CODE VERSION (version.json commit)
+     🔥 CHECK CODE VERSION
   ===================================================== */
 
   async function checkCodeVersion(){
 
-    console.log("🧠 [VC] Checking CODE version...");
+    logVC("🧠 Checking CODE...");
 
     try {
 
@@ -169,19 +218,10 @@ function initVersionChecker(config) {
       const data = await res.json();
 
       const nuevaCodeVersion = String(data.commit);
-      const savedCodeVersionRaw = localStorage.getItem("lc_code_version");
-      const savedCodeVersion = savedCodeVersionRaw
-        ? String(savedCodeVersionRaw)
-        : null;
+      const savedCodeVersion = localStorage.getItem("lc_code_version");
 
-      console.log("💾 Code Local:", savedCodeVersion);
-      console.log("🌐 Code GitHub:", nuevaCodeVersion);
-
-      console.log("🔬 CODE COMPARE:",
-        nuevaCodeVersion === savedCodeVersion,
-        JSON.stringify(nuevaCodeVersion),
-        JSON.stringify(savedCodeVersion)
-      );
+      logVC("💾 Local CODE", savedCodeVersion);
+      logVC("🌐 GitHub CODE", nuevaCodeVersion);
 
       /* =====================================================
          PRIMERA VEZ
@@ -193,9 +233,7 @@ function initVersionChecker(config) {
         localStorage.setItem("lc_code_version", nuevaCodeVersion);
 
         if(savedCodeVersion && savedCodeVersion !== nuevaCodeVersion){
-
-          console.log("💥 Código actualizado → HARD RELOAD");
-
+          logVC("💥 Código actualizado → reload");
           location.href = buildUrl();
         }
 
@@ -208,10 +246,9 @@ function initVersionChecker(config) {
 
       if(currentCodeVersion !== nuevaCodeVersion){
 
-        console.log("💥 Nuevo deploy detectado → HARD RELOAD");
+        logVC("💥 Nuevo deploy → reload");
 
         localStorage.setItem("lc_code_version", nuevaCodeVersion);
-
         location.href = buildUrl();
         return;
       }
@@ -231,7 +268,7 @@ function initVersionChecker(config) {
   async function check(){
 
     if(checking){
-      console.log("⛔ VC busy");
+      logVC("⛔ VC busy");
       return;
     }
 
@@ -239,7 +276,6 @@ function initVersionChecker(config) {
 
     try {
 
-      // 🔥 ORDEN CRÍTICO
       await checkCodeVersion();   // HARD reload si cambia
       await checkDataVersion();   // soft refresh si cambia
 
@@ -251,7 +287,6 @@ function initVersionChecker(config) {
 
   }
 
-  // 🔥 EXPUESTO para visibility / pageshow
   window.initVersionCheckerCheck = check;
 
   /* =====================================================
@@ -260,15 +295,15 @@ function initVersionChecker(config) {
 
   function init(){
 
-    console.log("🚀 [VC] INIT");
+    renderDebugPanel(); // 🔥 DEBUG VISUAL
 
-    // 🔥 cuando usuario vuelve a la pestaña
+    logVC("🚀 VC INIT");
+
     LaunchCore.visibility.init(check, config.checkInterval);
 
-    // 🔥 primer check inmediato
-    check();
+    check(); // primer check
 
-    // 🔥 loop constante (backup)
+    // 🔥 loop backup (cada X tiempo)
     LaunchCore.scheduler.programar(
       "vc-check-loop",
       function loop(){
@@ -287,5 +322,4 @@ function initVersionChecker(config) {
   init();
 }
 
-// 🔥 global
 window.initVersionChecker = initVersionChecker;
