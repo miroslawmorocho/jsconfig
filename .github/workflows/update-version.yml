@@ -7,28 +7,28 @@ on:
     paths-ignore:
       - 'version.json'
 
-permissions:
-  contents: write
-
 jobs:
   update-version:
-    if: "!contains(github.event.head_commit.message, 'update version')"
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Get latest commit
+      - name: Write version.json
         run: |
           echo "{ \"commit\": \"$(git rev-parse HEAD)\" }" > version.json
 
-      - name: Commit version.json
+      - name: Commit version.json (silent)
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add version.json
-          git commit -m "update version" || echo "no changes"
+          git commit -m "chore: update version [skip ci]" || exit 0
 
-      - name: Push changes
+      - name: Push
         run: git push
