@@ -568,15 +568,18 @@ document.addEventListener("click", function(e){
   const a = e.target.closest("a");
   if(!a) return;
 
+  // 🔥 respetar comportamiento usuario (ctrl click etc)
+  if(e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+
+  const href = a.getAttribute("href");
+  if(!href || href.startsWith("#")) return;
+
   const url = new URL(a.href, window.location.origin);
 
-  // 🔥 SOLO si es misma web
   if(url.origin !== window.location.origin) return;
 
-  // 🔥 SI ya tiene ?v= → no tocar
   if(url.searchParams.has("v")) return;
 
-  // 🔥 SI YO tengo ?v= → transferirlo
   const currentParams = new URLSearchParams(window.location.search);
   const v = currentParams.get("v");
 
@@ -584,7 +587,13 @@ document.addEventListener("click", function(e){
     url.searchParams.set("v", v);
 
     e.preventDefault();
-    window.location.href = url.toString();
+
+    // 🔥 HEREDAR target
+    if(a.target === "_blank"){
+      window.open(url.toString(), "_blank");
+    } else {
+      window.location.href = url.toString();
+    }
   }
 
 });
