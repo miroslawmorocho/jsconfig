@@ -25,7 +25,8 @@ const DOM = {
   calendarTitle: document.getElementById("launch-calendar-title"),
   offerText: document.getElementById("offer-deadline"), // Extraído a DOM para mejor orden
   sectionPadding: document.getElementById("section-6f21106b"), // El section de tu oferta
-  proxima: document.getElementById("launch-proxima")
+  proxima: document.getElementById("launch-proxima"),
+  estadoCerrado: document.getElementById("estado-cerrado")
 };
 
 /* =====================================================
@@ -57,11 +58,42 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       if (!data) return;
 
-      // 🔥 EVENTO CERRADO
+      // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
       if (data.eventoCerrado) {
-        if (DOM.root) DOM.root.innerHTML = data.htmlEventoCerrado;
-        return;
+
+      if (DOM.estadoCerrado) {
+        DOM.estadoCerrado.innerHTML = data.htmlEventoCerrado;
+        DOM.estadoCerrado.style.display = "block";
       }
+
+      if (DOM.header) DOM.header.style.display = "none";
+      if (DOM.clases) DOM.clases.style.display = "none";
+      if (DOM.countdown) DOM.countdown.style.display = "none";
+      if (DOM.info) DOM.info.style.display = "none";
+      if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
+      if (DOM.proxima) DOM.proxima.style.display = "none";
+      if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
+      if (DOM.offerText) DOM.offerText.style.display = "none";
+
+      currentExecution = null; // 🔥 CLAVE
+
+      return;
+    }
+
+      // AL REABRIR, SI AÚN ESTÁ LA PESTAÑA ABIERTA RECONSTRUIMOS
+      // 🔥 RESTAURAR UI NORMAL
+      if (DOM.estadoCerrado) {
+        DOM.estadoCerrado.innerHTML = "";
+        DOM.estadoCerrado.style.display = "none";
+      }
+
+      // 🔥 volver a mostrar todo
+      if (DOM.header) DOM.header.style.display = "";
+      if (DOM.clases) DOM.clases.style.display = "";
+      if (DOM.countdown) DOM.countdown.style.display = "";
+      if (DOM.info) DOM.info.style.display = "";
+      if (DOM.calendarTitle) DOM.calendarTitle.style.display = "";
+      if (DOM.proxima) DOM.proxima.style.display = "";
 
       // 🔥 OFFER TEXT
       if (DOM.offerText) {
@@ -132,9 +164,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       // 🔥 persistimos
       localStorage.setItem("lc_next_update", nextScheduledUpdate);
-
-      // 🔥 guardamos cuándo debería correr
-      nextScheduledUpdate = Date.now() + delay;
 
       console.log("⏰ next run in", delay);
 
