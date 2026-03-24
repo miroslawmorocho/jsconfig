@@ -260,8 +260,9 @@ function initVersionChecker(config) {
 
         if(savedCodeVersion && savedCodeVersion !== nuevaCodeVersion){
           logVC("💥 Código actualizado → reload");
-          location.href = buildUrl();
-          //location.reload(); 
+          //location.href = buildUrl(); → EL PEOR!
+          //location.reload(); → FUNCIONA en móvil a medias! No carga bien css js html nuevo
+          window.location.replace(buildUrl());
         }
 
         return;
@@ -276,8 +277,9 @@ function initVersionChecker(config) {
         logVC("💥 Nuevo deploy → reload");
 
         localStorage.setItem("lc_code_version", nuevaCodeVersion);
-        location.href = buildUrl();
+        //location.href = buildUrl();
         //location.reload();
+        window.location.replace(buildUrl());
         return;
       }
 

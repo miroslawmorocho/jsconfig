@@ -39,6 +39,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
   const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
 
   if (!force && hasRenderedBefore && now < nextScheduledUpdate) {
+
+    if(document.visibilityState === "hidden"){
+      return;
+    }
+
     console.log("⏳ Aún no toca ejecución");
     return;
   }
@@ -289,57 +294,63 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
      document.addEventListener("DOMContentLoaded", initLaunchEngine);
    } else {
      initLaunchEngine();
-   }      
-  
-  window.addEventListener("pageshow", function(e) {
+   }
+   
+   let pageshowRunning = false;
 
-    if (!nextScheduledUpdate || isNaN(nextScheduledUpdate)) {
-      console.log("⚠️ No hay nextScheduledUpdate → fetch inicial");
+    window.addEventListener("pageshow", function(e) {
 
-      LaunchCore.forceFresh = true;
-      currentExecution = null;
-
-      initLaunchEngine(true, null, true);
-
-      if(window.initVersionCheckerCheck){
-        window.initVersionCheckerCheck();
+      if (pageshowRunning) {
+        console.log("⛔ pageshow duplicado bloqueado");
+        return;
       }
 
-      return;
-    }
+      pageshowRunning = true;
+      setTimeout(() => pageshowRunning = false, 1000);
 
-    const now = Date.now();
+      const now = Date.now();
 
-    console.log("👁️ volvió, now:", now);
-    console.log("⏰ nextScheduledUpdate:", nextScheduledUpdate);
+      console.log("👁️ volvió, now:", now);
+      console.log("⏰ nextScheduledUpdate:", nextScheduledUpdate);
 
-    if (e.persisted) {
-      console.log("♻️ bfcache restore");
-    }
+      // 💀 BF CACHE (MÓVIL)
+      if (e.persisted) {
+        console.log("💀 bfcache detectado → refresh forzado");
 
-    const GRACE = 5000;
+        LaunchCore.scheduler.cancelar("bridge-main");
+        currentExecution = null;
 
-    if (now > (nextScheduledUpdate + GRACE)) {
-
-      console.log("🔥 TIEMPO VENCIDO → REFRESH INMEDIATO");
-
-      LaunchCore.forceFresh = true;
-      currentExecution = null;
-
-      // 🔥 CANCELAR LOOP ANTERIOR
-      LaunchCore.scheduler.cancelar("bridge-main");
-
-      initLaunchEngine(true, null, true);
-
-      if(window.initVersionCheckerCheck){
-        window.initVersionCheckerCheck();
+        initLaunchEngine(true, null, true);
+        return;
       }
 
-    } else {
-      console.log("😴 aún no toca actualizar");
-    }
+      // ⚠️ SIN TIMER
+      if (!nextScheduledUpdate || isNaN(nextScheduledUpdate)) {
+        console.log("⚠️ No hay nextScheduledUpdate → fetch inicial");
 
-  });
+        LaunchCore.scheduler.cancelar("bridge-main");
+        currentExecution = null;
+
+        initLaunchEngine(true, null, true);
+        return;
+      }
+
+      const GRACE = 5000;
+
+      if (now > (nextScheduledUpdate + GRACE)) {
+
+        console.log("🔥 TIEMPO VENCIDO → REFRESH INMEDIATO");
+
+        LaunchCore.scheduler.cancelar("bridge-main");
+        currentExecution = null;
+
+        initLaunchEngine(true, null, true);
+
+      } else {
+        console.log("😴 aún no toca actualizar");
+      }
+
+    });
   
   /*LaunchCore.visibility.init(() => {
     NUNCA MÁS USAMOS VISIBILITY AQUÍ...
