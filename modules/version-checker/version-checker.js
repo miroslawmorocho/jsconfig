@@ -52,7 +52,7 @@ function initVersionChecker(config) {
         nuevaDataVersion
       );
 
-      // 🔥 comparación segura
+      // 🔥 comparación segura prueba
       if(String(data?.version) === String(nuevaDataVersion)){
 
         console.log("✅ [VC] Worker sincronizado");
