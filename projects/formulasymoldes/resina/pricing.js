@@ -102,4 +102,4 @@ async function cargarPricing(data){
 }
 
 /* cargar tabla */
-LaunchCore.onReady(cargarPricing);
+LaunchCore.onReady(() => LaunchCore.run());
