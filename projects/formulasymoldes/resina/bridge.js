@@ -10,6 +10,7 @@
 let currentExecution = null;
 let ultimaRevision = 0;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
+let nextScheduledUpdate = Number(localStorage.getItem("lc_next_update") || 0);
 
 /* =====================================================
    DOM
@@ -123,10 +124,19 @@ async function initLaunchEngine(force = false, externalData = null){
         intervaloRevisionDin = data.intervaloRevisionMs;
 
         // 🔥 sincronizar visibility con worker
-        LaunchCore.visibility.updateInterval(intervaloRevisionDin);
+        //LaunchCore.visibility.updateInterval(intervaloRevisionDin);
       }
 
       const delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
+
+      // 🔥 guardamos cuándo debería correr
+      nextScheduledUpdate = Date.now() + delay;
+
+      // 🔥 persistimos
+      localStorage.setItem("lc_next_update", nextScheduledUpdate);
+
+      // 🔥 guardamos cuándo debería correr
+      nextScheduledUpdate = Date.now() + delay;
 
       console.log("⏰ next run in", delay);
 
@@ -244,45 +254,57 @@ async function initLaunchEngine(force = false, externalData = null){
    }      
   
   window.addEventListener("pageshow", function(e) {
-    if (e.persisted) {
+
+    if (!nextScheduledUpdate || isNaN(nextScheduledUpdate)) {
+      console.log("⚠️ No hay nextScheduledUpdate → fetch inicial");
+
+      LaunchCore.forceFresh = true;
+      currentExecution = null;
+
       initLaunchEngine(true);
-    }
-  });
 
-  window.addEventListener("pageshow", function() {
-  console.log("👁️ Usuario volvió → forzar check inmediato");
+      if(window.initVersionCheckerCheck){
+        window.initVersionCheckerCheck();
+      }
 
-  if(window.initVersionCheckerCheck){
-      window.initVersionCheckerCheck();
-    }
-  });
-  
-  LaunchCore.visibility.init(() => {
-
-    const lastHidden = Number(localStorage.getItem("lc_last_hidden") || 0);
-    const now = Date.now();
-    const diff = now - lastHidden;
-
-    console.log("👁️ volvió, diff:", diff);
-
-    // 🔥 umbral configurable
-    const UMBRAL = intervaloRevisionDin;
-
-    if (diff < UMBRAL) {
-      console.log("⏱️ skip fetch");
       return;
     }
 
-    console.log("🔥 REFRESH REAL");
+    const now = Date.now();
 
-    LaunchCore.forceFresh = true;
-    initLaunchEngine(true);
+    console.log("👁️ volvió, now:", now);
+    console.log("⏰ nextScheduledUpdate:", nextScheduledUpdate);
 
-    if(window.initVersionCheckerCheck){
-      window.initVersionCheckerCheck();
+    if (e.persisted) {
+      console.log("♻️ bfcache restore");
     }
 
-  }, intervaloRevisionDin);
+    const GRACE = 5000;
+
+    if (now > (nextScheduledUpdate + GRACE)) {
+
+      console.log("🔥 TIEMPO VENCIDO → REFRESH INMEDIATO");
+
+      LaunchCore.forceFresh = true;
+      currentExecution = null;
+
+      initLaunchEngine(true);
+
+      if(window.initVersionCheckerCheck){
+        window.initVersionCheckerCheck();
+      }
+
+    } else {
+      console.log("😴 aún no toca actualizar");
+    }
+
+  });
+  
+  /*LaunchCore.visibility.init(() => {
+    NUNCA MÁS USAMOS VISIBILITY AQUÍ...
+    Con el pageshow, si el usuario regresa 5 segundos después (GRACE time)
+    del tiempo que indicó el WORKER para despertar, recarga de inmediato */
+
 
    // botones de calendario
    document.addEventListener("click", function(e) {
