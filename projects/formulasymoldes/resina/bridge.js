@@ -36,15 +36,15 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   const now = Date.now();
 
-  const isFirstLoad = !ultimaRevision;
+  const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
 
-  if (!force && !isFirstLoad && now < nextScheduledUpdate) {
+  if (!force && hasRenderedBefore && now < nextScheduledUpdate) {
     console.log("⏳ Aún no toca ejecución");
     return;
   }
 
-  if (currentExecution && !force) {
-    console.warn("⛔ Ya hay una ejecución en curso");
+  if (currentExecution) {
+    console.warn("⛔ Ya hay ejecución, cancelando duplicado");
     return currentExecution;
   }
 
@@ -66,6 +66,8 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       }
 
       if (!data) return;
+
+      sessionStorage.setItem("lc_rendered", "1");
 
       // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
       if (data.eventoCerrado) {
@@ -297,7 +299,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       LaunchCore.forceFresh = true;
       currentExecution = null;
 
-      initLaunchEngine(true);
+      initLaunchEngine(true, null, true);
 
       if(window.initVersionCheckerCheck){
         window.initVersionCheckerCheck();
