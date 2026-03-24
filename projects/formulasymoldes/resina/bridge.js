@@ -36,7 +36,9 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   const now = Date.now();
 
-  if (!force && now < nextScheduledUpdate) {
+  const isFirstLoad = !ultimaRevision;
+
+  if (!force && !isFirstLoad && now < nextScheduledUpdate) {
     console.log("⏳ Aún no toca ejecución");
     return;
   }
