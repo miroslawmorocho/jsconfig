@@ -110,7 +110,8 @@ function initVersionChecker(config) {
             window.initLaunchEngine(true, freshData);
           } else {
             logVC("⚠️ fallback reload");
-            location.href = buildUrl();
+            //location.href = buildUrl();
+            location.reload();
           }
 
         }
@@ -254,7 +255,8 @@ function initVersionChecker(config) {
 
         if(savedCodeVersion && savedCodeVersion !== nuevaCodeVersion){
           logVC("💥 Código actualizado → reload");
-          location.href = buildUrl();
+          //location.href = buildUrl();
+          location.reload();
         }
 
         return;
@@ -269,7 +271,8 @@ function initVersionChecker(config) {
         logVC("💥 Nuevo deploy → reload");
 
         localStorage.setItem("lc_code_version", nuevaCodeVersion);
-        location.href = buildUrl();
+        //location.href = buildUrl();
+        location.reload();
         return;
       }
 
