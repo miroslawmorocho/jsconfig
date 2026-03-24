@@ -39,13 +39,8 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
 
-  if (!force && hasRenderedBefore && !LaunchCore.timing.shouldRun()) {
-
-    if(document.visibilityState === "hidden"){
-      return;
-    }
-
-    console.log("⏳ Aún no toca ejecución");
+  if (!force && hasRenderedBefore){
+    console.log("😴 Esperando al CORE...");
     return;
   }
 
@@ -301,68 +296,18 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
     }
   }
    
-   let pageshowRunning = false;
+  window.addEventListener("pageshow", function(e) {
 
-    window.addEventListener("pageshow", function(e) {
+    if (!firstLoadDone) return;
 
-      if (!firstLoadDone) {
-        console.log("🛑 pageshow ignorado (primera carga)");
-        return;
-      }
+    console.log("👁️ pageshow → delegando al CORE");
 
-      if (pageshowRunning) {
-        console.log("⛔ pageshow duplicado bloqueado");
-        return;
-      }
-
-      pageshowRunning = true;
-      setTimeout(() => pageshowRunning = false, 1000);
-
-      const now = Date.now();
-
-      console.log("👁️ volvió, now:", now);
-      console.log("⏰ nextScheduledUpdate:", nextScheduledUpdate);
-
-      // 💀 BF CACHE (MÓVIL)
-      if (e.persisted) {
-        console.log("💀 bfcache → bloquear init duplicado");
-
-        initialLoadExecuted = true; // 🔥 evita que DOMContentLoaded dispare init otra vez
-
-        LaunchCore.scheduler.cancelar("bridge-main");
-        currentExecution = null;
-
-        initLaunchEngine(true, null, true);
-        return;
-      }
-
-      // ⚠️ SIN TIMER
-      if (!LaunchCore.timing.getNext()) {
-        console.log("⚠️ No hay nextScheduledUpdate → fetch inicial");
-
-        LaunchCore.scheduler.cancelar("bridge-main");
-        currentExecution = null;
-
-        initLaunchEngine(true, null, true);
-        return;
-      }
-
-      const GRACE = 5000;
-
-      if (now > (LaunchCore.timing.getNext() + GRACE)) {
-
-        console.log("🔥 TIEMPO VENCIDO → REFRESH INMEDIATO");
-
-        LaunchCore.scheduler.cancelar("bridge-main");
-        currentExecution = null;
-
-        initLaunchEngine(true, null, true);
-
-      } else {
-        console.log("😴 aún no toca actualizar");
-      }
-
+    LaunchCore.run({
+      force: true,
+      forceFetch: true
     });
+
+  });
   
   /*LaunchCore.visibility.init(() => {
     NUNCA MÁS USAMOS VISIBILITY AQUÍ...

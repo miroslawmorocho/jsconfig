@@ -113,7 +113,10 @@ function initVersionChecker(config) {
 
           if(window.initLaunchEngine){
             currentExecution = null;
-            window.initLaunchEngine(true, freshData);
+            LaunchCore.run({
+              force: true,
+              externalData: freshData
+            });
           } else {
             logVC("⚠️ fallback reload");
             location.reload();

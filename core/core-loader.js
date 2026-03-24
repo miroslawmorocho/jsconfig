@@ -362,6 +362,25 @@ LaunchCore.forceFresh = false;
 
 })();
 
+
+/* =====================================================
+    GLOBAL EXECUTION ENGINE
+  ===================================================== */
+
+  LaunchCore.run = async function(options = {}){
+
+    const { force = false, externalData = null, forceFetch = false } = options;
+
+    if(typeof window.initLaunchEngine !== "function"){
+      console.warn("⚠️ initLaunchEngine no disponible");
+      return;
+    }
+
+    return await window.initLaunchEngine(force, externalData, forceFetch);
+
+  };
+
+
 /* =====================================================
    MODULE REGISTRY (AUTO INIT)
 ===================================================== */
