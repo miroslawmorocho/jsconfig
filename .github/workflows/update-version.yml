@@ -4,13 +4,15 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'version.json'
 
 permissions:
   contents: write
 
 jobs:
   update-version:
-    if: github.actor != 'github-actions[bot]'
+    if: "!contains(github.event.head_commit.message, 'update version')"
     runs-on: ubuntu-latest
 
     steps:
