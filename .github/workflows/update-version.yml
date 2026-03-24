@@ -9,7 +9,7 @@ on:
 
 jobs:
   update-version:
-    if: github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip-version]')
     runs-on: ubuntu-latest
 
     permissions:
