@@ -39,7 +39,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
 
-  if (!force && hasRenderedBefore){
+  if (!force && hasRenderedBefore && !externalData){
     console.log("😴 Esperando al CORE...");
     return;
   }
@@ -287,12 +287,18 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
     document.addEventListener("DOMContentLoaded", () => {
       if (initialLoadExecuted) return;
       initialLoadExecuted = true;
-      initLaunchEngine();
+      LaunchCore.run({
+        force: true,
+        forceFetch: true
+      });
     });
   } else {
     if (!initialLoadExecuted) {
       initialLoadExecuted = true;
-      initLaunchEngine();
+      LaunchCore.run({
+        force: true,
+        forceFetch: true
+      });
     }
   }
    
@@ -300,12 +306,34 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     if (!firstLoadDone) return;
 
-    console.log("👁️ pageshow → delegando al CORE");
+    // 💀 BF CACHE (MÓVIL)
+    if (e.persisted) {
+      console.log("💀 bfcache → refresh inmediato");
 
-    LaunchCore.run({
-      force: true,
-      forceFetch: true
-    });
+      LaunchCore.run({
+        force: true,
+        forceFetch: true
+      });
+
+      return;
+    }
+
+    const GRACE = 5000;
+    const next = LaunchCore.timing.getNext();
+    const now = Date.now();
+
+    if (!next || now > (next + GRACE)) {
+
+      console.log("🔥 pageshow → refresh inmediato");
+
+      LaunchCore.run({
+        force: true,
+        forceFetch: true
+      });
+
+    } else {
+      console.log("😴 pageshow → aún no toca");
+    }
 
   });
   
