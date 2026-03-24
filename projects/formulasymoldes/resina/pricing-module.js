@@ -43,3 +43,6 @@ const root = LaunchCore.root;
   };
 
 });
+
+// 🔥 PRIMER RENDER (cuando TODO está listo)
+await LaunchCore.run();
