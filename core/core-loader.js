@@ -9,7 +9,8 @@ LaunchCore.paths = {
 LaunchCore.config = {
   project: null,
   product: null,
-  page: null
+  page: null,
+  endpoint: ""
 };
 
 LaunchCore.forceFresh = false;
@@ -419,6 +420,18 @@ LaunchCore.init = async function(){
   }
 
   const { project, product, page } = LaunchCore.config;
+
+  /* =====================================================
+    ENDPOINT POR PÁGINA
+  ===================================================== */
+
+  const endpointMap = {
+    bridge: "",
+    capture: "/captura",
+    pricing: "/pricing"
+  };
+
+  LaunchCore.config.endpoint = endpointMap[page] || "";
 
   const base = LaunchCore.paths.projects + `${project}/${product}/`;
 

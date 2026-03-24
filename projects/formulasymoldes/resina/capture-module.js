@@ -37,7 +37,8 @@ LaunchCore.register("capture", async function(){
           console.log("⚡ Usando data externa");
           data = externalData;
         } else {
-          data = await LaunchCore.fetchWorker("/captura", forceFetch);
+          const endpoint = LaunchCore.config.endpoint;
+          data = await LaunchCore.fetchWorker(endpoint, forceFetch);
         }
 
         if(!data) return;

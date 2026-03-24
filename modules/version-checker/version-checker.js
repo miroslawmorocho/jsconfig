@@ -113,7 +113,8 @@ function initVersionChecker(config) {
 
           logVC("🎨 Renderizando nueva versión");
 
-          const freshData = await LaunchCore.fetchWorker("", true);
+          const endpoint = LaunchCore.config.endpoint || "";
+          const freshData = await LaunchCore.fetchWorker(endpoint, true);
 
           if(window.initLaunchEngine){
             currentExecution = null;
