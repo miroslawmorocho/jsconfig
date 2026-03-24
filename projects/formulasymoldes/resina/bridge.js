@@ -39,11 +39,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
 
-  if (!force && hasRenderedBefore && !externalData){
-    console.log("😴 Esperando al CORE...");
-    return;
-  }
-
   if (currentExecution) {
     console.warn("⛔ Ya hay ejecución, cancelando duplicado");
     return currentExecution;
