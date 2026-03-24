@@ -100,6 +100,3 @@ async function cargarPricing(data){
 
   }
 }
-
-/* cargar tabla */
-//LaunchCore.onReady(() => LaunchCore.run());

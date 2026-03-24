@@ -560,3 +560,31 @@ LaunchCore.globals.flag = async function(){
   );
 
 };
+
+/* PASAR LA VERSIÓN DE URL "?v=XXX" EN ENLACES DE MI DOMINIO */
+
+document.addEventListener("click", function(e){
+
+  const a = e.target.closest("a");
+  if(!a) return;
+
+  const url = new URL(a.href, window.location.origin);
+
+  // 🔥 SOLO si es misma web
+  if(url.origin !== window.location.origin) return;
+
+  // 🔥 SI ya tiene ?v= → no tocar
+  if(url.searchParams.has("v")) return;
+
+  // 🔥 SI YO tengo ?v= → transferirlo
+  const currentParams = new URLSearchParams(window.location.search);
+  const v = currentParams.get("v");
+
+  if(v){
+    url.searchParams.set("v", v);
+
+    e.preventDefault();
+    window.location.href = url.toString();
+  }
+
+});
