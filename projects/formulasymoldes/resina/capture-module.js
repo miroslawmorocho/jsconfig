@@ -69,7 +69,7 @@ LaunchCore.register("capture", async function(){
   ===================================================== */
 
   LaunchCore.onReady(() => {
-    window.initLaunchEngine();
+    window.initLaunchEngine(true); // 👈 FORZAR PRIMER RENDER
   });
 
 });
