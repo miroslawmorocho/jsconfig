@@ -217,10 +217,10 @@ function initVersionChecker(config) {
 
         logVC("⏳ Timestamp reciente → esperar confirmDelay");
 
-        LaunchCore.scheduler.programar(
-          "vc-confirm",
+        LaunchCore.timing.schedule(
           () => confirmarConWorker(nuevaDataVersion),
-          config.confirmDelay
+          config.confirmDelay,
+          "vc-confirm"
         );
 
       }
@@ -341,17 +341,19 @@ function initVersionChecker(config) {
     check(); // primer check
 
     // 🔥 loop backup (cada X tiempo)
-    LaunchCore.scheduler.programar(
-      "vc-check-loop",
-      function loop(){
-        check();
-        LaunchCore.scheduler.programar(
-          "vc-check-loop",
-          loop,
-          config.checkInterval
-        );
-      },
-      config.checkInterval
+    function loop(){
+      check();
+      LaunchCore.timing.schedule(
+        loop,
+        config.checkInterval,
+        "vc-check-loop"
+      );
+    }
+
+    LaunchCore.timing.schedule(
+      loop,
+      config.checkInterval,
+      "vc-check-loop"
     );
 
   }

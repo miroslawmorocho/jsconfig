@@ -329,12 +329,17 @@ LaunchCore.forceFresh = false;
       }
     }
 
+    function schedule(fn, delay, key = "global"){
+      LaunchCore.scheduler.programar(key, fn, delay);
+    }
+
     return {
       setNext,
       getNext,
       shouldRun,
       force,
-      initFromStorage
+      initFromStorage,
+      schedule // 👈 nuevo
     };
 
   })();
