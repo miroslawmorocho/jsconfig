@@ -121,9 +121,10 @@ async function initLaunchEngine(force = false, externalData = null){
       // 🔥 INTERVALOS DINÁMICOS
       if (data.intervaloRevisionMs) {
         intervaloRevisionDin = data.intervaloRevisionMs;
-      }
 
-      //LaunchCore.visibility.updateInterval(intervaloRevisionDin);
+        // 🔥 sincronizar visibility con worker
+        LaunchCore.visibility.updateInterval(intervaloRevisionDin);
+      }
 
       const delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
@@ -256,10 +257,32 @@ async function initLaunchEngine(force = false, externalData = null){
     }
   });
   
-  /*LaunchCore.visibility.init(() => {
-    console.log("👁️ visibility → forcing refresh");
+  LaunchCore.visibility.init(() => {
+
+    const lastHidden = Number(localStorage.getItem("lc_last_hidden") || 0);
+    const now = Date.now();
+    const diff = now - lastHidden;
+
+    console.log("👁️ volvió, diff:", diff);
+
+    // 🔥 umbral configurable
+    const UMBRAL = intervaloRevisionDin;
+
+    if (diff < UMBRAL) {
+      console.log("⏱️ skip fetch");
+      return;
+    }
+
+    console.log("🔥 REFRESH REAL");
+
+    LaunchCore.forceFresh = true;
     initLaunchEngine(true);
-  }, intervaloRevisionDin);*/
+
+    if(window.initVersionCheckerCheck){
+      window.initVersionCheckerCheck();
+    }
+
+  }, intervaloRevisionDin);
 
    // botones de calendario
    document.addEventListener("click", function(e) {

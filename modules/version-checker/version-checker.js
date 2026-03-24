@@ -142,6 +142,14 @@ function initVersionChecker(config) {
       const data = await res.json();
       const nuevaDataVersion = String(data.version);
 
+      const now = Date.now();
+      const versionTime = Number(nuevaDataVersion);
+
+      // 🔥 ventana de seguridad (3 min)
+      const SAFE_WINDOW = 3 * 60 * 1000;
+
+      const yaDeberiaEstarLista = (now - versionTime) > SAFE_WINDOW;
+
       // 🔥 SI NO CAMBIÓ → NO HACER NADA
       if(currentDataVersion === nuevaDataVersion){
         logVC("😴 DATA sin cambios");
@@ -186,11 +194,23 @@ function initVersionChecker(config) {
 
       const versionToConfirm = nuevaDataVersion;
 
-      LaunchCore.scheduler.programar(
-        "vc-confirm",
-        () => confirmarConWorker(versionToConfirm),
-        config.confirmDelay
-      );
+      if (yaDeberiaEstarLista) {
+
+        logVC("⚡ Timestamp viejo → fetch inmediato");
+
+        confirmarConWorker(nuevaDataVersion);
+
+      } else {
+
+        logVC("⏳ Timestamp reciente → esperar confirmDelay");
+
+        LaunchCore.scheduler.programar(
+          "vc-confirm",
+          () => confirmarConWorker(nuevaDataVersion),
+          config.confirmDelay
+        );
+
+      }
 
       currentDataVersion = nuevaDataVersion;
       localStorage.setItem("lc_data_version", nuevaDataVersion);
