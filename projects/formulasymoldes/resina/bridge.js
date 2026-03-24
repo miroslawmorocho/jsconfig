@@ -12,6 +12,7 @@ let ultimaRevision = 0;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 let nextScheduledUpdate = Number(localStorage.getItem("lc_next_update") || 0);
 let initialLoadExecuted = false;
+let firstLoadDone = false;
 
 /* =====================================================
    DOM
@@ -74,6 +75,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       if (!data) return;
 
       sessionStorage.setItem("lc_rendered", "1");
+      firstLoadDone = true; // 👈 AÑADE ESTO
 
       // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
       if (data.eventoCerrado) {
@@ -307,6 +309,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
    let pageshowRunning = false;
 
     window.addEventListener("pageshow", function(e) {
+
+      if (!firstLoadDone) {
+        console.log("🛑 pageshow ignorado (primera carga)");
+        return;
+      }
 
       if (pageshowRunning) {
         console.log("⛔ pageshow duplicado bloqueado");
