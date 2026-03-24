@@ -109,17 +109,17 @@ LaunchCore.forceFresh = false;
 
     function programar(key, fn, delay){
 
+      cancelar(key); // 🔥 SIEMPRE limpiar antes
+
       if(!key){
         console.warn("Scheduler requiere key");
         return;
       }
 
-      const MAX_DELAY = 2147483647; // ~24.8 días
+      const MAX_DELAY = 2147483647;
 
-      // 🔥 calcular tiempo objetivo REAL
       const targetTime = Date.now() + delay;
 
-      // 🔥 guardar en localStorage (para sobrevivir reload)
       localStorage.setItem("lc_timer_" + key, targetTime);
 
       function tick(){
@@ -129,6 +129,7 @@ LaunchCore.forceFresh = false;
 
         if(remaining <= 0){
           localStorage.removeItem("lc_timer_" + key);
+          delete timers[key]; // 🔥 limpiar referencia
           fn();
           return;
         }
@@ -146,8 +147,22 @@ LaunchCore.forceFresh = false;
       tick();
     }
 
+    // 🔥 NUEVO: cancelar timer
+    function cancelar(key){
+
+      if(timers[key]){
+        clearTimeout(timers[key]);
+        delete timers[key];
+      }
+
+      localStorage.removeItem("lc_timer_" + key);
+
+      console.log("🧨 Scheduler cancelado:", key);
+    }
+
     return {
-      programar
+      programar,
+      cancelar // 👈 CLAVE
     };
 
   })();

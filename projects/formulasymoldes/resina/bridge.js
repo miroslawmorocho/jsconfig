@@ -34,6 +34,13 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
+  const now = Date.now();
+
+  if (!force && now < nextScheduledUpdate) {
+    console.log("⏳ Aún no toca ejecución");
+    return;
+  }
+
   if (currentExecution && !force) {
     console.warn("⛔ Ya hay una ejecución en curso");
     return currentExecution;
@@ -314,6 +321,9 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       LaunchCore.forceFresh = true;
       currentExecution = null;
+
+      // 🔥 CANCELAR LOOP ANTERIOR
+      LaunchCore.scheduler.cancelar("bridge-main");
 
       initLaunchEngine(true, null, true);
 
