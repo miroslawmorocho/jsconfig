@@ -1,10 +1,8 @@
 let scrollYaEjecutado = false;
 let estadoPricingActual = null; // 🔥 detecta cambios PRE → OPEN
 
-async function cargarPricing(){
-    
-  const data = await LaunchCore.fetchWorker("/pricing");
-
+async function cargarPricing(data){
+  
   if (!data || !data.pricingHtml) {
     console.warn("⚠️ Data incompleta");
     return;
@@ -66,7 +64,7 @@ async function cargarPricing(){
 
     LaunchCore.scheduler.programar(
       "pricing-main",
-      cargarPricing,
+      () => LaunchCore.run(),
       delay
     );
 
@@ -104,4 +102,4 @@ async function cargarPricing(){
 }
 
 /* cargar tabla */
-LaunchCore.onReady(cargarPricing);
+//LaunchCore.onReady(cargarPricing);

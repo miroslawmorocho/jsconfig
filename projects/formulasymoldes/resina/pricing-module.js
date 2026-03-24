@@ -29,4 +29,17 @@ const root = LaunchCore.root;
   // 🔥 lógica propia
   await LaunchCore.loadScript(url + ".js");
 
+  // 🔥 conectar render con CORE
+  window.initLaunchEngine = async function(force, externalData){
+
+    if(externalData){
+      await cargarPricing(externalData);
+      return;
+    }
+
+    const data = await LaunchCore.fetchWorker(LaunchCore.config.endpoint, force);
+    await cargarPricing(data);
+
+  };
+
 });
