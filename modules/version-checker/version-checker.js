@@ -105,6 +105,7 @@ function initVersionChecker(config) {
           const freshData = await LaunchCore.fetchWorker("", true);
 
           if(window.initLaunchEngine){
+            currentExecution = null;
             window.initLaunchEngine(true, freshData);
           } else {
             logVC("⚠️ fallback reload");

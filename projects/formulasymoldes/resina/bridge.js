@@ -33,7 +33,7 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
-  if (currentExecution) {
+  if (currentExecution && !force) {
     console.warn("⛔ Ya hay una ejecución en curso");
     return currentExecution;
   }
