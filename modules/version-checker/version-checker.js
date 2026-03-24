@@ -261,7 +261,7 @@ function initVersionChecker(config) {
         if(savedCodeVersion && savedCodeVersion !== nuevaCodeVersion){
           logVC("💥 Código actualizado → reload");
           location.href = buildUrl();
-          //location.reload();
+          //location.reload(); 
         }
 
         return;
