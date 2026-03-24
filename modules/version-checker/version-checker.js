@@ -14,6 +14,7 @@ function initVersionChecker(config) {
   let checking = false;
   let pendingDataVersion = null;
   let lastRenderedVersion = null;
+  const DEBUG = false; // 🔴 cámbialo a true cuando quieras debug
 
   /* =====================================================
      HELPERS
@@ -41,6 +42,9 @@ function initVersionChecker(config) {
   ===================================================== */
 
   function logVC(msg, data = null){
+
+    if(!DEBUG) return; // 🔥 si debug está apagado → no hace nada
+
     const log = {
       time: new Date().toISOString(),
       msg,
@@ -335,7 +339,10 @@ function initVersionChecker(config) {
 
   function init(){
 
-    renderDebugPanel(); // 🔥 DEBUG VISUAL
+    if (DEBUG) {
+      sessionStorage.removeItem("vc_logs");
+      renderDebugPanel();
+    } // 🔥 DEBUG VISUAL
 
     logVC("🚀 VC INIT");
 
