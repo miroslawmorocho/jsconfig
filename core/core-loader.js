@@ -221,6 +221,7 @@ LaunchCore.forceFresh = false;
     };
 
   })();
+  
 
   /* =====================================================
     COUNTDOWN (GLOBAL)
@@ -287,6 +288,58 @@ LaunchCore.forceFresh = false;
 
   })();
 
+
+  /* =====================================================
+    GLOBAL TIMING ENGINE (SINGLE SOURCE OF TRUTH)
+  ===================================================== */
+
+  LaunchCore.timing = (function(){
+
+    let nextUpdate = 0;
+
+    function setNext(delay){
+      nextUpdate = Date.now() + delay;
+
+      localStorage.setItem("lc_next_update", nextUpdate);
+
+      console.log("🧠 [Timing] next update in", delay);
+    }
+
+    function getNext(){
+      return nextUpdate;
+    }
+
+    function shouldRun(){
+      const now = Date.now();
+
+      if(!nextUpdate) return true;
+
+      return now >= nextUpdate;
+    }
+
+    function force(){
+      nextUpdate = 0;
+      localStorage.removeItem("lc_next_update");
+    }
+
+    function initFromStorage(){
+      const saved = Number(localStorage.getItem("lc_next_update") || 0);
+      if(saved){
+        nextUpdate = saved;
+      }
+    }
+
+    return {
+      setNext,
+      getNext,
+      shouldRun,
+      force,
+      initFromStorage
+    };
+
+  })();
+
+
   /* =====================================================
     READY (espera a que responda el worker y carga el div
     donde se inyecta la tabla de precios de pricing)
@@ -349,12 +402,14 @@ LaunchCore.init = async function(){
 
   try{
 
+    LaunchCore.timing.initFromStorage();
+
     // 🔥 cargar CSS globales base
     await LaunchCore.globals.flag();
 
     // 🔥 cargar módulo dinámicamente
     await LaunchCore.loadScript(moduleUrl);
-
+    
     const module = LaunchCore.modules[page];
 
     if(!module){
@@ -453,7 +508,7 @@ LaunchCore.globals.versionChecker = async function(){
     versionUrl: dataVersionUrl, // worker data version
     codeVersionUrl: LaunchCore.paths.base + "version.json", // versión de código estático de Github
     workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
-    checkInterval: 1*60*1000, // PRODUCCIÓN 15*60*1000,
+    checkInterval: 1*60*1000, // PRODUCCIÓN 15*60*1000 o incluso 60*60*1000,
     confirmDelay: 1*60*1000, // PRODUCCIÓN 3 * 60 * 1000,
     autoReload: true
   });

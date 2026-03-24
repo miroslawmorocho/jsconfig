@@ -10,7 +10,6 @@
 let currentExecution = null;
 let ultimaRevision = 0;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
-let nextScheduledUpdate = Number(localStorage.getItem("lc_next_update") || 0);
 let initialLoadExecuted = false;
 let firstLoadDone = false;
 
@@ -40,7 +39,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
 
-  if (!force && hasRenderedBefore && now < nextScheduledUpdate) {
+  if (!force && hasRenderedBefore && !LaunchCore.timing.shouldRun()) {
 
     if(document.visibilityState === "hidden"){
       return;
@@ -178,11 +177,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       const delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
-      // 🔥 guardamos cuándo debería correr
-      nextScheduledUpdate = Date.now() + delay;
-
-      // 🔥 persistimos
-      localStorage.setItem("lc_next_update", nextScheduledUpdate);
+      LaunchCore.timing.setNext(delay);
 
       console.log("⏰ next run in", delay);
 
@@ -342,7 +337,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       }
 
       // ⚠️ SIN TIMER
-      if (!nextScheduledUpdate || isNaN(nextScheduledUpdate)) {
+      if (!LaunchCore.timing.getNext()) {
         console.log("⚠️ No hay nextScheduledUpdate → fetch inicial");
 
         LaunchCore.scheduler.cancelar("bridge-main");
@@ -354,7 +349,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       const GRACE = 5000;
 
-      if (now > (nextScheduledUpdate + GRACE)) {
+      if (now > (LaunchCore.timing.getNext() + GRACE)) {
 
         console.log("🔥 TIEMPO VENCIDO → REFRESH INMEDIATO");
 
