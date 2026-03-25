@@ -14,6 +14,7 @@ LaunchCore.config = {
 };
 
 LaunchCore.forceFresh = false;
+LaunchCore.lastFetchTime = 0;
 
 (function(){
 
@@ -76,7 +77,6 @@ LaunchCore.forceFresh = false;
 
       let url = BASE_WORKER_URL + endpoint + window.location.search;
 
-      // 🔥 SIEMPRE romper cache si force = true
       if(force){
         url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
       }
@@ -89,13 +89,16 @@ LaunchCore.forceFresh = false;
 
       if(!res.ok) throw new Error("Worker error");
 
-      return await res.json();
+      const data = await res.json();
+
+      // 🔥 REGISTRAR FETCH GLOBAL
+      LaunchCore.lastFetchTime = Date.now();
+
+      return data;
 
     }catch(e){
-
       console.warn("LaunchCore fetch error:", e);
       return null;
-
     }
 
   };

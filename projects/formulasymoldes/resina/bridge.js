@@ -286,6 +286,12 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       return;
     }
 
+    // 🔥 evitar duplicado inmediato (fetch reciente)
+    if(now - LaunchCore.lastFetchTime < 3000){
+      console.log("⛔ skip duplicate fetch:", source);
+      return;
+    }
+
     lastWake = now;
 
     const next = LaunchCore.timing.getNext();
@@ -297,6 +303,9 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
     }
 
     console.log("🔥 WAKE → FETCH REAL:", source);
+
+    // 💣 matar scheduler viejo
+    LaunchCore.scheduler.cancelar("bridge-main");
 
     LaunchCore.run({
       force: true,
