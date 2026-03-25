@@ -327,9 +327,14 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
     LaunchCore.scheduler.cancelar("bridge-main");
     LaunchCore.scheduler.cancelar("vc-check-loop");
 
+    // 💀 BLOQUEO REAL
+    if(eventClosed){
+      console.log("💀 skip wake, event closed");
+      return;
+    }
+
     console.log("🔥 WAKE → FETCH REAL:", source);
 
-    // 💀 AQUÍ YA NO BLOQUEAS
     safeRun();
 
   }
