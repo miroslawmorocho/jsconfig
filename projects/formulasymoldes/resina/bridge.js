@@ -36,10 +36,6 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
-  const now = Date.now();
-
-  const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
-
   if (currentExecution) {
     console.warn("⛔ Ya hay ejecución, cancelando duplicado");
     return currentExecution;
@@ -94,6 +90,12 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
         currentExecution = null;
         return;
+      }
+
+      if(!data.eventoCerrado && eventClosed){
+        console.log("🧟 EVENT REOPENED");
+
+        eventClosed = false;
       }
 
       // AL REABRIR, SI AÚN ESTÁ LA PESTAÑA ABIERTA RECONSTRUIMOS
@@ -173,11 +175,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       }
 
-      if(eventClosed){
-        console.log("💀 skip scheduling, event closed");
-        return;
-      }
-
       const delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
       LaunchCore.timing.setNext(delay);
@@ -191,12 +188,8 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
           () => {
 
             if(document.hidden){
-              console.log("💤 scheduler fired but tab hidden → SKIP");
-              return;
-            }
-
-            if(eventClosed){
-              console.log("💀 scheduler fired but event closed → SKIP");
+              console.log("💤 scheduler killed (tab hidden)");
+              LaunchCore.scheduler.cancelar("bridge-main");
               return;
             }
 
@@ -317,7 +310,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     const now = Date.now();
 
-    // 🔥 anti spam básico
     if(now - lastWake < 2000){
       console.log("⛔ skip spam:", source);
       return;
@@ -327,22 +319,17 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     const next = LaunchCore.timing.getNext();
 
-    // 🔥 SI TODAVÍA NO TOCA → NO HACER NADA
     if(next && now < next){
       console.log("😴 skip early wake:", source);
       return;
     }
 
-    // 💥 CANCELAR timers viejos antes de refrescar
-    if(eventClosed){
-      console.log("💀 skip wake, event closed");
-      return;
-    }
-
     LaunchCore.scheduler.cancelar("bridge-main");
+    LaunchCore.scheduler.cancelar("vc-check-loop");
 
     console.log("🔥 WAKE → FETCH REAL:", source);
 
+    // 💀 AQUÍ YA NO BLOQUEAS
     safeRun();
 
   }
@@ -351,6 +338,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
   let isFetching = false;
 
   async function safeRun(){
+
+    if(document.hidden){
+      console.log("💤 abort fetch, tab hidden");
+      return;
+    }
 
     if(isFetching){
       console.log("⛔ fetch locked");
@@ -392,9 +384,10 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     if(document.hidden){
 
-      console.log("💤 tab hidden → cancel timers");
+      console.log("💤 tab hidden → FULL STOP");
 
       LaunchCore.scheduler.cancelar("bridge-main");
+      LaunchCore.scheduler.cancelar("vc-check-loop"); // 🔥 ESTE FALTABA
 
     } else {
 
@@ -406,11 +399,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
 
   window.addEventListener("focus", () => {
-
-    if(eventClosed) return;
-
     forceRefreshFromBackground("focus");
-
   });
 
 
