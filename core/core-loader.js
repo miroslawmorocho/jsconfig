@@ -15,6 +15,8 @@ LaunchCore.config = {
 
 LaunchCore.forceFresh = false;
 LaunchCore.lastFetchTime = 0;
+let isRunning = false;
+let lastRunTime = 0;
 
 (function(){
 
@@ -371,20 +373,39 @@ LaunchCore.lastFetchTime = 0;
 
 /* =====================================================
     GLOBAL EXECUTION ENGINE
-  ===================================================== */
+===================================================== */
 
-  LaunchCore.run = async function(options = {}){
+async function run(options = {}){
 
-    const { force = false, externalData = null, forceFetch = false } = options;
+  const now = Date.now();
 
-    if(typeof window.initLaunchEngine !== "function"){
-      console.warn("⚠️ initLaunchEngine no disponible");
-      return;
-    }
+  // 🔥 throttle global
+  if(now - lastRunTime < 2000){
+    console.log("⛔ run throttle");
+    return;
+  }
 
-    return await window.initLaunchEngine(force, externalData, forceFetch);
+  // 🔥 evitar concurrencia
+  if(isRunning){
+    console.log("⛔ run bloqueado (ya en ejecución)");
+    return;
+  }
 
-  };
+  lastRunTime = now;
+  isRunning = true;
+
+  try {
+
+    console.log("🚀 Fetching worker...");
+
+    await initLaunchEngine(options);
+
+  } catch(e){
+    console.error("❌ error en run:", e);
+  }
+
+  isRunning = false;
+}
 
 
 /* =====================================================
