@@ -54,6 +54,10 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       let data;
 
+      if(force || forceFetch){
+        LaunchCore.timing.force();
+      }
+
       if(externalData){
         console.log("⚡ Usando data externa (sin fetch)");
         data = externalData;
@@ -296,8 +300,21 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       });
     }
   }
-   
+  
+  
   window.addEventListener("pageshow", function(e) {
+
+    console.log("📱 pageshow → FORCE REFRESH");
+
+    LaunchCore.run({
+      force: true,
+      forceFetch: true
+    });
+
+  });
+
+
+  /*window.addEventListener("pageshow", function(e) {
 
     if (!firstLoadDone) return;
 
@@ -330,7 +347,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       console.log("😴 pageshow → aún no toca");
     }
 
-  });
+  }); */
   
   /*LaunchCore.visibility.init(() => {
     NUNCA MÁS USAMOS VISIBILITY AQUÍ...

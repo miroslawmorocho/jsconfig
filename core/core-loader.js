@@ -70,7 +70,39 @@ LaunchCore.forceFresh = false;
     FETCH WORKER (UNIFICADO)
   ===================================================== */
 
+
   LaunchCore.fetchWorker = async function(endpoint = "", force = false){
+
+    try{
+
+      let url = BASE_WORKER_URL + endpoint + window.location.search;
+
+      // 💣 SIEMPRE romper cache (NO solo force)
+      url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+
+      const res = await fetch(url, {
+        cache: "no-store"
+      });
+
+      if(!res.ok) throw new Error("Worker error");
+
+      const data = await res.json();
+
+      console.log("📦 WORKER RESPONSE:", data?.version || "no-version");
+
+      return data;
+
+    }catch(e){
+
+      console.warn("LaunchCore fetch error:", e);
+      return null;
+
+    }
+
+  };
+
+
+  /*LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
     try{
 
@@ -98,7 +130,7 @@ LaunchCore.forceFresh = false;
 
     }
 
-  };
+  }; */
 
   /* =====================================================
     SCHEDULER (REPROGRAMACIÓN)
