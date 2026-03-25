@@ -36,6 +36,10 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
+  const now = Date.now();
+
+  const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
+
   if (currentExecution) {
     console.warn("⛔ Ya hay ejecución, cancelando duplicado");
     return currentExecution;
@@ -90,12 +94,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
         currentExecution = null;
         return;
-      }
-
-      if(!data.eventoCerrado && eventClosed){
-        console.log("🧟 EVENT REOPENED");
-
-        eventClosed = false;
       }
 
       // AL REABRIR, SI AÚN ESTÁ LA PESTAÑA ABIERTA RECONSTRUIMOS
@@ -185,17 +183,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
         LaunchCore.scheduler.programar(
           "bridge-main",
-          () => {
-
-            if(document.hidden){
-              console.log("💤 scheduler killed (tab hidden)");
-              LaunchCore.scheduler.cancelar("bridge-main");
-              return;
-            }
-
-            initLaunchEngine(false);
-
-          },
+          () => initLaunchEngine(false),
           delay
         );
 
@@ -310,6 +298,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     const now = Date.now();
 
+    // 🔥 anti spam básico
     if(now - lastWake < 2000){
       console.log("⛔ skip spam:", source);
       return;
@@ -319,21 +308,21 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     const next = LaunchCore.timing.getNext();
 
+    // 🔥 SI TODAVÍA NO TOCA → NO HACER NADA
     if(next && now < next){
       console.log("😴 skip early wake:", source);
       return;
     }
 
+    // 💥 CANCELAR timers viejos antes de refrescar
     LaunchCore.scheduler.cancelar("bridge-main");
-    LaunchCore.scheduler.cancelar("vc-check-loop");
 
-    // 💀 BLOQUEO REAL
+    console.log("🔥 WAKE → FETCH REAL:", source);
+
     if(eventClosed){
       console.log("💀 skip wake, event closed");
       return;
     }
-
-    console.log("🔥 WAKE → FETCH REAL:", source);
 
     safeRun();
 
@@ -343,11 +332,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
   let isFetching = false;
 
   async function safeRun(){
-
-    if(document.hidden){
-      console.log("💤 abort fetch, tab hidden");
-      return;
-    }
 
     if(isFetching){
       console.log("⛔ fetch locked");
@@ -387,27 +371,21 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   document.addEventListener("visibilitychange", () => {
 
-    if(document.hidden){
+    if(eventClosed) return;
 
-      console.log("💤 tab hidden → FULL STOP");
-
-      LaunchCore.scheduler.cancelar("bridge-main");
-      LaunchCore.scheduler.cancelar("vc-check-loop"); // 🔥 ESTE FALTABA
-
-    } else {
-
-      console.log("👁️ tab visible → resume engine");
-
-      // 🔥 IMPORTANTE: forzar ciclo completo, no solo wake
-      initLaunchEngine(false);
-
+    if(!document.hidden){
+      forceRefreshFromBackground("visibility");
     }
 
   });
 
 
   window.addEventListener("focus", () => {
+
+    if(eventClosed) return;
+
     forceRefreshFromBackground("focus");
+
   });
 
 
@@ -421,7 +399,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     }
   });
-
 
    // botones de calendario
    document.addEventListener("click", function(e) {
