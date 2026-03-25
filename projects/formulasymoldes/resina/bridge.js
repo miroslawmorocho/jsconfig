@@ -274,6 +274,26 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
     //await renderFlags();
   }
 
+
+  let lastWake = 0;
+
+  function forceRefreshFromBackground(){
+
+    const now = Date.now();
+
+    if(now - lastWake < 3000) return; // anti spam
+
+    lastWake = now;
+
+    console.log("🔥 RETURN → FORCING REFRESH");
+
+    LaunchCore.run({
+      force: true,
+      forceFetch: true
+    });
+
+  }
+
   
   /* =====================================================
      EVENT LISTENERS (Manejo de visibilidad y caché)
@@ -296,8 +316,32 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       });
     }
   }
-   
-  window.addEventListener("pageshow", function(e) {
+
+
+  document.addEventListener("visibilitychange", () => {
+
+    if(!document.hidden){
+      forceRefreshFromBackground();
+    }
+
+  });
+
+
+  window.addEventListener("focus", () => {
+    forceRefreshFromBackground();
+  });
+  
+  
+  window.addEventListener("pageshow", function(e){
+
+    if(e.persisted){
+      forceRefreshFromBackground();
+    }
+
+  });
+
+
+  /*window.addEventListener("pageshow", function(e) {
 
     if (!firstLoadDone) return;
 
@@ -330,7 +374,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       console.log("😴 pageshow → aún no toca");
     }
 
-  });
+  });*/
   
   /*LaunchCore.visibility.init(() => {
     NUNCA MÁS USAMOS VISIBILITY AQUÍ...
