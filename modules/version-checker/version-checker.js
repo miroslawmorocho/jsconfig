@@ -328,7 +328,7 @@ function initVersionChecker(config) {
     try {
 
       await checkCodeVersion();   // HARD reload si cambia
-      await checkDataVersion();   // soft refresh si cambia
+      //await checkDataVersion();   // soft refresh si cambia
 
     } catch(e){
       console.warn("❌ [VC] Error check", e);
