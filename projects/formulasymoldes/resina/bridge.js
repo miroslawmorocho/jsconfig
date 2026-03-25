@@ -173,17 +173,44 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       }
 
+      if(eventClosed){
+        console.log("💀 skip scheduling, event closed");
+        return;
+      }
+
       const delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
       LaunchCore.timing.setNext(delay);
 
       console.log("⏰ next run in", delay);
 
-      LaunchCore.scheduler.programar(
-        "bridge-main",
-        () => initLaunchEngine(false),
-        delay
-      );
+      if(!document.hidden){
+
+        LaunchCore.scheduler.programar(
+          "bridge-main",
+          () => {
+
+            if(document.hidden){
+              console.log("💤 scheduler fired but tab hidden → SKIP");
+              return;
+            }
+
+            if(eventClosed){
+              console.log("💀 scheduler fired but event closed → SKIP");
+              return;
+            }
+
+            initLaunchEngine(false);
+
+          },
+          delay
+        );
+
+      } else {
+
+        console.log("💤 no program scheduler (hidden)");
+
+      }
 
       ultimaRevision = Date.now();
 
@@ -307,14 +334,14 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
     }
 
     // 💥 CANCELAR timers viejos antes de refrescar
-    LaunchCore.scheduler.cancelar("bridge-main");
-
-    console.log("🔥 WAKE → FETCH REAL:", source);
-
     if(eventClosed){
       console.log("💀 skip wake, event closed");
       return;
     }
+
+    LaunchCore.scheduler.cancelar("bridge-main");
+
+    console.log("🔥 WAKE → FETCH REAL:", source);
 
     safeRun();
 
@@ -363,10 +390,16 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   document.addEventListener("visibilitychange", () => {
 
-    if(eventClosed) return;
+    if(document.hidden){
 
-    if(!document.hidden){
+      console.log("💤 tab hidden → cancel timers");
+
+      LaunchCore.scheduler.cancelar("bridge-main");
+
+    } else {
+
       forceRefreshFromBackground("visibility");
+
     }
 
   });
@@ -391,47 +424,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     }
   });
-
-
-  /*window.addEventListener("pageshow", function(e) {
-
-    if (!firstLoadDone) return;
-
-    // 💀 BF CACHE (MÓVIL)
-    if (e.persisted) {
-      console.log("💀 bfcache → refresh inmediato");
-
-      LaunchCore.run({
-        force: true,
-        forceFetch: true
-      });
-
-      return;
-    }
-
-    const GRACE = 5000;
-    const next = LaunchCore.timing.getNext();
-    const now = Date.now();
-
-    if (!next || now > (next + GRACE)) {
-
-      console.log("🔥 pageshow → refresh inmediato");
-
-      LaunchCore.run({
-        force: true,
-        forceFetch: true
-      });
-
-    } else {
-      console.log("😴 pageshow → aún no toca");
-    }
-
-  });*/
-  
-  /*LaunchCore.visibility.init(() => {
-    NUNCA MÁS USAMOS VISIBILITY AQUÍ...
-    Con el pageshow, si el usuario regresa 5 segundos después (GRACE time)
-    del tiempo que indicó el WORKER para despertar, recarga de inmediato */
 
 
    // botones de calendario
