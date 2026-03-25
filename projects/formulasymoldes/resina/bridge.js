@@ -39,10 +39,16 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
 
-  if (currentExecution) {
+
+  if (currentExecution && !force) {
     console.warn("⛔ Ya hay ejecución, cancelando duplicado");
     return currentExecution;
   }
+
+  /*if (currentExecution) {
+    console.warn("⛔ Ya hay ejecución, cancelando duplicado");
+    return currentExecution;
+  }*/
 
   const ahora = Date.now();
 
@@ -304,8 +310,19 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
   
   window.addEventListener("pageshow", function(e) {
 
-    console.log("📱 pageshow → FORCE REFRESH");
+    console.log("📱 pageshow → HARD RESET");
 
+    // 💣 matar ejecución zombie
+    currentExecution = null;
+
+    // 💣 reset timing
+    LaunchCore.timing.force();
+
+    // 💣 cancelar timers
+    LaunchCore.scheduler.cancelar("bridge-main");
+    LaunchCore.scheduler.cancelar("vc-check-loop");
+
+    // 💣 ejecutar limpio
     LaunchCore.run({
       force: true,
       forceFetch: true

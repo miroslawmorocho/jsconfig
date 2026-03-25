@@ -88,7 +88,7 @@ LaunchCore.forceFresh = false;
 
       const data = await res.json();
 
-      console.log("📦 WORKER RESPONSE:", data?.version || "no-version");
+      console.log("📦 WORKER FULL:", data);
 
       return data;
 
