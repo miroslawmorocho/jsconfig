@@ -12,7 +12,6 @@ let ultimaRevision = 0;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 let initialLoadExecuted = false;
 let firstLoadDone = false;
-let eventClosed = false;
 
 /* =====================================================
    DOM
@@ -70,31 +69,24 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
       if (data.eventoCerrado) {
 
-        eventClosed = true;
-
-        console.log("💀 EVENT CLOSED → STOP EVERYTHING");
-
-        // 💥 apagar timers
-        LaunchCore.scheduler.cancelar("bridge-main");
-        LaunchCore.scheduler.cancelar("vc-check-loop");
-
-        if (DOM.estadoCerrado) {
-          DOM.estadoCerrado.innerHTML = data.htmlEventoCerrado;
-          DOM.estadoCerrado.style.display = "block";
-        }
-
-        if (DOM.header) DOM.header.style.display = "none";
-        if (DOM.clases) DOM.clases.style.display = "none";
-        if (DOM.countdown) DOM.countdown.style.display = "none";
-        if (DOM.info) DOM.info.style.display = "none";
-        if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
-        if (DOM.proxima) DOM.proxima.style.display = "none";
-        if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
-        if (DOM.offerText) DOM.offerText.style.display = "none";
-
-        currentExecution = null;
-        return;
+      if (DOM.estadoCerrado) {
+        DOM.estadoCerrado.innerHTML = data.htmlEventoCerrado;
+        DOM.estadoCerrado.style.display = "block";
       }
+
+      if (DOM.header) DOM.header.style.display = "none";
+      if (DOM.clases) DOM.clases.style.display = "none";
+      if (DOM.countdown) DOM.countdown.style.display = "none";
+      if (DOM.info) DOM.info.style.display = "none";
+      if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
+      if (DOM.proxima) DOM.proxima.style.display = "none";
+      if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
+      if (DOM.offerText) DOM.offerText.style.display = "none";
+
+      currentExecution = null; // 🔥 CLAVE
+
+      return;
+    }
 
       // AL REABRIR, SI AÚN ESTÁ LA PESTAÑA ABIERTA RECONSTRUIMOS
       // 🔥 RESTAURAR UI NORMAL
@@ -179,19 +171,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       console.log("⏰ next run in", delay);
 
-      if(!document.hidden){
-
-        LaunchCore.scheduler.programar(
-          "bridge-main",
-          () => initLaunchEngine(false),
-          delay
-        );
-
-      } else {
-
-        console.log("💤 no program scheduler (hidden)");
-
-      }
+      LaunchCore.scheduler.programar(
+        "bridge-main",
+        () => initLaunchEngine(false),
+        delay
+      );
 
       ultimaRevision = Date.now();
 
@@ -282,13 +266,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
     });
 
     return html;
-
   }
 
 
   async function renderComponentes() {
-    await renderBotones();
-    //await renderFlags();
+    await renderBotones();   
   }
 
 
@@ -314,40 +296,12 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       return;
     }
 
-    // 💥 CANCELAR timers viejos antes de refrescar
-    LaunchCore.scheduler.cancelar("bridge-main");
-
     console.log("🔥 WAKE → FETCH REAL:", source);
 
-    if(eventClosed){
-      console.log("💀 skip wake, event closed");
-      return;
-    }
-
-    safeRun();
-
-  }
-
-
-  let isFetching = false;
-
-  async function safeRun(){
-
-    if(isFetching){
-      console.log("⛔ fetch locked");
-      return;
-    }
-
-    isFetching = true;
-
-    try{
-      await LaunchCore.run({
-        force: true,
-        forceFetch: true
-      });
-    } finally {
-      isFetching = false;
-    }
+    LaunchCore.run({
+      force: true,
+      forceFetch: true
+    });
 
   }
 
@@ -359,46 +313,37 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
     document.addEventListener("DOMContentLoaded", () => {
       if (initialLoadExecuted) return;
       initialLoadExecuted = true;
-      safeRun();
+      LaunchCore.run({
+        force: true,
+        forceFetch: true
+      });
     });
   } else {
     if (!initialLoadExecuted) {
       initialLoadExecuted = true;
-      safeRun();
+      LaunchCore.run({
+        force: true,
+        forceFetch: true
+      });
     }
   }
-
-
+   
   document.addEventListener("visibilitychange", () => {
-
-    if(eventClosed) return;
-
     if(!document.hidden){
       forceRefreshFromBackground("visibility");
     }
-
   });
-
 
   window.addEventListener("focus", () => {
-
-    if(eventClosed) return;
-
     forceRefreshFromBackground("focus");
-
   });
-
 
   window.addEventListener("pageshow", function(e){
-    
     if(e.persisted){
-
-      if(eventClosed) return;
-
       forceRefreshFromBackground("pageshow");
-
     }
   });
+
 
    // botones de calendario
    document.addEventListener("click", function(e) {
