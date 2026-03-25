@@ -116,6 +116,14 @@ function initVersionChecker(config) {
           const endpoint = LaunchCore.config.endpoint || "";
           const freshData = await LaunchCore.fetchWorker(endpoint, true);
 
+          // 🔥 SI YA HUBO FETCH RECIENTE → NO DUPLICAR
+          const now = Date.now();
+
+          if(LaunchCore.lastFetchTime && (now - LaunchCore.lastFetchTime < 3000)){
+            logVC("🧠 Skip render (ya actualizado por sistema principal)");
+            return;
+          }
+
           if(window.initLaunchEngine){
             currentExecution = null;
             LaunchCore.run({

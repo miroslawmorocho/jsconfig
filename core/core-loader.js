@@ -87,6 +87,8 @@ LaunchCore.lastFetchTime = 0;
 
       const res = await fetch(url, options);
 
+      LaunchCore.lastFetchTime = Date.now();
+
       if(!res.ok) throw new Error("Worker error");
 
       const data = await res.json();
