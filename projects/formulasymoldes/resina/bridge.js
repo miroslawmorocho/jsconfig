@@ -277,15 +277,27 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   let lastWake = 0;
 
-  function forceRefreshFromBackground(){
+  function forceRefreshFromBackground(source = "unknown"){
 
     const now = Date.now();
 
-    if(now - lastWake < 3000) return; // anti spam
+    // 🔥 anti spam básico
+    if(now - lastWake < 2000){
+      console.log("⛔ skip spam:", source);
+      return;
+    }
 
     lastWake = now;
 
-    console.log("🔥 RETURN → FORCING REFRESH");
+    const next = LaunchCore.timing.getNext();
+
+    // 🔥 SI TODAVÍA NO TOCA → NO HACER NADA
+    if(next && now < next){
+      console.log("😴 skip early wake:", source);
+      return;
+    }
+
+    console.log("🔥 WAKE → FETCH REAL:", source);
 
     LaunchCore.run({
       force: true,
@@ -319,25 +331,19 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
 
   document.addEventListener("visibilitychange", () => {
-
     if(!document.hidden){
-      forceRefreshFromBackground();
+      forceRefreshFromBackground("visibility");
     }
-
   });
-
 
   window.addEventListener("focus", () => {
-    forceRefreshFromBackground();
+    forceRefreshFromBackground("focus");
   });
-  
-  
+
   window.addEventListener("pageshow", function(e){
-
     if(e.persisted){
-      forceRefreshFromBackground();
+      forceRefreshFromBackground("pageshow");
     }
-
   });
 
 
