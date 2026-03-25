@@ -14,6 +14,7 @@ let initialLoadExecuted = false;
 let firstLoadDone = false;
 let lastDelay = null;
 let sameDelayCount = 0;
+window.isUserActive = true;
 
 /* =====================================================
    DOM
@@ -348,68 +349,82 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
   }
 
   
-  /* =====================================================
-     EVENT LISTENERS (Manejo de visibilidad y caché)
-  ===================================================== */
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      if (initialLoadExecuted) return;
-      initialLoadExecuted = true;
-      LaunchCore.run({
-        force: true,
-        forceFetch: true
-      });
+/* =====================================================
+    EVENT LISTENERS (Manejo de visibilidad y caché)
+===================================================== */
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    if (initialLoadExecuted) return;
+    initialLoadExecuted = true;
+    LaunchCore.run({
+      force: true,
+      forceFetch: true
     });
-  } else {
-    if (!initialLoadExecuted) {
-      initialLoadExecuted = true;
-      LaunchCore.run({
-        force: true,
-        forceFetch: true
-      });
-    }
+  });
+} else {
+  if (!initialLoadExecuted) {
+    initialLoadExecuted = true;
+    LaunchCore.run({
+      force: true,
+      forceFetch: true
+    });
   }
-   
-  document.addEventListener("visibilitychange", () => {
-    if(!document.hidden){
-      forceRefreshFromBackground("visibility");
-    }
-  });
-
-  window.addEventListener("focus", () => {
-    forceRefreshFromBackground("focus");
-  });
-
-  window.addEventListener("pageshow", function(e){
-    if(e.persisted){
-      forceRefreshFromBackground("pageshow");
-    }
-  });
+}
 
 
-   // botones de calendario
-   document.addEventListener("click", function(e) {
+document.addEventListener("visibilitychange", () => {
 
-     const toggle = e.target.closest(".calendar-toggle");
-   
-     if (toggle) {
-       const container = toggle.parentElement;
-       const menu = container.querySelector(".calendar-menu-inline");
-   
-       if (!menu) return;
-   
-       const isOpen = getComputedStyle(menu).display === "flex";
-   
-       // cerrar todos
-       document.querySelectorAll(".calendar-menu-inline")
-         .forEach(m => m.style.display = "none");
-   
-       menu.style.display = isOpen ? "none" : "flex";
-       return;
-     }
-   
-     // cerrar si clic fuera
-     document.querySelectorAll(".calendar-menu-inline")
-       .forEach(m => m.style.display = "none");
-   
-   });
+  if(document.hidden){
+
+    window.isUserActive = false;
+    console.log("😴 usuario AUSENTE → pausa total");
+
+  } else {
+
+    window.isUserActive = true;
+    console.log("🔥 usuario VOLVIÓ → sync inmediata");
+
+    forceRefreshFromBackground("return");
+  }
+
+});
+
+
+window.addEventListener("focus", () => {
+  forceRefreshFromBackground("focus");
+});
+
+
+window.addEventListener("pageshow", function(e){
+  if(e.persisted){
+    forceRefreshFromBackground("pageshow");
+  }
+});
+
+
+// botones de calendario
+document.addEventListener("click", function(e) {
+
+  const toggle = e.target.closest(".calendar-toggle");
+
+  if (toggle) {
+    const container = toggle.parentElement;
+    const menu = container.querySelector(".calendar-menu-inline");
+
+    if (!menu) return;
+
+    const isOpen = getComputedStyle(menu).display === "flex";
+
+    // cerrar todos
+    document.querySelectorAll(".calendar-menu-inline")
+      .forEach(m => m.style.display = "none");
+
+    menu.style.display = isOpen ? "none" : "flex";
+    return;
+  }
+
+  // cerrar si clic fuera
+  document.querySelectorAll(".calendar-menu-inline")
+    .forEach(m => m.style.display = "none");
+
+});
