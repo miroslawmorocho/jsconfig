@@ -375,7 +375,7 @@ let lastRunTime = 0;
     GLOBAL EXECUTION ENGINE
 ===================================================== */
 
-async function run(options = {}){
+LaunchCore.run = async function(options = {}) {
 
   const now = Date.now();
 
