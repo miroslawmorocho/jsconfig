@@ -213,8 +213,6 @@ function initVersionChecker(config) {
 
       pendingDataVersion = nuevaDataVersion;
 
-      const versionToConfirm = nuevaDataVersion;
-
       if (yaDeberiaEstarLista) {
 
         logVC("⚡ Timestamp viejo → fetch inmediato");

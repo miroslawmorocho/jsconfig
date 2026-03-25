@@ -39,16 +39,10 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
   const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
 
-
-  if (currentExecution && !force) {
+  if (currentExecution) {
     console.warn("⛔ Ya hay ejecución, cancelando duplicado");
     return currentExecution;
   }
-
-  /*if (currentExecution) {
-    console.warn("⛔ Ya hay ejecución, cancelando duplicado");
-    return currentExecution;
-  }*/
 
   const ahora = Date.now();
 
@@ -59,10 +53,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       console.log("🚀 Fetching worker...");
 
       let data;
-
-      if(force || forceFetch){
-        LaunchCore.timing.force();
-      }
 
       if(externalData){
         console.log("⚡ Usando data externa (sin fetch)");
@@ -306,32 +296,8 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       });
     }
   }
-  
-  
+   
   window.addEventListener("pageshow", function(e) {
-
-    console.log("📱 pageshow → HARD RESET");
-
-    // 💣 matar ejecución zombie
-    currentExecution = null;
-
-    // 💣 reset timing
-    LaunchCore.timing.force();
-
-    // 💣 cancelar timers
-    LaunchCore.scheduler.cancelar("bridge-main");
-    LaunchCore.scheduler.cancelar("vc-check-loop");
-
-    // 💣 ejecutar limpio
-    LaunchCore.run({
-      force: true,
-      forceFetch: true
-    });
-
-  });
-
-
-  /*window.addEventListener("pageshow", function(e) {
 
     if (!firstLoadDone) return;
 
@@ -364,7 +330,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       console.log("😴 pageshow → aún no toca");
     }
 
-  }); */
+  });
   
   /*LaunchCore.visibility.init(() => {
     NUNCA MÁS USAMOS VISIBILITY AQUÍ...
