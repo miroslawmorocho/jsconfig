@@ -399,7 +399,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       console.log("👁️ tab visible → resume engine");
 
       // 🔥 IMPORTANTE: forzar ciclo completo, no solo wake
-      initLaunchEngine(true);
+      initLaunchEngine(false);
 
     }
 
