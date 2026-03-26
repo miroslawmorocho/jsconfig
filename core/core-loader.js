@@ -408,15 +408,19 @@ let lastRunTime = 0;
 
 LaunchCore.run = async function(options = {}) {
 
+  const {
+    force = false,
+    externalData = null,
+    forceFetch = false
+  } = options;
+
   const now = Date.now();
 
-  // 🔥 throttle global
   if(now - lastRunTime < 2000){
     console.log("⛔ run throttle");
     return;
   }
 
-  // 🔥 evitar concurrencia
   if(isRunning){
     console.log("⛔ run bloqueado (ya en ejecución)");
     return;
@@ -429,7 +433,7 @@ LaunchCore.run = async function(options = {}) {
 
     console.log("🚀 Fetching worker...");
 
-    await initLaunchEngine(options);
+    await initLaunchEngine(force, externalData, forceFetch);
 
   } catch(e){
     console.error("❌ error en run:", e);
