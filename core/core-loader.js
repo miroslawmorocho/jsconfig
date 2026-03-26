@@ -19,6 +19,7 @@ LaunchCore.state = {
 
 LaunchCore.forceFresh = false;
 LaunchCore.lastFetchTime = 0;
+LaunchCore.lastGlobalFetch = 0;
 let isRunning = false;
 let lastRunTime = 0;
 
@@ -94,6 +95,7 @@ let lastRunTime = 0;
       const res = await fetch(url, options);
 
       LaunchCore.lastFetchTime = Date.now();
+      LaunchCore.lastGlobalFetch = Date.now(); // 🔥 NUEVO
 
       if(!res.ok) throw new Error("Worker error");
 
@@ -101,6 +103,7 @@ let lastRunTime = 0;
 
       // 🔥 REGISTRAR FETCH GLOBAL
       LaunchCore.lastFetchTime = Date.now();
+      LaunchCore.lastGlobalFetch = Date.now(); // 🔥 NUEVO
 
       return data;
 
