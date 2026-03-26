@@ -358,7 +358,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     LaunchCore.run({
       force: true,
-      forceFetch: true
+      forceFetch: false
     });
 
   }
@@ -373,7 +373,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       initialLoadExecuted = true;
       LaunchCore.run({
         force: true,
-        forceFetch: true
+        forceFetch: false
       });
     });
   } else {
@@ -381,7 +381,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       initialLoadExecuted = true;
       LaunchCore.run({
         force: true,
-        forceFetch: true
+        forceFetch: false
       });
     }
   }
