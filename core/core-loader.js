@@ -13,6 +13,10 @@ LaunchCore.config = {
   endpoint: ""
 };
 
+LaunchCore.state = {
+  eventoCerrado: false
+};
+
 LaunchCore.forceFresh = false;
 LaunchCore.lastFetchTime = 0;
 let isRunning = false;

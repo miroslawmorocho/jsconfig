@@ -65,6 +65,8 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       if (!data) return;
 
+      LaunchCore.state.eventoCerrado = data.eventoCerrado;
+
       sessionStorage.setItem("lc_rendered", "1");
       firstLoadDone = true; // 👈 AÑADE ESTO
 
@@ -220,8 +222,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
           delay
         );
 
-        console.log("⏰ next run in", delay, document.hidden ? "(PAUSADO)" : "");
-
       } // hasta aca
 
       ultimaRevision = Date.now();
@@ -324,6 +324,12 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
   let lastWake = 0;
 
   function forceRefreshFromBackground(source = "unknown"){
+
+    // 💣 BLOQUEO TOTAL SI EVENTO CERRADO
+    if(LaunchCore.state?.eventoCerrado){
+      console.log("🚫 evento cerrado → no wake:", source);
+      return;
+    }
 
     const now = Date.now();
 
