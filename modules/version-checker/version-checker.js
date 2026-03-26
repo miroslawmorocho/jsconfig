@@ -14,7 +14,7 @@ function initVersionChecker(config) {
   let checking = false;
   let pendingDataVersion = null;
   let lastRenderedVersion = null;
-  const DEBUG = false; // 🔴 cámbialo a true cuando quieras debug
+  const DEBUG = true; // 🔴 cámbialo a true cuando quieras debug
 
   /* =====================================================
      HELPERS
