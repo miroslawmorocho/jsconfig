@@ -8,10 +8,8 @@
  */
 
 let currentExecution = null;
-let ultimaRevision = 0;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 let initialLoadExecuted = false;
-let firstLoadDone = false;
 let lastDelay = null;
 let sameDelayCount = 0;
 
@@ -37,16 +35,10 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
-  const now = Date.now();
-
-  const hasRenderedBefore = sessionStorage.getItem("lc_rendered");
-
   if (currentExecution) {
     console.warn("⛔ Ya hay ejecución, cancelando duplicado");
     return currentExecution;
   }
-
-  const ahora = Date.now();
 
   currentExecution = (async () => {
 
@@ -60,7 +52,40 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
         console.log("⚡ Usando data externa (sin fetch)");
         data = externalData;
       } else {
-        data = await LaunchCore.fetchWorker("", forceFetch);
+
+        // 🧠 intentar cache primero
+        if(!forceFetch && !LaunchCore.timing.shouldRun()){
+
+          const cached = localStorage.getItem("lc_data_cache");
+
+          if(cached){
+            try{
+              console.log("💾 Usando cache local (NO fetch)");
+              data = JSON.parse(cached);
+            }catch(e){
+              console.warn("⚠️ cache corrupto → limpiando");
+              localStorage.removeItem("lc_data_cache");
+            }
+          }
+
+        }
+
+        // 🔥 si no hay data → fetch normal
+        if(!data){
+          console.log("🌐 Fetch real al worker");
+          data = await LaunchCore.fetchWorker("", forceFetch);
+
+          localStorage.setItem("lc_data_cache", JSON.stringify(data));
+          localStorage.setItem("lc_data_time", Date.now());
+        }
+
+      }
+      
+      const savedTime = Number(localStorage.getItem("lc_data_time") || 0);
+
+      if(Date.now() - savedTime > 7 * 24 * 60 * 60 * 1000){
+        localStorage.removeItem("lc_data_cache");
+        localStorage.removeItem("lc_data_time");
       }
 
       if (!data) return;
@@ -70,9 +95,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       LaunchCore.state.eventoCerrado = data.eventoCerrado;
 
       console.log("🧠 estado eventoCerrado:", data.eventoCerrado);
-
-      sessionStorage.setItem("lc_rendered", "1");
-      firstLoadDone = true; // 👈 AÑADE ESTO
 
       // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
       if (data.eventoCerrado) {
@@ -175,7 +197,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       let delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
-      // 🔥 evitar loops agresivos del worker
+      /*// 🔥 evitar loops agresivos del worker
       const MIN_DELAY = 10000; // 10 segundos
 
       if(delay < MIN_DELAY){
@@ -200,7 +222,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       }
 
-      lastDelay = delay;
+      lastDelay = delay; */
 
       // 🔥 jitter opcional (anti sincronización exacta)
       const jitter = Math.random() * 2000;
@@ -228,8 +250,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
         }
 
       }
-
-      ultimaRevision = Date.now();
 
     } catch (error) {
       console.warn("💥 Error en engine:", error);
