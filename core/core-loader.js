@@ -377,11 +377,6 @@ let lastRunTime = 0;
 
 LaunchCore.run = async function(options = {}) {
 
-  if(window.isUserActive === false){
-    console.log("😴 run cancelado (usuario no activo)");
-    return;
-  }
-
   const now = Date.now();
 
   // 🔥 throttle global
