@@ -65,7 +65,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       if (!data) return;
 
+      // 🔥 sincronizar estado global con el worker
+      LaunchCore.state = LaunchCore.state || {};
       LaunchCore.state.eventoCerrado = data.eventoCerrado;
+
+      console.log("🧠 estado eventoCerrado:", data.eventoCerrado);
 
       sessionStorage.setItem("lc_rendered", "1");
       firstLoadDone = true; // 👈 AÑADE ESTO
