@@ -212,29 +212,38 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
         LaunchCore.countdown.stop();
       }
 
-      let delay = data.siguienteActualizacionMs;
+      let savedNext = Number(localStorage.getItem("lc_next_update") || 0);
 
-      if(!delay){
+      if(savedNext && savedNext > Date.now()){
+        console.log("🧠 Respetando next_update existente");
 
-        console.warn("⚠️ sin siguienteActualizacionMs");
+        LaunchCore.timing.initFromStorage();
 
-        // 👇 asegúrate de congelar bien
-        LaunchCore.timing.setNext(Number.MAX_SAFE_INTEGER);
-        localStorage.setItem("lc_next_update", Number.MAX_SAFE_INTEGER);
+      } else {
 
-        return;
+        let delay = data.siguienteActualizacionMs;
+
+        if(!delay){
+
+          console.warn("⚠️ sin siguienteActualizacionMs");
+
+          // 👇 asegúrate de congelar bien
+          localStorage.setItem("lc_next_update", Number.MAX_SAFE_INTEGER);
+
+          return;
+        }
+
+        const jitter = Math.random() * 2000;
+        delay += jitter;
+
+        const nextTime = Date.now() + delay;
+
+        localStorage.setItem("lc_next_update", nextTime);
+
+        LaunchCore.timing.setNext(delay);
+
+        console.log("⏰ new next run in", delay);
       }
-
-      // 🔥 jitter opcional (anti sincronización exacta)
-      const jitter = Math.random() * 2000;
-      delay += jitter;
-
-      LaunchCore.timing.setNext(delay);
-      
-      console.log("⏰ next run in", delay);
-
-      const nextTime = Date.now() + delay;
-      localStorage.setItem("lc_next_update", nextTime);
 
       if(document.hidden){
         console.log("😴 tab oculta → NO programo siguiente fetch");
