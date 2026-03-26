@@ -8,7 +8,6 @@
  */
 
 let currentExecution = null;
-let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 let initialLoadExecuted = false;
 
 /* =====================================================
@@ -51,10 +50,27 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
         data = externalData;
       } else {
 
-        // 🧠 intentar cache primero
-        if(!forceFetch && !LaunchCore.timing.shouldRun()){
+        const cached = localStorage.getItem("lc_data_cache");
 
-          const cached = localStorage.getItem("lc_data_cache");
+        if(cached){
+
+          try{
+            const parsed = JSON.parse(cached);
+
+            if(parsed?.eventoCerrado){
+              console.log("💀 Evento cerrado (cache) → NO fetch nunca");
+              data = parsed;
+            }
+
+          }catch(e){
+            console.warn("⚠️ cache corrupto → limpiando");
+            localStorage.removeItem("lc_data_cache");
+          }
+
+        }
+
+        // 🧠 intentar cache primero
+        if(!data && !forceFetch && !LaunchCore.timing.shouldRun()){
 
           if(cached){
             try{
@@ -65,7 +81,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
               localStorage.removeItem("lc_data_cache");
             }
           }
-
         }
 
         // 🔥 si no hay data → fetch normal
@@ -97,24 +112,24 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
       if (data.eventoCerrado) {
 
-      if (DOM.estadoCerrado) {
-        DOM.estadoCerrado.innerHTML = data.htmlEventoCerrado;
-        DOM.estadoCerrado.style.display = "block";
+        if (DOM.estadoCerrado) {
+          DOM.estadoCerrado.innerHTML = data.htmlEventoCerrado;
+          DOM.estadoCerrado.style.display = "block";
+        }
+
+        if (DOM.header) DOM.header.style.display = "none";
+        if (DOM.clases) DOM.clases.style.display = "none";
+        if (DOM.countdown) DOM.countdown.style.display = "none";
+        if (DOM.info) DOM.info.style.display = "none";
+        if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
+        if (DOM.proxima) DOM.proxima.style.display = "none";
+        if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
+        if (DOM.offerText) DOM.offerText.style.display = "none";
+
+        currentExecution = null; // 🔥 CLAVE
+
+        return;
       }
-
-      if (DOM.header) DOM.header.style.display = "none";
-      if (DOM.clases) DOM.clases.style.display = "none";
-      if (DOM.countdown) DOM.countdown.style.display = "none";
-      if (DOM.info) DOM.info.style.display = "none";
-      if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
-      if (DOM.proxima) DOM.proxima.style.display = "none";
-      if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
-      if (DOM.offerText) DOM.offerText.style.display = "none";
-
-      currentExecution = null; // 🔥 CLAVE
-
-      return;
-    }
 
       // AL REABRIR, SI AÚN ESTÁ LA PESTAÑA ABIERTA RECONSTRUIMOS
       // 🔥 RESTAURAR UI NORMAL
@@ -187,13 +202,12 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
         LaunchCore.countdown.stop();
       }
 
-      // 🔥 INTERVALOS DINÁMICOS
-      if (data.intervaloRevisionMs) {
-        intervaloRevisionDin = data.intervaloRevisionMs;
+      let delay = data.siguienteActualizacionMs;
 
+      if(!delay){
+        console.warn("⚠️ sin siguienteActualizacionMs");
+        return;
       }
-
-      let delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
 
       // 🔥 jitter opcional (anti sincronización exacta)
       const jitter = Math.random() * 2000;
@@ -234,189 +248,181 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 }
 
 
-  let calendarTemplateCache = null;
+let calendarTemplateCache = null;
 
-  async function renderBotones() {
+async function renderBotones() {
 
-    const botones = document.querySelectorAll(".clase-boton");
+  const botones = document.querySelectorAll(".clase-boton");
 
-    for (const el of botones) {
+  for (const el of botones) {
 
-      const raw = el.dataset.boton;
-      if (!raw) continue;
+    const raw = el.dataset.boton;
+    if (!raw) continue;
 
-      let data;
-      try {
-        data = JSON.parse(decodeURIComponent(raw));
-      } catch (e) {
-        console.warn("JSON inválido en data-boton", raw);
-        continue;
+    let data;
+    try {
+      data = JSON.parse(decodeURIComponent(raw));
+    } catch (e) {
+      console.warn("JSON inválido en data-boton", raw);
+      continue;
+    }
+
+    // 🔥 CALENDAR
+    if (data.tipo === "calendar") {
+
+      if (!calendarTemplateCache) {
+        calendarTemplateCache = await fetch(
+          LaunchCore.paths.components + "calendar-button.html"
+        ).then(r => r.text());
       }
 
-      // 🔥 CALENDAR
-      if (data.tipo === "calendar") {
+      el.innerHTML = calendarTemplateCache
+        .replace("{{texto}}", data.texto)
+        .replace("{{google}}", data.google)
+        .replace("{{ics}}", data.ics);
 
-        if (!calendarTemplateCache) {
-          calendarTemplateCache = await fetch(
-            LaunchCore.paths.components + "calendar-button.html"
-          ).then(r => r.text());
-        }
+    }
 
-        el.innerHTML = calendarTemplateCache
-          .replace("{{texto}}", data.texto)
-          .replace("{{google}}", data.google)
-          .replace("{{ics}}", data.ics);
+    // 🔥 LINK NORMAL
+    if (data.tipo === "link") {
 
-      }
-
-      // 🔥 LINK NORMAL
-      if (data.tipo === "link") {
-
-        el.innerHTML = `
-          <a href="${data.url}" target="_blank">
-            ${data.texto}
-          </a>
-        `;
-
-      }
+      el.innerHTML = `
+        <a href="${data.url}" target="_blank">
+          ${data.texto}
+        </a>
+      `;
 
     }
 
   }
 
+}
 
-  let messageTemplateCache = null;
 
-  async function renderClases(clases) {
+let messageTemplateCache = null;
 
-    if (!messageTemplateCache) {
-      messageTemplateCache = await fetch(
-        LaunchCore.paths.components + "messages.html"
-      ).then(r => r.text());
-    }
+async function renderClases(clases) {
 
-    let html = "";
-
-    clases.forEach(c => {
-
-      const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
-
-      html += messageTemplateCache
-        .replace("{{titulo}}", c.titulo)
-        .replace("{{mensaje}}", c.mensaje)
-        .replace("{{boton}}", botonJSON);
-
-    });
-
-    return html;
+  if (!messageTemplateCache) {
+    messageTemplateCache = await fetch(
+      LaunchCore.paths.components + "messages.html"
+    ).then(r => r.text());
   }
 
+  let html = "";
 
-  async function renderComponentes() {
-    await renderBotones();   
+  clases.forEach(c => {
+
+    const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
+
+    html += messageTemplateCache
+      .replace("{{titulo}}", c.titulo)
+      .replace("{{mensaje}}", c.mensaje)
+      .replace("{{boton}}", botonJSON);
+
+  });
+
+  return html;
+}
+
+
+async function renderComponentes() {
+  await renderBotones();   
+}
+
+
+let lastWake = 0;
+
+function forceRefreshFromBackground(source = "unknown"){
+
+  // 💣 BLOQUEO TOTAL SI EVENTO CERRADO
+  if(LaunchCore.state?.eventoCerrado){
+    console.log("🚫 evento cerrado → no wake:", source);
+    return;
   }
 
+  const now = Date.now();
 
-  let lastWake = 0;
+  // 🔥 anti spam básico
+  if(now - lastWake < 2000){
+    console.log("⛔ skip spam:", source);
+    return;
+  }
 
-  function forceRefreshFromBackground(source = "unknown"){
+  lastWake = now;
 
-    // 💣 BLOQUEO TOTAL SI EVENTO CERRADO
-    if(LaunchCore.state?.eventoCerrado){
-      console.log("🚫 evento cerrado → no wake:", source);
-      return;
-    }
+  if(!LaunchCore.timing.shouldRun()){
+    console.log("😴 skip early wake:", source);
+    return;
+  }
 
-    const now = Date.now();
+  console.log("🔥 WAKE → FETCH REAL:", source);
 
-    // 🔥 anti spam básico
-    if(now - lastWake < 2000){
-      console.log("⛔ skip spam:", source);
-      return;
-    }
+  // 💣 matar scheduler viejo
+  LaunchCore.scheduler.cancelar("bridge-main");
 
-    lastWake = now;
+  LaunchCore.run({
+    force: true,
+    forceFetch: false
+  });
 
-    if(!LaunchCore.timing.shouldRun()){
-      console.log("😴 skip early wake:", source);
-      return;
-    }
+}
 
-    console.log("🔥 WAKE → FETCH REAL:", source);
+  
+/* =====================================================
+    EVENT LISTENERS (Manejo de visibilidad y caché)
+===================================================== */
+if (!initialLoadExecuted) {
+  initialLoadExecuted = true;
 
-    // 💣 matar scheduler viejo
-    LaunchCore.scheduler.cancelar("bridge-main");
-
+  LaunchCore.onReady(() => {
     LaunchCore.run({
       force: true,
       forceFetch: false
     });
-
-  }
-
-  
-  /* =====================================================
-     EVENT LISTENERS (Manejo de visibilidad y caché)
-  ===================================================== */
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      if (initialLoadExecuted) return;
-      initialLoadExecuted = true;
-      LaunchCore.run({
-        force: true,
-        forceFetch: false
-      });
-    });
-  } else {
-    if (!initialLoadExecuted) {
-      initialLoadExecuted = true;
-      LaunchCore.run({
-        force: true,
-        forceFetch: false
-      });
-    }
-  }
+  });
+}
   
 document.addEventListener("visibilitychange", () => {
-    if(!document.hidden){
-      forceRefreshFromBackground("visibility");
-    }
-  });
+  if(!document.hidden){
+    forceRefreshFromBackground("visibility");
+  }
+});
 
-  window.addEventListener("focus", () => {
-    forceRefreshFromBackground("focus");
-  });
+window.addEventListener("focus", () => {
+  forceRefreshFromBackground("focus");
+});
 
-  window.addEventListener("pageshow", function(e){
-    if(e.persisted){
-      forceRefreshFromBackground("pageshow");
-    }
-  });
+window.addEventListener("pageshow", function(e){
+  if(e.persisted){
+    forceRefreshFromBackground("pageshow");
+  }
+});
 
 
-   // botones de calendario
-   document.addEventListener("click", function(e) {
+// botones de calendario
+document.addEventListener("click", function(e) {
 
-     const toggle = e.target.closest(".calendar-toggle");
-   
-     if (toggle) {
-       const container = toggle.parentElement;
-       const menu = container.querySelector(".calendar-menu-inline");
-   
-       if (!menu) return;
-   
-       const isOpen = getComputedStyle(menu).display === "flex";
-   
-       // cerrar todos
-       document.querySelectorAll(".calendar-menu-inline")
-         .forEach(m => m.style.display = "none");
-   
-       menu.style.display = isOpen ? "none" : "flex";
-       return;
-     }
-   
-     // cerrar si clic fuera
-     document.querySelectorAll(".calendar-menu-inline")
-       .forEach(m => m.style.display = "none");
-   
-   });
+  const toggle = e.target.closest(".calendar-toggle");
+
+  if (toggle) {
+    const container = toggle.parentElement;
+    const menu = container.querySelector(".calendar-menu-inline");
+
+    if (!menu) return;
+
+    const isOpen = getComputedStyle(menu).display === "flex";
+
+    // cerrar todos
+    document.querySelectorAll(".calendar-menu-inline")
+      .forEach(m => m.style.display = "none");
+
+    menu.style.display = isOpen ? "none" : "flex";
+    return;
+  }
+
+  // cerrar si clic fuera
+  document.querySelectorAll(".calendar-menu-inline")
+    .forEach(m => m.style.display = "none");
+
+});
