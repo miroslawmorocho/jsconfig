@@ -91,84 +91,88 @@ function initVersionChecker(config) {
     }, 1000);
   }
 
-/* =====================================================
-    🔥 CONFIRMAR CON WORKER (DATA REAL)
-===================================================== */
+  /* =====================================================
+      🔥 CONFIRMAR CON WORKER (DATA REAL)
+  ===================================================== */
 
-async function confirmarConWorker(versionToConfirm){
+  async function confirmarConWorker(versionToConfirm){
 
-  logVC("⏳ Confirmando con worker...", versionToConfirm);
+    logVC("⏳ Confirmando con worker...", versionToConfirm);
 
-  try {
+    try {
 
-    const data = await LaunchCore.fetchWorker("/status", true);
+      const data = await LaunchCore.fetchWorker("/status", true);
 
-    logVC("🛰️ Worker version", data?.version);
+      logVC("🛰️ Worker version", data?.version);
 
-    if(String(data?.version) === String(versionToConfirm)){
+      if(String(data?.version) === String(versionToConfirm)){
 
-      logVC("✅ Worker sincronizado");
+        // ✅ AHORA sí guardamos versión REAL
+        currentDataVersion = String(versionToConfirm);
+        localStorage.setItem("lc_data_version", String(versionToConfirm));
 
-      if(lastRenderedVersion !== String(versionToConfirm)){
+        logVC("✅ Worker sincronizado");
 
-        logVC("🎨 Renderizando nueva versión");
+        if(lastRenderedVersion !== String(versionToConfirm)){
 
-        const endpoint = LaunchCore.config.endpoint || "";
-        const freshData = await LaunchCore.fetchWorker(endpoint, true);
+          logVC("🎨 Renderizando nueva versión");
 
-        // 🔥 1. SINCRONIZAR ESTADO GLOBAL SIEMPRE (ANTES DE TODO)
-        if(freshData && typeof freshData.eventoCerrado !== "undefined"){
-          LaunchCore.state.eventoCerrado = freshData.eventoCerrado;
-          console.log("🧠 [VC] estado actualizado:", freshData.eventoCerrado);
-        }
+          const endpoint = LaunchCore.config.endpoint || "";
+          const freshData = await LaunchCore.fetchWorker(endpoint, true);
 
-        if(freshData?.siguienteActualizacionMs){
+          // 🔥 1. SINCRONIZAR ESTADO GLOBAL SIEMPRE (ANTES DE TODO)
+          if(freshData && typeof freshData.eventoCerrado !== "undefined"){
+            LaunchCore.state.eventoCerrado = freshData.eventoCerrado;
+            console.log("🧠 [VC] estado actualizado:", freshData.eventoCerrado);
+          }
 
-          const nextTime = Date.now() + freshData.siguienteActualizacionMs;
-          localStorage.setItem("lc_next_update", nextTime);
+          if(freshData?.siguienteActualizacionMs){
 
-        }
+            const nextTime = Date.now() + freshData.siguienteActualizacionMs;
+            localStorage.setItem("lc_next_update", nextTime);
 
-        // 💣 2. MATAR scheduler viejo SIEMPRE
-        LaunchCore.scheduler.cancelar("bridge-main");
+          }
 
-        // 💣 3. RESET global SIEMPRE
-        currentExecution = null;
-        
-        // 🚀 5. render limpio
-        if(window.initLaunchEngine){
+          // 💣 2. MATAR scheduler viejo SIEMPRE
+          LaunchCore.scheduler.cancelar("bridge-main");
 
-          LaunchCore.run({
-            force: true,
-            externalData: freshData
-          });
+          // 💣 3. RESET global SIEMPRE
+          currentExecution = null;
+          
+          // 🚀 5. render limpio
+          if(window.initLaunchEngine){
+
+            LaunchCore.run({
+              force: true,
+              externalData: freshData
+            });
+
+          } else {
+
+            logVC("⚠️ fallback reload");
+            location.reload();
+
+          }
+
+          lastRenderedVersion = String(versionToConfirm);
 
         } else {
-
-          logVC("⚠️ fallback reload");
-          location.reload();
-
+          logVC("😴 Ya renderizado, skip");
         }
 
-        lastRenderedVersion = String(versionToConfirm);
-
       } else {
-        logVC("😴 Ya renderizado, skip");
+        logVC("⌛ Worker aún no actualizado");
       }
 
-    } else {
-      logVC("⌛ Worker aún no actualizado");
+    } catch(e){
+      console.warn("❌ [VC] Error worker", e);
     }
 
-  } catch(e){
-    console.warn("❌ [VC] Error worker", e);
-  }
+    finally {
+      pendingDataVersion = null;
+    }
 
-  finally {
-    pendingDataVersion = null;
   }
-
-}
 
   /* =====================================================
      🔥 CHECK DATA VERSION
@@ -186,15 +190,7 @@ async function confirmarConWorker(versionToConfirm){
 
       const data = await res.json();
       const nuevaDataVersion = String(data.version);
-
-      const now = Date.now();
-      const versionTime = Number(nuevaDataVersion);
-
-      // 🔥 ventana de seguridad (3 min)
-      const SAFE_WINDOW = 3 * 60 * 1000;
-
-      const yaDeberiaEstarLista = (now - versionTime) > SAFE_WINDOW;
-
+      
       // 🔥 SI NO CAMBIÓ → NO HACER NADA
       if(currentDataVersion === nuevaDataVersion){
         logVC("😴 DATA sin cambios");
@@ -212,8 +208,7 @@ async function confirmarConWorker(versionToConfirm){
 
       if(!currentDataVersion){
 
-        currentDataVersion = nuevaDataVersion;
-        localStorage.setItem("lc_data_version", nuevaDataVersion);
+        currentDataVersion = savedDataVersion || nuevaDataVersion;
 
         if(savedDataVersion && savedDataVersion !== nuevaDataVersion){
           logVC("🧟 Usuario volvió → refresh inmediato");
@@ -237,23 +232,13 @@ async function confirmarConWorker(versionToConfirm){
 
       pendingDataVersion = nuevaDataVersion;
 
-      if (yaDeberiaEstarLista) {
+      logVC("⏳ Timestamp reciente → esperar confirmDelay");
 
-        logVC("⚡ Timestamp viejo → fetch inmediato");
-
-        confirmarConWorker(nuevaDataVersion);
-
-      } else {
-
-        logVC("⏳ Timestamp reciente → esperar confirmDelay");
-
-        LaunchCore.timing.schedule(
-          () => confirmarConWorker(nuevaDataVersion),
-          config.confirmDelay,
-          "vc-confirm"
-        );
-
-      }
+      LaunchCore.timing.schedule(
+        () => confirmarConWorker(nuevaDataVersion),
+        config.confirmDelay,
+        "vc-confirm"
+      );
 
       currentDataVersion = nuevaDataVersion;
       localStorage.setItem("lc_data_version", nuevaDataVersion);
@@ -296,9 +281,7 @@ async function confirmarConWorker(versionToConfirm){
         localStorage.setItem("lc_code_version", nuevaCodeVersion);
 
         if(savedCodeVersion && savedCodeVersion !== nuevaCodeVersion){
-          logVC("💥 Código actualizado → reload");
-          //location.href = buildUrl(); → EL PEOR!
-          //location.reload(); → FUNCIONA en móvil a medias! No carga bien css js html nuevo
+          logVC("💥 Código actualizado → reload");          
           window.location.replace(buildUrl());
         }
 
@@ -313,9 +296,7 @@ async function confirmarConWorker(versionToConfirm){
 
         logVC("💥 Nuevo deploy → reload");
 
-        localStorage.setItem("lc_code_version", nuevaCodeVersion);
-        //location.href = buildUrl();
-        //location.reload();
+        localStorage.setItem("lc_code_version", nuevaCodeVersion);        
         window.location.replace(buildUrl());
         return;
       }
