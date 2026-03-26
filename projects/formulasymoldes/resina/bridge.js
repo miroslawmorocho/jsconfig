@@ -10,8 +10,6 @@
 let currentExecution = null;
 let intervaloRevisionDin = 60 * 60 * 1000; // Valor por defecto, el worker lo actualizará
 let initialLoadExecuted = false;
-let lastDelay = null;
-let sameDelayCount = 0;
 
 /* =====================================================
    DOM
@@ -196,33 +194,6 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       }
 
       let delay = data.siguienteActualizacionMs ?? intervaloRevisionDin;
-
-      /*// 🔥 evitar loops agresivos del worker
-      const MIN_DELAY = 10000; // 10 segundos
-
-      if(delay < MIN_DELAY){
-        console.warn("⚠️ delay muy corto, ajustando:", delay);
-        delay = MIN_DELAY;
-      }
-
-      // 🔥 anti delay repetido
-      if(typeof lastDelay !== "undefined"){
-
-        if(delay === lastDelay){
-          sameDelayCount++;
-
-          if(sameDelayCount >= 2){
-            console.warn("⚠️ mismo delay repetido → suavizando");
-            delay = delay + 5000;
-          }
-
-        } else {
-          sameDelayCount = 0;
-        }
-
-      }
-
-      lastDelay = delay; */
 
       // 🔥 jitter opcional (anti sincronización exacta)
       const jitter = Math.random() * 2000;
