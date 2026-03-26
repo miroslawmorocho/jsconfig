@@ -91,74 +91,86 @@ function initVersionChecker(config) {
     }, 1000);
   }
 
-  /* =====================================================
-     🔥 CONFIRMAR CON WORKER (DATA REAL)
-  ===================================================== */
+/* =====================================================
+    🔥 CONFIRMAR CON WORKER (DATA REAL)
+===================================================== */
 
-  async function confirmarConWorker(versionToConfirm){
+async function confirmarConWorker(versionToConfirm){
 
-    logVC("⏳ Confirmando con worker...", versionToConfirm);
+  logVC("⏳ Confirmando con worker...", versionToConfirm);
 
-    try {
+  try {
 
-      const data = await LaunchCore.fetchWorker("/status", true);
+    const data = await LaunchCore.fetchWorker("/status", true);
 
-      logVC("🛰️ Worker version", data?.version);
+    logVC("🛰️ Worker version", data?.version);
 
-      if(String(data?.version) === String(versionToConfirm)){
+    if(String(data?.version) === String(versionToConfirm)){
 
-        logVC("✅ Worker sincronizado");
+      logVC("✅ Worker sincronizado");
 
-        if(lastRenderedVersion !== String(versionToConfirm)){
+      if(lastRenderedVersion !== String(versionToConfirm)){
 
-          logVC("🎨 Renderizando nueva versión");
+        logVC("🎨 Renderizando nueva versión");
 
-          const endpoint = LaunchCore.config.endpoint || "";
-          const freshData = await LaunchCore.fetchWorker(endpoint, true);
+        const endpoint = LaunchCore.config.endpoint || "";
+        const freshData = await LaunchCore.fetchWorker(endpoint, true);
 
-          // 🔥 SI YA HUBO FETCH RECIENTE → NO DUPLICAR
-          const now = Date.now();
+        const now = Date.now();
 
-          if(LaunchCore.lastFetchTime && (now - LaunchCore.lastFetchTime < 3000)){
-            logVC("🧠 Skip render (ya actualizado por sistema principal)");
-            return;
-          }
-
-          if(window.initLaunchEngine){
-
-            // 💣 matar scheduler viejo ANTES del render
-            LaunchCore.scheduler.cancelar("bridge-main");
-
-            currentExecution = null;
-
-            LaunchCore.run({
-              force: true,
-              externalData: freshData
-            });
-
-          } else {
-            logVC("⚠️ fallback reload");
-            location.reload();
-          }
-
-          lastRenderedVersion = String(versionToConfirm);
-        } else {
-          logVC("😴 Ya renderizado, skip");
+        // 🔥 1. SINCRONIZAR ESTADO GLOBAL SIEMPRE (ANTES DE TODO)
+        if(freshData && typeof freshData.eventoCerrado !== "undefined"){
+          LaunchCore.state.eventoCerrado = freshData.eventoCerrado;
+          console.log("🧠 [VC] estado actualizado:", freshData.eventoCerrado);
         }
 
+        // 💣 2. MATAR scheduler viejo SIEMPRE
+        LaunchCore.scheduler.cancelar("bridge-main");
+
+        // 💣 3. RESET global SIEMPRE
+        currentExecution = null;
+        LaunchCore.timing.force();
+
+        // 🔥 4. evitar doble render (PERO sin romper estado)
+        if(LaunchCore.lastFetchTime && (now - LaunchCore.lastFetchTime < 3000)){
+          logVC("🧠 Skip render (ya actualizado por sistema principal)");
+          return;
+        }
+
+        // 🚀 5. render limpio
+        if(window.initLaunchEngine){
+
+          LaunchCore.run({
+            force: true,
+            externalData: freshData
+          });
+
+        } else {
+
+          logVC("⚠️ fallback reload");
+          location.reload();
+
+        }
+
+        lastRenderedVersion = String(versionToConfirm);
+
       } else {
-        logVC("⌛ Worker aún no actualizado");
+        logVC("😴 Ya renderizado, skip");
       }
 
-    } catch(e){
-      console.warn("❌ [VC] Error worker", e);
+    } else {
+      logVC("⌛ Worker aún no actualizado");
     }
 
-    finally {
-      pendingDataVersion = null;
-    }
-
+  } catch(e){
+    console.warn("❌ [VC] Error worker", e);
   }
+
+  finally {
+    pendingDataVersion = null;
+  }
+
+}
 
   /* =====================================================
      🔥 CHECK DATA VERSION
