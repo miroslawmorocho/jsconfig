@@ -338,21 +338,9 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
     const now = Date.now();
 
-    // 🔥 NUEVO: cooldown global (mata fetch fantasma del VC)
-    if(now - LaunchCore.lastGlobalFetch < 5000){
-      console.log("🧠 skip global cooldown:", source);
-      return;
-    }
-
     // 🔥 anti spam básico
     if(now - lastWake < 2000){
       console.log("⛔ skip spam:", source);
-      return;
-    }
-
-    // 🔥 evitar duplicado inmediato (fetch reciente)
-    if(now - LaunchCore.lastFetchTime < 3000){
-      console.log("⛔ skip duplicate fetch:", source);
       return;
     }
 
