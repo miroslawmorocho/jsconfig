@@ -129,8 +129,7 @@ async function confirmarConWorker(versionToConfirm){
 
         // 💣 3. RESET global SIEMPRE
         currentExecution = null;
-        LaunchCore.timing.force();
-
+        
         // 🔥 4. evitar doble render (PERO sin romper estado)
         if(LaunchCore.lastFetchTime && (now - LaunchCore.lastFetchTime < 3000)){
           logVC("🧠 Skip render (ya actualizado por sistema principal)");
