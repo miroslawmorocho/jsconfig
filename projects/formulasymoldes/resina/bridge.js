@@ -206,23 +206,24 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       console.log("⏰ next run in", delay);
 
-      /*LaunchCore.scheduler.programar(
-        "bridge-main",
-        () => initLaunchEngine(false),
-        delay
-      );*/ // invisible
-
-      if(document.hidden){ // desde aqui
+      if(document.hidden){
         console.log("😴 tab oculta → NO programo siguiente fetch");
       } else {
 
-        LaunchCore.scheduler.programar(
-          "bridge-main",
-          () => initLaunchEngine(false),
-          delay
-        );
+        // 🚫 NO reprogramar si viene de version checker
+        if(!externalData){
 
-      } // hasta aca
+          LaunchCore.scheduler.programar(
+            "bridge-main",
+            () => initLaunchEngine(false),
+            delay
+          );
+
+        } else {
+          console.log("🧠 skip scheduler (externalData)");
+        }
+
+      }
 
       ultimaRevision = Date.now();
 

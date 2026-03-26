@@ -125,11 +125,17 @@ function initVersionChecker(config) {
           }
 
           if(window.initLaunchEngine){
+
+            // 💣 matar scheduler viejo ANTES del render
+            LaunchCore.scheduler.cancelar("bridge-main");
+
             currentExecution = null;
+
             LaunchCore.run({
               force: true,
               externalData: freshData
             });
+
           } else {
             logVC("⚠️ fallback reload");
             location.reload();
