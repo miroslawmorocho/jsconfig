@@ -143,11 +143,35 @@ let lastRunTime = 0;
         const remaining = targetTime - now;
 
         if(remaining <= 0){
-          localStorage.removeItem("lc_timer_" + key);
-          delete timers[key]; // 🔥 limpiar referencia
-          fn();
-          return;
+        localStorage.removeItem("lc_timer_" + key);
+        delete timers[key];
+
+        // 💣 VALIDACIÓN GLOBAL ANTES DE EJECUTAR
+        if(key === "bridge-main"){
+
+          // 🚫 no correr si tab oculta
+          if(document.hidden){
+            console.log("😴 skip scheduled (tab hidden)");
+            return;
+          }
+
+          // 🚫 no correr si no toca aún
+          if(!LaunchCore.timing.shouldRun()){
+            console.log("😴 skip scheduled (too early)");
+            return;
+          }
+
+          // 🚫 no correr si evento cerrado
+          if(LaunchCore.state?.eventoCerrado){
+            console.log("🚫 skip scheduled (evento cerrado)");
+            return;
+          }
+
         }
+
+        fn();
+        return;
+      }
 
         const nextDelay = Math.min(remaining, MAX_DELAY);
 
