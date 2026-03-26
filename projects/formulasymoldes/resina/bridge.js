@@ -57,9 +57,15 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
           try{
             const parsed = JSON.parse(cached);
 
-            if(parsed?.eventoCerrado){
-              console.log("💀 Evento cerrado (cache) → NO fetch nunca");
-              data = parsed;
+            if(parsed?.eventoCerrado && !forceFetch && !externalData){
+
+              const nextUpdate = Number(localStorage.getItem("lc_next_update") || 0);
+
+              if(Date.now() < nextUpdate){
+                console.log("💀 Evento cerrado → usando cache");
+                data = parsed;
+              }
+
             }
 
           }catch(e){
@@ -110,7 +116,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       console.log("🧠 estado eventoCerrado:", data.eventoCerrado);
 
       // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
-      if (data.eventoCerrado) {
+      if (data.eventoCerrado) {        
+
+        console.log("💀 Evento cerrado → congelando sistema");
+
+        localStorage.setItem("lc_next_update", Number.MAX_SAFE_INTEGER);
 
         if (DOM.estadoCerrado) {
           DOM.estadoCerrado.innerHTML = data.htmlEventoCerrado;
@@ -205,7 +215,13 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       let delay = data.siguienteActualizacionMs;
 
       if(!delay){
+
         console.warn("⚠️ sin siguienteActualizacionMs");
+
+        // 👇 asegúrate de congelar bien
+        LaunchCore.timing.setNext(Number.MAX_SAFE_INTEGER);
+        localStorage.setItem("lc_next_update", Number.MAX_SAFE_INTEGER);
+
         return;
       }
 
@@ -214,8 +230,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       delay += jitter;
 
       LaunchCore.timing.setNext(delay);
-
+      
       console.log("⏰ next run in", delay);
+
+      const nextTime = Date.now() + delay;
+      localStorage.setItem("lc_next_update", nextTime);
 
       if(document.hidden){
         console.log("😴 tab oculta → NO programo siguiente fetch");

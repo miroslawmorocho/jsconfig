@@ -348,12 +348,21 @@ let lastRunTime = 0;
       return nextUpdate;
     }
 
-    function shouldRun(){
+    /*function shouldRun(){
       const now = Date.now();
 
       if(!nextUpdate) return true;
 
       return now >= nextUpdate;
+    }*/
+
+    function shouldRun(){
+
+      const saved = Number(localStorage.getItem("lc_next_update") || 0);
+
+      if(!saved) return true; // nunca ha corrido → fetch
+
+      return Date.now() >= saved;
     }
 
     function force(){

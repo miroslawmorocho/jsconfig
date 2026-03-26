@@ -116,12 +116,17 @@ async function confirmarConWorker(versionToConfirm){
         const endpoint = LaunchCore.config.endpoint || "";
         const freshData = await LaunchCore.fetchWorker(endpoint, true);
 
-        const now = Date.now();
-
         // 🔥 1. SINCRONIZAR ESTADO GLOBAL SIEMPRE (ANTES DE TODO)
         if(freshData && typeof freshData.eventoCerrado !== "undefined"){
           LaunchCore.state.eventoCerrado = freshData.eventoCerrado;
           console.log("🧠 [VC] estado actualizado:", freshData.eventoCerrado);
+        }
+
+        if(freshData?.siguienteActualizacionMs){
+
+          const nextTime = Date.now() + freshData.siguienteActualizacionMs;
+          localStorage.setItem("lc_next_update", nextTime);
+
         }
 
         // 💣 2. MATAR scheduler viejo SIEMPRE
