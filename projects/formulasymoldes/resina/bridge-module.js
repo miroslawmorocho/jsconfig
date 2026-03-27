@@ -22,7 +22,7 @@ LaunchCore.register("bridge", {
   render: async function(data){
 
     // 🔥 reutilizamos TODO tu engine actual
-    await initLaunchEngine(true, data);
+    await initLaunchEngine(data);
 
   }
 
