@@ -132,25 +132,11 @@ function initVersionChecker(config) {
 
         if(lastRenderedVersion !== String(versionToConfirm)){
 
-          logVC("🎨 Renderizando nueva versión");
+          console.log("🔥 VC → delegando render a CORE");
 
-          const endpoint = LaunchCore.config.endpoint || "";
-          const freshData = await LaunchCore.fetchWorker(endpoint, true);
-
-          // 🔥 1. SINCRONIZAR ESTADO GLOBAL
-          if(freshData && typeof freshData.eventoCerrado !== "undefined"){
-            LaunchCore.state.eventoCerrado = freshData.eventoCerrado;
-            console.log("🧠 [VC] estado actualizado:", freshData.eventoCerrado);
-          }
-
-          if(window.initLaunchEngine){
-            LaunchCore.run({
-              force: true,
-              externalData: freshData
-            });
-          } else {
-            location.reload();
-          }
+          LaunchCore.run({
+            force: true
+          });
 
           lastRenderedVersion = String(versionToConfirm);
 

@@ -7,8 +7,6 @@
  * ============================================================================
  */
 
-let initialLoadExecuted = false;
-
 /* =====================================================
    DOM
 ===================================================== */
@@ -167,11 +165,8 @@ async function renderBotones() {
           ${data.texto}
         </a>
       `;
-
     }
-
   }
-
 }
 
 
@@ -204,21 +199,6 @@ async function renderClases(clases) {
 
 async function renderComponentes() {
   await renderBotones();   
-}
-
-  
-/* =====================================================
-    EVENT LISTENERS (Manejo de visibilidad y caché)
-===================================================== */
-if (!initialLoadExecuted) {
-  initialLoadExecuted = true;
-
-  LaunchCore.onReady(() => {
-    LaunchCore.run({
-      force: true,
-      forceFetch: false
-    });
-  });
 }
   
 
