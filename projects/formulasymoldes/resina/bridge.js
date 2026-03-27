@@ -32,9 +32,9 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
-  if (currentExecution) {
-    console.warn("⛔ Ya hay ejecución, cancelando duplicado");
-    return currentExecution;
+  if(currentExecution && !options?.force){
+    console.log("⛔ Ya hay ejecución, cancelando duplicado");
+    return;
   }
 
   currentExecution = (async () => {
