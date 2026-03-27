@@ -282,8 +282,8 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
         console.log("😴 tab oculta → NO programo siguiente fetch");
       } else {
 
-        // 🚫 NO reprogramar si viene de version checker
-        if(!externalData && !force){
+        // 🔥 SIEMPRE que haya siguienteActualizacion → programar
+        if(data.siguienteActualizacionMs){
 
           LaunchCore.scheduler.programar(
             "bridge-main",
@@ -292,7 +292,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
           );
 
         } else {
-          console.log("🧠 skip scheduler (externalData)");
+          console.log("⛔ no schedule (sin siguienteActualizacionMs)");
         }
 
       }

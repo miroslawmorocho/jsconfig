@@ -244,10 +244,14 @@ function initVersionChecker(config) {
 
           LaunchCore.scheduler.cancelar("vc-confirm");
 
-          LaunchCore.timing.schedule(
+          const nextConfirm = Date.now() + config.confirmDelay;
+
+          localStorage.setItem("vc_next_confirm", nextConfirm);
+
+          LaunchCore.scheduler.programar(
+            "vc-confirm",
             () => confirmarConWorker(nuevaDataVersion),
-            config.confirmDelay,
-            "vc-confirm"
+            config.confirmDelay
           );
         }
 
@@ -270,10 +274,14 @@ function initVersionChecker(config) {
       LaunchCore.scheduler.cancelar("vc-confirm");
 
       // 🔥 programar NUEVA confirmación
-      LaunchCore.timing.schedule(
+      const nextConfirm = Date.now() + config.confirmDelay;
+
+      localStorage.setItem("vc_next_confirm", nextConfirm);
+
+      LaunchCore.scheduler.programar(
+        "vc-confirm",
         () => confirmarConWorker(nuevaDataVersion),
-        config.confirmDelay,
-        "vc-confirm"
+        config.confirmDelay
       );
       
     } catch(e){
@@ -378,16 +386,20 @@ function initVersionChecker(config) {
 
     const pending = localStorage.getItem("lc_pending_version");
 
-    if(pending){
-      console.log("⏳ Retomando confirmación pendiente con delay");
+    const savedConfirm = Number(localStorage.getItem("vc_next_confirm") || 0);
 
-      LaunchCore.timing.schedule(
+    if(savedConfirm && savedConfirm > Date.now()){
+      const delay = savedConfirm - Date.now();
+
+      console.log("⏳ retomando confirm REAL en", delay);
+
+      LaunchCore.scheduler.programar(
+        "vc-confirm",
         () => confirmarConWorker(pending),
-        config.confirmDelay,
-        "vc-confirm"
+        delay
       );
 
-      return; // IMPORTANTE
+      return;
     }
 
     if (DEBUG) {
