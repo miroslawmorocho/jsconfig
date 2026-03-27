@@ -47,17 +47,13 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       console.log("🚀 Fetching worker...");
 
-      let data;
+      if(!externalData){
+        console.error("💣 ERROR: bridge intentó hacer fetch por su cuenta");
+        return;
+      }
 
-      if(externalData){
-        console.log("⚡ Usando data externa (sin fetch)");
-        data = externalData;
-
-        // 🧠 NO tocar scheduler
-        // 🧠 NO borrar next_update
-        // 🧠 SOLO renderizar
-
-      } else {
+      console.log("🎯 CORE → bridge (solo render)");
+      let data = externalData;
 
         const cached = localStorage.getItem("lc_data_cache");
 
@@ -107,7 +103,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
           localStorage.setItem("lc_data_time", Date.now());
         }
 
-      }
+      
       
       const savedTime = Number(localStorage.getItem("lc_data_time") || 0);
 
