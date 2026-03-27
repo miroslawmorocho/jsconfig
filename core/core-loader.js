@@ -583,6 +583,26 @@ LaunchCore.init = async function(){
       await module.init();
     }
 
+    // 🧠 VISIBILITY GLOBAL (CORE MANDA)
+    LaunchCore.visibility.init(() => {
+
+      console.log("👁️ CORE visibility wake");
+
+      if(!LaunchCore.timing.shouldRun()){
+        console.log("😴 CORE skip (too early)");
+        return;
+      }
+
+      console.log("🔥 CORE wake → run");
+
+      LaunchCore.run({
+        force: true
+      });
+
+    }, 30000); // 🧠 Qué hace esto:
+    // 👉 Cuando el usuario vuelve: Espera mínimo 30s desde último check
+    // Pregunta: shouldRun() Si toca → ejecuta
+
     await LaunchCore.use("versionChecker");
     console.log("🔥 LLAMANDO VERSION CHECKER...");
 
