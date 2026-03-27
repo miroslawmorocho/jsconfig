@@ -29,7 +29,7 @@ const DOM = {
 /* =====================================================
    ENGINE INICIALIZADOR
 ===================================================== */
-async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
+async function initLaunchEngine(data){
 
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
   if (data.eventoCerrado) {        
