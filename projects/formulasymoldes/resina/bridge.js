@@ -32,12 +32,16 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
-  if(currentExecution && !force){
+  if(currentExecution){
     console.log("⛔ Ya hay ejecución, cancelando duplicado");
     return;
   }
 
-  currentExecution = (async () => {
+  // 🔥 bloquear INMEDIATAMENTE
+  let resolveExecution;
+  currentExecution = new Promise(r => resolveExecution = r);
+
+  (async () => {
 
     try {
 
@@ -297,8 +301,8 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       console.warn("💥 Error en engine:", error);
     } finally {
       currentExecution = null;
+      resolveExecution();
     }
-
   })();
 
   return currentExecution;
