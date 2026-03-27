@@ -107,9 +107,11 @@ function initVersionChecker(config) {
 
       if(String(data?.version) === String(versionToConfirm)){
 
-        // ✅ AHORA sí guardamos versión REAL
         currentDataVersion = String(versionToConfirm);
         localStorage.setItem("lc_data_version", String(versionToConfirm));
+
+        // 🔥 SOLO AQUÍ se limpia
+        localStorage.removeItem("lc_pending_version");
 
         logVC("✅ Worker sincronizado");
 
@@ -169,7 +171,7 @@ function initVersionChecker(config) {
     }
 
     finally {
-      pendingDataVersion = null;
+      pendingDataVersion = null;      
     }
 
   }
@@ -221,28 +223,25 @@ function initVersionChecker(config) {
       /* =====================================================
          CAMBIO DETECTADO
       ===================================================== */
-
-      // 🔥 evitar duplicados
-      if(pendingDataVersion === nuevaDataVersion){
-        logVC("⏳ Confirmación ya en curso");
-        return;
+      // 🔥 SIEMPRE reemplazar pendiente
+      if(pendingDataVersion && pendingDataVersion !== nuevaDataVersion){
+        logVC("♻️ Reemplazando pendiente vieja", pendingDataVersion);
       }
+      pendingDataVersion = nuevaDataVersion;
+      localStorage.setItem("lc_pending_version", nuevaDataVersion);
 
       logVC("🆕 Nueva DATA detectada", nuevaDataVersion);
 
-      pendingDataVersion = nuevaDataVersion;
+      // 🔥 cancelar confirmación anterior
+      LaunchCore.scheduler.cancelar("vc-confirm");
 
-      logVC("⏳ Timestamp reciente → esperar confirmDelay");
-
+      // 🔥 programar NUEVA confirmación
       LaunchCore.timing.schedule(
         () => confirmarConWorker(nuevaDataVersion),
         config.confirmDelay,
         "vc-confirm"
       );
-
-      currentDataVersion = nuevaDataVersion;
-      localStorage.setItem("lc_data_version", nuevaDataVersion);
-
+      
     } catch(e){
       console.warn("❌ [VC] Error DATA version", e);
     }
@@ -342,6 +341,15 @@ function initVersionChecker(config) {
   ===================================================== */
 
   function init(){
+
+    const pending = localStorage.getItem("lc_pending_version");
+
+    if(pending && !pendingDataVersion){
+      pendingDataVersion = pending;
+
+      logVC("🔥 retomando confirmación pendiente", pending);
+      confirmarConWorker(pending);
+    }
 
     if (DEBUG) {
       sessionStorage.removeItem("vc_logs");
