@@ -281,11 +281,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
         // 🔥 SIEMPRE que haya siguienteActualizacion → programar
         if(data.siguienteActualizacionMs){
 
-          LaunchCore.scheduler.programar(
-            "bridge-main",
-            () => initLaunchEngine(false),
-            delay
-          );
+          console.log("🧠 schedule delegado a CORE");
 
         } else {
           console.log("⛔ no schedule (sin siguienteActualizacionMs)");
