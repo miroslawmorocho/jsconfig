@@ -216,7 +216,16 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       let savedNext = Number(localStorage.getItem("lc_next_update") || 0);
 
-      if(savedNext && savedNext > Date.now()){
+      if(savedNext === Number.MAX_SAFE_INTEGER){
+        console.log("🧊 sistema congelado (no schedule)");
+        return;
+      }
+
+      if(
+        savedNext &&
+        savedNext > Date.now() &&
+        savedNext !== Number.MAX_SAFE_INTEGER
+      ){
         console.log("🧠 Respetando next_update existente");
 
         delay = savedNext - Date.now();
