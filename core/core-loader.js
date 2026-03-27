@@ -557,6 +557,7 @@ LaunchCore.init = async function(){
   };
 
   LaunchCore.config.endpoint = endpointMap[page] || "";
+  console.log("🧠 endpoint seteado:", LaunchCore.config.endpoint);
 
   const base = LaunchCore.paths.projects + `${project}/${product}/`;
 
