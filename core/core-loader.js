@@ -82,7 +82,13 @@ let lastRunTime = 0;
 
     try{
 
-      let url = BASE_WORKER_URL + endpoint + window.location.search;
+      let query = window.location.search || "?v=" + Date.now();
+
+      let url = BASE_WORKER_URL.replace(/\/$/, "") +
+                endpoint +
+                query;
+
+      console.log("🌐 FETCH URL:", url);
 
       if(force){
         url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
@@ -434,6 +440,8 @@ LaunchCore.render = async function(data){
 
 LaunchCore.run = async function(options = {}) {
 
+  console.log("🧠 RUN llamado");
+
   const {
     force = false,
     externalData = null,
@@ -449,10 +457,10 @@ LaunchCore.run = async function(options = {}) {
     return;
   }
 
-  if(isRunning){
+  /*if(isRunning){
     console.log("⛔ run bloqueado (ya en ejecución)");
     return;
-  }
+  }*/
 
   lastRunTime = now;
   isRunning = true;
