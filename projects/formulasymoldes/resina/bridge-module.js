@@ -1,18 +1,29 @@
-LaunchCore.register("bridge", async function(){
+LaunchCore.register("bridge", {
 
-  const root = document.getElementById("launch-engine-root");
+  init: async function(){
 
-  const { project, product, page } = LaunchCore.config;
-  const base = LaunchCore.paths.projects;
+    const root = document.getElementById("launch-engine-root");
 
-  const url = `${base}${project}/${product}/${page}`;
+    const { project, product, page } = LaunchCore.config;
+    const base = LaunchCore.paths.projects;
 
-  // 🔥 HTML
-  const html = await fetch(url + ".html").then(r => r.text());
-  root.innerHTML = html;
+    const url = `${base}${project}/${product}/${page}`;
 
-  // 🔥 CSS + JS
-  await LaunchCore.loadCSS(url + ".css");
-  await LaunchCore.loadScript(url + ".js");
+    // 🔥 HTML
+    const html = await fetch(url + ".html").then(r => r.text());
+    root.innerHTML = html;
+
+    // 🔥 CSS + JS
+    await LaunchCore.loadCSS(url + ".css");
+    await LaunchCore.loadScript(url + ".js");
+
+  },
+
+  render: async function(data){
+
+    // 🔥 reutilizamos TODO tu engine actual
+    await initLaunchEngine(true, data);
+
+  }
 
 });

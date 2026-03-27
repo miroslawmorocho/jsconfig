@@ -410,6 +410,23 @@ let lastRunTime = 0;
 
 })();
 
+/* =====================================================
+    RENDER MACHINE
+===================================================== */
+LaunchCore.render = async function(data){
+
+  const page = LaunchCore.config.page;
+  const module = LaunchCore.modules[page];
+
+  if(!module){
+    console.warn("No hay módulo para render:", page);
+    return;
+  }
+
+  await module.render(data);
+
+};
+
 
 /* =====================================================
     GLOBAL EXECUTION ENGINE
@@ -419,124 +436,52 @@ LaunchCore.run = async function(options = {}) {
 
   const {
     force = false,
+    externalData = null,
     forceFetch = false
   } = options;
 
-  if(isRunning){
-    console.log("⛔ run bloqueado");
+  const now = Date.now();
+
+  const THROTTLE_TIME = 2000; // o lo que quieras
+
+  if(!force && now - lastRunTime < THROTTLE_TIME){
+    console.log("⛔ run throttle");
     return;
   }
 
+  if(isRunning){
+    console.log("⛔ run bloqueado (ya en ejecución)");
+    return;
+  }
+
+  lastRunTime = now;
   isRunning = true;
 
   try {
 
-    console.log("🚀 CORE RUN");
+    console.log("🚀 Fetching worker...");
 
-    const data = await LaunchCore.engine.getData({ forceFetch });
+    console.log("🚀 CORE fetching...");
+
+    const data = await LaunchCore.fetchWorker(
+      LaunchCore.config.endpoint,
+      forceFetch
+    );
 
     if(!data){
-      console.warn("⚠️ sin data");
+      console.warn("Sin data");
       return;
     }
 
-    LaunchCore.engine.updateState(data);
-
-    await LaunchCore.engine.dispatch(data);
-
-    LaunchCore.engine.scheduleNext(data);
+    // 👉 NUEVO: pasar data al render
+    await LaunchCore.render(data);
 
   } catch(e){
-    console.error("❌ CORE error:", e);
+    console.error("❌ error en run:", e);
   }
 
   isRunning = false;
-};
-
-
-/* =====================================================
-   CEREBRO PRINCIPAL
-===================================================== */
-LaunchCore.engine = (function(){
-
-  async function getData({ forceFetch = false } = {}){
-
-    let data = null;
-
-    const cached = localStorage.getItem("lc_data_cache");
-
-    // 🧠 1. intentar cache
-    if(!forceFetch && cached){
-      try{
-        data = JSON.parse(cached);
-        console.log("💾 CORE usando cache");
-      }catch(e){
-        localStorage.removeItem("lc_data_cache");
-      }
-    }
-
-    // 🌐 2. fetch si necesario
-    if(!data){
-      console.log("🌐 CORE fetch real");
-
-      data = await LaunchCore.fetchWorker(
-        LaunchCore.config.endpoint,
-        forceFetch
-      );
-
-      if(data){
-        localStorage.setItem("lc_data_cache", JSON.stringify(data));
-        localStorage.setItem("lc_data_time", Date.now());
-      }
-    }
-
-    return data;
-  }
-
-  function updateState(data){
-    if(!data) return;
-
-    LaunchCore.state.eventoCerrado = data.eventoCerrado;
-  }
-
-  function scheduleNext(data){
-
-    if(!data?.siguienteActualizacionMs) return;
-
-    let delay = data.siguienteActualizacionMs;
-
-    const jitter = Math.random() * 2000;
-    delay += jitter;
-
-    LaunchCore.timing.setNext(delay);
-
-    LaunchCore.scheduler.programar(
-      "core-main",
-      () => LaunchCore.run(),
-      delay
-    );
-
-    console.log("⏰ CORE schedule en", delay);
-  }
-
-  async function dispatch(data){
-
-    if(!window.renderBridge){
-      console.error("❌ Bridge no disponible");
-      return;
-    }
-
-    await window.renderBridge(data);
-  }
-
-  return {
-    getData,
-    updateState,
-    scheduleNext,
-    dispatch
-  };
-
-})();
+}
 
 
 /* =====================================================
@@ -611,7 +556,9 @@ LaunchCore.init = async function(){
       return;
     }
 
-    await module();
+    if(module.init){
+      await module.init();
+    }
 
     await LaunchCore.use("versionChecker");
     console.log("🔥 LLAMANDO VERSION CHECKER...");
