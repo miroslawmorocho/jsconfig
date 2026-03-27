@@ -48,6 +48,11 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       if(externalData){
         console.log("⚡ Usando data externa (sin fetch)");
         data = externalData;
+
+        // 🧠 NO tocar scheduler
+        // 🧠 NO borrar next_update
+        // 🧠 SOLO renderizar
+
       } else {
 
         const cached = localStorage.getItem("lc_data_cache");
@@ -274,7 +279,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       } else {
 
         // 🚫 NO reprogramar si viene de version checker
-        if(!externalData || force){
+        if(!externalData && !force){
 
           LaunchCore.scheduler.programar(
             "bridge-main",
