@@ -425,7 +425,9 @@ LaunchCore.run = async function(options = {}) {
 
   const now = Date.now();
 
-  if(now - lastRunTime < 2000){
+  const THROTTLE_TIME = 2000; // o lo que quieras
+
+  if(!force && now - lastRunTime < THROTTLE_TIME){
     console.log("⛔ run throttle");
     return;
   }

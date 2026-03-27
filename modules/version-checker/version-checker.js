@@ -379,11 +379,15 @@ function initVersionChecker(config) {
     const pending = localStorage.getItem("lc_pending_version");
 
     if(pending){
-      pendingDataVersion = pending;
+      console.log("⏳ Retomando confirmación pendiente con delay");
 
-      logVC("🔥 retomando confirmación pendiente (init)", pending);
+      LaunchCore.timing.schedule(
+        () => confirmarConWorker(pending),
+        config.confirmDelay,
+        "vc-confirm"
+      );
 
-      confirmarConWorker(pending);
+      return; // IMPORTANTE
     }
 
     if (DEBUG) {

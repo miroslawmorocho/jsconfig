@@ -32,7 +32,7 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(force = false, externalData = null, forceFetch = false){
 
-  if(currentExecution && !options?.force){
+  if(currentExecution && !force){
     console.log("⛔ Ya hay ejecución, cancelando duplicado");
     return;
   }
@@ -250,7 +250,7 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
       } else {
 
         // 🚫 NO reprogramar si viene de version checker
-        if(!externalData){
+        if(!externalData || force){
 
           LaunchCore.scheduler.programar(
             "bridge-main",
