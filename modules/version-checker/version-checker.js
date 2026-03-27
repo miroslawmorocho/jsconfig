@@ -107,6 +107,12 @@ function initVersionChecker(config) {
 
     logVC("⏳ Confirmando con worker...", versionToConfirm);
 
+    if(lastRenderedVersion === String(versionToConfirm)){
+      logVC("😴 ya renderizado, NO re-run");
+      confirming = false;
+      return;
+    }
+
     try {
 
       const data = await LaunchCore.fetchWorker("/status", true);
@@ -137,43 +143,13 @@ function initVersionChecker(config) {
             console.log("🧠 [VC] estado actualizado:", freshData.eventoCerrado);
           }
 
-          // 🔥 2. SINCRONIZAR TIMING REAL (SIN RESETS)
-          if(freshData?.siguienteActualizacionMs){
-
-            const existingNext = Number(localStorage.getItem("lc_next_update") || 0);
-
-            // 👉 SOLO si no existe o ya expiró
-            if(!existingNext || Date.now() >= existingNext){
-
-              const nextTime = Date.now() + freshData.siguienteActualizacionMs;
-              localStorage.setItem("lc_next_update", nextTime);
-
-              console.log("⏰ [VC] nuevo next_update sincronizado");
-            } else {
-              console.log("⏰ [VC] se respeta timing existente");
-            }
-
-          }
-
-          // 💣 3. MATAR scheduler viejo
-          LaunchCore.scheduler.cancelar("bridge-main");
-
-          // 💣 4. RESET ejecución
-          currentExecution = null;
-          
-          // 🚀 5. RENDER LIMPIO
           if(window.initLaunchEngine){
-
             LaunchCore.run({
               force: true,
               externalData: freshData
             });
-
           } else {
-
-            logVC("⚠️ fallback reload");
             location.reload();
-
           }
 
           lastRenderedVersion = String(versionToConfirm);
@@ -203,6 +179,11 @@ function initVersionChecker(config) {
 
   async function checkDataVersion(){
 
+    if(confirming){
+      logVC("⛔ checkDataVersion bloqueado (confirmando)");
+      return;
+    }
+
     logVC("🔍 Checking DATA...");
 
     try {
@@ -213,6 +194,11 @@ function initVersionChecker(config) {
 
       const data = await res.json();
       const nuevaDataVersion = String(data.version);
+
+      if(pendingDataVersion === nuevaDataVersion){
+        logVC("😴 ya está pendiente esta versión");
+        return;
+      }
       
       const pending = localStorage.getItem("lc_pending_version");
 
