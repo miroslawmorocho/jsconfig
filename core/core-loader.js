@@ -471,6 +471,10 @@ LaunchCore.run = async function(options = {}) {
 
     console.log("🚀 CORE fetching...");
 
+    if(force){
+      LaunchCore.timing.force();
+    }
+
     const data = await LaunchCore.fetchWorker(
       LaunchCore.config.endpoint,
       forceFetch
@@ -597,10 +601,7 @@ LaunchCore.init = async function(){
 
       console.log("👁️ CORE visibility wake");
 
-      if(!LaunchCore.timing.shouldRun()){
-        console.log("😴 CORE skip (too early)");
-        return;
-      }
+      LaunchCore.run({ force: true });
 
       console.log("🔥 CORE wake → run");
 
