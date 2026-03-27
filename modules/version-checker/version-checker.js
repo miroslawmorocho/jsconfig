@@ -214,8 +214,12 @@ function initVersionChecker(config) {
       const data = await res.json();
       const nuevaDataVersion = String(data.version);
       
-      // 🔥 SI NO CAMBIÓ → NO HACER NADA
-      if(currentDataVersion === nuevaDataVersion){
+      const pending = localStorage.getItem("lc_pending_version");
+
+      if(
+        currentDataVersion === nuevaDataVersion &&
+        !pending
+      ){
         logVC("😴 DATA sin cambios");
         return;
       }
@@ -231,11 +235,34 @@ function initVersionChecker(config) {
 
       if(!currentDataVersion){
 
-        currentDataVersion = savedDataVersion || nuevaDataVersion;
+        // 🔥 SOLO confiar en localStorage (estado REAL confirmado)
+        currentDataVersion = savedDataVersion || null;
+        logVC("🧠 currentDataVersion INIT", currentDataVersion);
 
-        if(savedDataVersion && savedDataVersion !== nuevaDataVersion){
-          logVC("🧟 Usuario volvió → refresh inmediato");
-          confirmarConWorker(nuevaDataVersion);
+        // 👉 SI hay pending → retomar SIEMPRE
+        const pending = localStorage.getItem("lc_pending_version");
+
+        if(pending){
+          logVC("🔥 retomando pending en primera carga", pending);
+          confirmarConWorker(pending);
+          return;
+        }
+
+        // 👉 SI no hay pending pero GitHub es distinto → iniciar flujo
+        if(savedDataVersion !== nuevaDataVersion){
+
+          logVC("🆕 Primera carga detecta cambio → iniciar confirmación");
+
+          pendingDataVersion = nuevaDataVersion;
+          localStorage.setItem("lc_pending_version", nuevaDataVersion);
+
+          LaunchCore.scheduler.cancelar("vc-confirm");
+
+          LaunchCore.timing.schedule(
+            () => confirmarConWorker(nuevaDataVersion),
+            config.confirmDelay,
+            "vc-confirm"
+          );
         }
 
         return;
@@ -365,10 +392,11 @@ function initVersionChecker(config) {
 
     const pending = localStorage.getItem("lc_pending_version");
 
-    if(pending && !pendingDataVersion){
+    if(pending){
       pendingDataVersion = pending;
 
-      logVC("🔥 retomando confirmación pendiente", pending);
+      logVC("🔥 retomando confirmación pendiente (init)", pending);
+
       confirmarConWorker(pending);
     }
 
