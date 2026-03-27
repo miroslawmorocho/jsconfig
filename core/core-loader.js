@@ -476,6 +476,29 @@ LaunchCore.run = async function(options = {}) {
     // 👉 NUEVO: pasar data al render
     await LaunchCore.render(data);
 
+    // 🧠 PROGRAMACIÓN CENTRALIZADA
+    if(data?.siguienteActualizacionMs){
+
+      let delay = data.siguienteActualizacionMs;
+
+      // pequeño jitter para evitar sincronización masiva
+      delay += Math.random() * 2000;
+
+      // protección mínima
+      delay = Math.max(delay, 5000);
+
+      console.log("🧠 CORE scheduling in", delay);
+
+      LaunchCore.scheduler.programar(
+        "core-main",
+        () => LaunchCore.run(),
+        delay
+      );
+
+    } else {
+      console.log("⛔ CORE: sin siguienteActualizacionMs");
+    }
+
   } catch(e){
     console.error("❌ error en run:", e);
   }
