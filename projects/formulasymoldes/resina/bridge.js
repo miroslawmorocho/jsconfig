@@ -115,6 +115,15 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
       console.log("🧠 estado eventoCerrado:", data.eventoCerrado);
 
+      if(!data.eventoCerrado){
+        const savedNext = Number(localStorage.getItem("lc_next_update"));
+
+        if(savedNext === Number.MAX_SAFE_INTEGER){
+          console.log("🔥 descongelando sistema");
+          localStorage.removeItem("lc_next_update");
+        }
+      }
+
       // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
       if (data.eventoCerrado) {        
 
