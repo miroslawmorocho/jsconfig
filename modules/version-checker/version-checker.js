@@ -14,6 +14,7 @@ function initVersionChecker(config) {
   let checking = false;
   let pendingDataVersion = null;
   let lastRenderedVersion = null;
+  let confirming = false;
   const DEBUG = true; // 🔴 cámbialo a true cuando quieras debug
 
   /* =====================================================
@@ -97,6 +98,13 @@ function initVersionChecker(config) {
 
   async function confirmarConWorker(versionToConfirm){
 
+    if(confirming){
+      logVC("⛔ confirm en progreso, skip");
+      return;
+    }
+
+    confirming = true;
+
     logVC("⏳ Confirmando con worker...", versionToConfirm);
 
     try {
@@ -107,10 +115,11 @@ function initVersionChecker(config) {
 
       if(String(data?.version) === String(versionToConfirm)){
 
+        // ✅ DATA REAL CONFIRMADA
         currentDataVersion = String(versionToConfirm);
         localStorage.setItem("lc_data_version", String(versionToConfirm));
 
-        // 🔥 SOLO AQUÍ se limpia
+        // 🔥 SOLO AQUÍ se limpia pending
         localStorage.removeItem("lc_pending_version");
 
         logVC("✅ Worker sincronizado");
@@ -122,26 +131,37 @@ function initVersionChecker(config) {
           const endpoint = LaunchCore.config.endpoint || "";
           const freshData = await LaunchCore.fetchWorker(endpoint, true);
 
-          // 🔥 1. SINCRONIZAR ESTADO GLOBAL SIEMPRE (ANTES DE TODO)
+          // 🔥 1. SINCRONIZAR ESTADO GLOBAL
           if(freshData && typeof freshData.eventoCerrado !== "undefined"){
             LaunchCore.state.eventoCerrado = freshData.eventoCerrado;
             console.log("🧠 [VC] estado actualizado:", freshData.eventoCerrado);
           }
 
+          // 🔥 2. SINCRONIZAR TIMING REAL (SIN RESETS)
           if(freshData?.siguienteActualizacionMs){
 
-            const nextTime = Date.now() + freshData.siguienteActualizacionMs;
-            localStorage.setItem("lc_next_update", nextTime);
+            const existingNext = Number(localStorage.getItem("lc_next_update") || 0);
+
+            // 👉 SOLO si no existe o ya expiró
+            if(!existingNext || Date.now() >= existingNext){
+
+              const nextTime = Date.now() + freshData.siguienteActualizacionMs;
+              localStorage.setItem("lc_next_update", nextTime);
+
+              console.log("⏰ [VC] nuevo next_update sincronizado");
+            } else {
+              console.log("⏰ [VC] se respeta timing existente");
+            }
 
           }
 
-          // 💣 2. MATAR scheduler viejo SIEMPRE
+          // 💣 3. MATAR scheduler viejo
           LaunchCore.scheduler.cancelar("bridge-main");
 
-          // 💣 3. RESET global SIEMPRE
+          // 💣 4. RESET ejecución
           currentExecution = null;
           
-          // 🚀 5. render limpio
+          // 🚀 5. RENDER LIMPIO
           if(window.initLaunchEngine){
 
             LaunchCore.run({
@@ -171,7 +191,8 @@ function initVersionChecker(config) {
     }
 
     finally {
-      pendingDataVersion = null;      
+      confirming = false; // 🔥 CLAVE ANTI DUPLICADOS
+      pendingDataVersion = null;
     }
 
   }
