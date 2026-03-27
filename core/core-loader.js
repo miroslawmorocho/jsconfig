@@ -551,7 +551,7 @@ LaunchCore.init = async function(){
   ===================================================== */
 
   const endpointMap = {
-    bridge: "",
+    bridge: "/",
     capture: "/captura",
     pricing: "/pricing"
   };
