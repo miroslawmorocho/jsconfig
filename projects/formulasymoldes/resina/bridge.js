@@ -212,24 +212,24 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
         LaunchCore.countdown.stop();
       }
 
+      let delay;
+
       let savedNext = Number(localStorage.getItem("lc_next_update") || 0);
 
       if(savedNext && savedNext > Date.now()){
         console.log("🧠 Respetando next_update existente");
 
+        delay = savedNext - Date.now();
+
         LaunchCore.timing.initFromStorage();
 
       } else {
 
-        let delay = data.siguienteActualizacionMs;
+        delay = data.siguienteActualizacionMs;
 
         if(!delay){
-
           console.warn("⚠️ sin siguienteActualizacionMs");
-
-          // 👇 asegúrate de congelar bien
           localStorage.setItem("lc_next_update", Number.MAX_SAFE_INTEGER);
-
           return;
         }
 
@@ -244,6 +244,12 @@ async function initLaunchEngine(force = false, externalData = null, forceFetch =
 
         console.log("⏰ new next run in", delay);
       }
+
+      // 🔥 PROTECCIÓN GLOBAL
+      delay = Math.max(delay, 5000);
+
+      // 🔥 DEBUG
+      console.log("🧠 scheduling in", delay);
 
       if(document.hidden){
         console.log("😴 tab oculta → NO programo siguiente fetch");
