@@ -395,8 +395,6 @@ function initVersionChecker(config) {
 
     logVC("🚀 VC INIT");
 
-    LaunchCore.visibility.init(check, config.checkInterval);
-
     check(); // primer check
 
     // 🔥 loop backup (cada X tiempo)
