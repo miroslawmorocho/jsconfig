@@ -384,7 +384,7 @@ async function renderComponentes() {
 }
 
 
-let lastWake = 0;
+/*let lastWake = 0;
 
 function forceRefreshFromBackground(source = "unknown"){
 
@@ -419,7 +419,7 @@ function forceRefreshFromBackground(source = "unknown"){
     forceFetch: false
   });
 
-}
+}*/
 
   
 /* =====================================================
@@ -436,7 +436,7 @@ if (!initialLoadExecuted) {
   });
 }
   
-document.addEventListener("visibilitychange", () => {
+/*document.addEventListener("visibilitychange", () => {
   if(!document.hidden){
     forceRefreshFromBackground("visibility");
   }
@@ -450,7 +450,7 @@ window.addEventListener("pageshow", function(e){
   if(e.persisted){
     forceRefreshFromBackground("pageshow");
   }
-});
+});*/
 
 
 // botones de calendario
