@@ -1,6 +1,10 @@
 function initVersionChecker(config){
 
-  if(window.__vcInitialized) return;
+  if(window.__vcInitialized) {
+    console.log("⛔ VC ya inicializado");
+    return;
+  }
+
   window.__vcInitialized = true;
 
   console.log("🔥 VC SENSOR INICIADO");
@@ -8,36 +12,59 @@ function initVersionChecker(config){
 
   let lastDataVersion = null;
   let lastCodeVersion = null;
+  let checking = false;
+
+  /* =====================================================
+     DEBUG SIMPLE
+  ===================================================== */
+
+  function log(msg, data){
+    console.log(`🛰️ VC → ${msg}`, data || "");
+  }
+
+  /* =====================================================
+     CHECK
+  ===================================================== */
 
   async function check(){
 
+    if(checking){
+      log("⛔ busy");
+      return;
+    }
+
+    checking = true;
+
     const now = new Date().toLocaleTimeString();
-    console.log(`🛰️ VC check @ ${now}`);
+    log("check @" + now);
 
     try{
 
-      // 🔥 CODE VERSION (GitHub)
+      // 🔥 CODE
       const codeRes = await fetch(config.codeVersionUrl, { cache: "no-store" });
       const code = String((await codeRes.json()).commit);
 
-      console.log("🧬 VC code version:", code);
+      log("code", code);
 
       if(lastCodeVersion && lastCodeVersion !== code){
-        console.log("💥 CODE CAMBIO DETECTADO");
+        log("💥 CODE CAMBIÓ");
         LaunchCore.emit("code:update");
       }
 
       lastCodeVersion = code;
 
-      // 🔥 DATA VERSION (GitHub)
+      // 🔥 DATA (GitHub)
       const dataRes = await fetch(config.versionUrl, { cache: "no-store" });
       const data = String((await dataRes.json()).version);
 
-      console.log("📦 VC data version:", data);
+      log("data", data);
 
       if(lastDataVersion && lastDataVersion !== data){
-        console.log("🟡 DATA CAMBIO DETECTADO (GitHub)");
-        LaunchCore.emit("data:detected"); // 👈 IMPORTANTE (NO update directo)
+        log("🟡 DATA CAMBIO DETECTADO");
+        LaunchCore.emit("data:detected", {
+          version: data,
+          confirmDelay: config.confirmDelay
+        });
       }
 
       lastDataVersion = data;
@@ -46,10 +73,14 @@ function initVersionChecker(config){
       console.warn("⚠️ VC error", e);
     }
 
+    checking = false;
   }
 
-  console.log("⏱️ VC intervalo:", config.checkInterval);
-  console.log("🛰️ VC activo (interval loop creado)");
+  /* =====================================================
+     LOOP
+  ===================================================== */
+
+  console.log("⏱️ intervalo:", config.checkInterval);
 
   setInterval(check, config.checkInterval);
 
