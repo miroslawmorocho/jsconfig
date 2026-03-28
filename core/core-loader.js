@@ -562,7 +562,12 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
           localStorage.removeItem("lc_data");
           cacheInvalidated = true;
 
-        } else if(cachedVersion && cachedVersion !== String(currentVersion)){
+        } if(!cachedVersion){
+          console.log("⚠️ sin versión guardada → invalidando cache");
+          localStorage.removeItem("lc_data");
+          cacheInvalidated = true;
+
+        } else if(cachedVersion !== String(currentVersion)){
 
           console.log("💥 cache inválido por versión");
           localStorage.removeItem("lc_data");
@@ -574,19 +579,24 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
           await LaunchCore.render(data);
 
-          if(control?.siguienteActualizacionMs){
+          const delay = Number(control?.siguienteActualizacionMs);
+
+          console.log("🔥 CACHE CONTROL:", control);
+          console.log("🔥 CACHE DELAY:", delay);
+
+          if(delay && !isNaN(delay)){
 
             LaunchCore.scheduler.programar(
               "core-main",
               () => LaunchCore.execute("scheduler"),
-              control.siguienteActualizacionMs
+              Math.max(delay, 5000)
             );
 
           } else {
 
-            console.log("⛔ sin siguienteActualizacionMs (cache)");
+            console.log("⚠️ cache sin timing válido → invalidando");
 
-            LaunchCore.scheduler.cancelar("core-main"); // 💥 LIMPIEZA
+            cacheInvalidated = true;
           }
 
           // 💥 CLAVE: SALIR
@@ -650,26 +660,25 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     await LaunchCore.render(data);
 
     // 🧠 PROGRAMACIÓN CENTRALIZADA
-    if(control?.siguienteActualizacionMs){
+    const delay = Number(control?.siguienteActualizacionMs);
 
-      let delay = control.siguienteActualizacionMs;
+    if(delay && !isNaN(delay)){
 
-      delay += Math.random() * 2000;
-      delay = Math.max(delay, 5000);
+      let finalDelay = delay + Math.random() * 2000;
+      finalDelay = Math.max(finalDelay, 5000);
 
-      console.log("🧠 CORE scheduling in", delay);
+      console.log("🧠 CORE scheduling in", finalDelay);
 
       LaunchCore.scheduler.programar(
         "core-main",
         () => LaunchCore.execute("scheduler"),
-        delay
+        finalDelay
       );
 
     } else {
 
-      console.log("⛔ CORE: sin siguienteActualizacionMs");
+      console.log("⚠️ FETCH sin timing válido");
 
-      LaunchCore.scheduler.cancelar("core-main"); // 💥 LIMPIEZA
     }
 
   } catch(e){
