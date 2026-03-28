@@ -1,3 +1,7 @@
+/* =====================================================
+    CONFIG BASE
+  ===================================================== */
+
 window.LaunchCore = window.LaunchCore || {};
 
 LaunchCore.paths = {
@@ -20,16 +24,31 @@ LaunchCore.state = {
 LaunchCore.forceFresh = false;
 LaunchCore.lastFetchTime = 0;
 LaunchCore.lastGlobalFetch = 0;
+
 let isRunning = false;
 let lastRunTime = 0;
 
+LaunchCore.events = {};
+
+
 (function(){
 
+  const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
+
   /* =====================================================
-    CONFIG BASE
+    EVENT BUS
   ===================================================== */
 
-  const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
+  LaunchCore.on = function(event, fn){
+    if(!this.events[event]) this.events[event] = [];
+    this.events[event].push(fn);
+  };
+
+
+  LaunchCore.emit = function(event, data){
+    (this.events[event] || []).forEach(fn => fn(data));
+  };
+
 
   /* =====================================================
     CORE GLOBAL
@@ -56,6 +75,7 @@ let lastRunTime = 0;
       document.body.appendChild(s);
     });
   };
+
 
   LaunchCore.loadCSS = function(href){
     return new Promise((resolve)=>{
@@ -212,47 +232,107 @@ let lastRunTime = 0;
 
   })();
 
+
+
+  /* =====================================================
+    GLOBAL TIMING ENGINE (SINGLE SOURCE OF TRUTH)
+  ===================================================== */
+
+  LaunchCore.timing = (function(){
+
+    let nextUpdate = 0;
+
+
+    function setNext(delay){
+      nextUpdate = Date.now() + delay;
+
+      localStorage.setItem("lc_next_update", nextUpdate);
+
+      console.log("🧠 [Timing] next update in", delay);
+    }
+
+    
+    function getNext(){
+      return nextUpdate;
+    }
+
+
+    function shouldRun(){
+
+      const saved = Number(localStorage.getItem("lc_next_update") || 0);
+
+      if(!saved) return true; // nunca ha corrido → fetch
+
+      return Date.now() >= saved;
+    }
+
+
+    function force(){
+      nextUpdate = 0;
+      localStorage.removeItem("lc_next_update");
+    }
+
+    
+    function initFromStorage(){
+      const saved = Number(localStorage.getItem("lc_next_update") || 0);
+      if(saved){
+        nextUpdate = saved;
+      }
+    }
+
+    
+    function schedule(fn, delay, key = "global"){
+      LaunchCore.scheduler.programar(key, fn, delay);
+    }
+
+    
+    return {
+      setNext,
+      getNext,
+      shouldRun,
+      force,
+      initFromStorage,
+      schedule // 👈 nuevo
+    };
+
+  })();
+
+
+
   /* =====================================================
     VISIBILITY CONTROL (GLOBAL)
   ===================================================== */
 
   LaunchCore.visibility = (function(){
 
-    let lastCheck = 0;
-    let minInterval = 60000; // default 1 min
-    let callbacks = [];
+    let initialized = false;
+
 
     function init(fn, interval){
+      if(!initialized){
+        document.addEventListener("visibilitychange", () => {
+          if(document.hidden) return;
+
+          const now = Date.now();
+
+          if(now - lastCheck < minInterval){
+            return;
+          }
+
+          callbacks.forEach(fn => fn());
+          lastCheck = now;
+        });
+
+        initialized = true;
+      }
 
       callbacks.push(fn);
 
       if(interval){
         minInterval = interval;
       }
-
-      document.addEventListener("visibilitychange", () => {
-
-        if(document.hidden) return;
-
-        const now = Date.now();
-
-        if(now - lastCheck < minInterval){
-          return;
-        }
-
-        callbacks.forEach(fn => {
-          try {
-            fn();
-          } catch(e){
-            console.warn("Visibility callback error:", e);
-          }
-        });
-
-        lastCheck = now;
-
-      });
-
     }
+
 
     function updateInterval(newInterval){
       if(newInterval){
@@ -260,6 +340,7 @@ let lastRunTime = 0;
       }
     }
 
+    
     return {
       init,
       updateInterval
@@ -284,12 +365,14 @@ let lastRunTime = 0;
       seconds: () => document.getElementById("seconds")
     };
 
+    
     function start(target){
 
       stop();
 
       targetTime = Number(target);
 
+    
       function update(){
 
         const now = Date.now();
@@ -317,6 +400,7 @@ let lastRunTime = 0;
 
     }
 
+    
     function stop(){
 
       if(interval){
@@ -326,74 +410,10 @@ let lastRunTime = 0;
 
     }
 
+
     return {
       start,
       stop
-    };
-
-  })();
-
-
-  /* =====================================================
-    GLOBAL TIMING ENGINE (SINGLE SOURCE OF TRUTH)
-  ===================================================== */
-
-  LaunchCore.timing = (function(){
-
-    let nextUpdate = 0;
-
-    function setNext(delay){
-      nextUpdate = Date.now() + delay;
-
-      localStorage.setItem("lc_next_update", nextUpdate);
-
-      console.log("🧠 [Timing] next update in", delay);
-    }
-
-    function getNext(){
-      return nextUpdate;
-    }
-
-    /*function shouldRun(){
-      const now = Date.now();
-
-      if(!nextUpdate) return true;
-
-      return now >= nextUpdate;
-    }*/
-
-    function shouldRun(){
-
-      const saved = Number(localStorage.getItem("lc_next_update") || 0);
-
-      if(!saved) return true; // nunca ha corrido → fetch
-
-      return Date.now() >= saved;
-    }
-
-    function force(){
-      nextUpdate = 0;
-      localStorage.removeItem("lc_next_update");
-    }
-
-    function initFromStorage(){
-      const saved = Number(localStorage.getItem("lc_next_update") || 0);
-      if(saved){
-        nextUpdate = saved;
-      }
-    }
-
-    function schedule(fn, delay, key = "global"){
-      LaunchCore.scheduler.programar(key, fn, delay);
-    }
-
-    return {
-      setNext,
-      getNext,
-      shouldRun,
-      force,
-      initFromStorage,
-      schedule // 👈 nuevo
     };
 
   })();
@@ -416,9 +436,72 @@ let lastRunTime = 0;
 
 })();
 
+
+/* =====================================================
+    NORMALIZADOR
+===================================================== */
+
+/* =====================================================
+   DATA NORMALIZER (CORE MANDA)
+===================================================== */
+
+LaunchCore.normalize = function(raw){
+
+  const page = LaunchCore.config.page;
+
+  if(!raw) return null;
+
+  // 🔥 separar control global (CORE lo usa)
+  const control = {
+    siguienteActualizacionMs: raw.siguienteActualizacionMs
+  };
+
+  let data = {};
+
+  switch(page){
+
+    case "bridge":
+      data = raw.evento || {};
+      delete data.siguienteActualizacionMs; // por si viene duplicado
+      break;
+
+    case "captura":
+      data = raw.captura || {};
+      break;
+
+    case "pricing":
+      data = raw.pricing || {};
+      break;
+
+    default:
+      console.warn("⚠️ Página no reconocida en normalizer:", page);
+      data = {};
+  }
+
+  return {
+    data,     // 👉 lo que usa la página
+    control   // 👉 lo que usa la CORE
+  };
+
+};
+
+
+
+/* =====================================================
+    ESTADO DEL LANZAMIENTO (luego)
+===================================================== */
+
+/*LaunchCore.globalState = {
+  eventoCerrado: raw.evento?.eventoCerrado || false,
+  pricingEstado: raw.pricing?.estado || "unknown"
+};*/
+
+
+
 /* =====================================================
     RENDER MACHINE
 ===================================================== */
+
 LaunchCore.render = async function(data){
 
   const page = LaunchCore.config.page;
@@ -434,6 +517,7 @@ LaunchCore.render = async function(data){
 };
 
 
+
 /* =====================================================
     GLOBAL EXECUTION ENGINE
 ===================================================== */
@@ -444,9 +528,14 @@ LaunchCore.run = async function(options = {}) {
 
   const {
     force = false,
-    externalData = null,
     forceFetch = false
   } = options;
+
+  console.log("🧠 RUN origen:", {
+    force,
+    forceFetch,
+    time: Date.now()
+  });
 
   const now = Date.now();
 
@@ -475,23 +564,26 @@ LaunchCore.run = async function(options = {}) {
       LaunchCore.timing.force();
     }
 
-    const data = await LaunchCore.fetchWorker(
+    const raw = await LaunchCore.fetchWorker(
       LaunchCore.config.endpoint,
       forceFetch
     );
 
-    if(!data){
+    if(!raw){
       console.warn("Sin data");
       return;
     }
 
-    // 👉 NUEVO: pasar data al render
+    // 🔥 NORMALIZAR
+    const { data, control } = LaunchCore.normalize(raw);
+
+    // 👉 render SOLO data limpia
     await LaunchCore.render(data);
 
     // 🧠 PROGRAMACIÓN CENTRALIZADA
-    if(data?.siguienteActualizacionMs){
+    if(control?.siguienteActualizacionMs){
 
-      let delay = data.siguienteActualizacionMs;
+      let delay = control.siguienteActualizacionMs;
 
       // pequeño jitter para evitar sincronización masiva
       delay += Math.random() * 2000;
@@ -503,7 +595,7 @@ LaunchCore.run = async function(options = {}) {
 
       LaunchCore.scheduler.programar(
         "core-main",
-        () => LaunchCore.run(),
+        () => LaunchCore.execute("scheduler"),
         delay
       );
 
@@ -520,14 +612,61 @@ LaunchCore.run = async function(options = {}) {
 
 
 /* =====================================================
+    EXECUTION SOURCE
+===================================================== */
+
+LaunchCore.execute = function(source = "unknown", options = {}){
+
+  console.log("🧠 EXECUTE desde:", source);
+
+  return LaunchCore.run(options);
+};
+
+
+/* =====================================================
+    EVENT HANDLERS
+===================================================== */
+
+LaunchCore.on("data:update", () => {
+
+  console.log("🧠 CORE: data update recibido");
+
+  LaunchCore.timing.force();
+
+  LaunchCore.execute("vc-data", {
+    force: true,
+    forceFetch: true
+  });
+
+});
+
+
+LaunchCore.on("code:update", () => {
+
+  console.log("🧠 CORE: code update recibido");
+
+  location.reload();
+
+});
+
+
+
+/* =====================================================
    MODULE REGISTRY (AUTO INIT)
 ===================================================== */
 
 LaunchCore.modules = {};
 
+
 LaunchCore.register = function(name, fn){
   LaunchCore.modules[name] = fn;
 };
+
+
+
+/* =====================================================
+   ORQUESTADOR (INIT)
+===================================================== */
 
 LaunchCore.init = async function(){
 
@@ -557,7 +696,7 @@ LaunchCore.init = async function(){
   }
 
   const { project, product, page } = LaunchCore.config;
-
+  
   /* =====================================================
     ENDPOINT POR PÁGINA
   ===================================================== */
@@ -601,13 +740,12 @@ LaunchCore.init = async function(){
 
       console.log("👁️ CORE visibility wake");
 
-      LaunchCore.run({ force: true });
+      if(!LaunchCore.timing.shouldRun()){
+        console.log("😴 CORE skip (too early)");
+        return;
+      }
 
-      console.log("🔥 CORE wake → run");
-
-      LaunchCore.run({
-        force: true
-      });
+      LaunchCore.execute("visibility", { force: true });
 
     }, 30000); // 🧠 Qué hace esto:
     // 👉 Cuando el usuario vuelve: Espera mínimo 30s desde último check
@@ -622,9 +760,12 @@ LaunchCore.init = async function(){
 
 };
 
+
+
 /* =====================================================
    MÓDULOS GLOBALES (darkmode, carousel, etc.)
 ===================================================== */
+
 LaunchCore.use = async function(name){
 
   const fn = LaunchCore.globals[name];
@@ -637,6 +778,7 @@ LaunchCore.use = async function(name){
   return await fn();
 
 };
+
 
 LaunchCore.globals.darkmode = async function(){
 
@@ -651,6 +793,7 @@ LaunchCore.globals.darkmode = async function(){
   await LaunchCore.loadScript(LaunchCore.paths.base + darkmodePath + ".js");
 
 };
+
 
 LaunchCore.globals.carousel = async function(){
 
@@ -678,12 +821,14 @@ LaunchCore.globals.carousel = async function(){
 
 };
 
+
 LaunchCore.globals.scroll = async function(){
 
   const scrollPath = "modules/scroll/scroll"
   await LaunchCore.loadScript(LaunchCore.paths.base + scrollPath + ".js");
 
 };
+
 
 LaunchCore.globals.versionChecker = async function(){
 
@@ -718,7 +863,11 @@ LaunchCore.globals.flag = async function(){
 
 };
 
-/* PASAR LA VERSIÓN DE URL "?v=XXX" EN ENLACES DE MI DOMINIO */
+
+
+/* =====================================================
+   VERSION IN URL
+===================================================== */
 
 document.addEventListener("click", function(e){
 

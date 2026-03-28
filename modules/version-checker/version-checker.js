@@ -3,67 +3,36 @@ function initVersionChecker(config){
   if(window.__vcInitialized) return;
   window.__vcInitialized = true;
 
-  console.log("🔥 VC SIMPLE INICIADO");
+  console.log("🔥 VC SENSOR INICIADO");
 
-  let currentDataVersion = null;
-  let currentCodeVersion = null;
+  let lastDataVersion = null;
+  let lastCodeVersion = null;
 
   async function check(){
 
     try{
 
-      // 🔥 CODE CHECK
+      // 🔥 CODE
       const codeRes = await fetch(config.codeVersionUrl, { cache: "no-store" });
-      const codeData = await codeRes.json();
+      const code = String((await codeRes.json()).commit);
 
-      const newCode = String(codeData.commit);
-      const savedCode = localStorage.getItem("lc_code_version");
-
-      if(!currentCodeVersion){
-        currentCodeVersion = newCode;
-        localStorage.setItem("lc_code_version", newCode);
-
-        if(savedCode && savedCode !== newCode){
-          console.log("💥 CODE cambiado → reload");
-          location.reload();
-          return;
-        }
+      if(lastCodeVersion && lastCodeVersion !== code){
+        console.log("💥 CODE CAMBIO DETECTADO");
+        LaunchCore.emit("code:update");
       }
 
-      if(currentCodeVersion !== newCode){
-        console.log("💥 CODE update → reload");
-        localStorage.setItem("lc_code_version", newCode);
-        location.reload();
-        return;
-      }
+      lastCodeVersion = code;
 
-      currentCodeVersion = newCode;
-
-      // 🔥 DATA CHECK
+      // 🔥 DATA
       const dataRes = await fetch(config.versionUrl, { cache: "no-store" });
-      const dataJson = await dataRes.json();
+      const data = String((await dataRes.json()).version);
 
-      const newData = String(dataJson.version);
-      const savedData = localStorage.getItem("lc_data_version");
-
-      if(!currentDataVersion){
-        currentDataVersion = savedData || newData;
+      if(lastDataVersion && lastDataVersion !== data){
+        console.log("🆕 DATA CAMBIO DETECTADO");
+        LaunchCore.emit("data:update");
       }
 
-      if(currentDataVersion !== newData){
-        console.log("🆕 DATA detectada");
-
-        currentDataVersion = newData;
-        localStorage.setItem("lc_data_version", newData);
-
-        // 💥 CLAVE: FORZAR CORE
-        LaunchCore.timing.force();
-
-        LaunchCore.run({
-          force: true,
-          forceFetch: true
-        });
-      }
+      lastDataVersion = data;
 
     }catch(e){
       console.warn("VC error", e);
@@ -71,10 +40,12 @@ function initVersionChecker(config){
 
   }
 
-  // 👁️ usar SOLO el sistema del CORE
-  LaunchCore.visibility.init(check, config.checkInterval);
+  LaunchCore.timing.schedule(
+    check,
+    config.checkInterval,
+    "vc-loop"
+  );
 
-  // primer check
   check();
 }
 
