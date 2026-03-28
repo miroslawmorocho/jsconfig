@@ -238,76 +238,25 @@ LaunchCore.events = {};
     GLOBAL TIMING ENGINE (SINGLE SOURCE OF TRUTH)
   ===================================================== */
 
-  LaunchCore.timing = (function(){
+  LaunchCore.timing.shouldRun = function(){
 
-    let nextUpdate = 0;
+    const next = Number(localStorage.getItem("lc_timer_core-main") || 0);
 
-
-    function setNext(delay){
-      nextUpdate = Date.now() + delay;
-
-      localStorage.setItem("lc_next_update", nextUpdate);
-
-      console.log("🧠 [Timing] next update in", delay);
-      console.log("🧠 next update at:", new Date(nextUpdate).toLocaleTimeString());
+    if(!next){
+      console.log("⏳ no hay timer");
+      return true; // importante 👀
     }
 
-    
-    function getNext(){
-      return nextUpdate;
-    }
+    const now = Date.now();
 
+    console.log("🧠 shouldRun?", {
+      now,
+      next,
+      diff: next - now
+    });
 
-    function shouldRun(){
-
-      const saved = Number(localStorage.getItem("lc_timer_core-main") || 0);
-
-      if(!saved){
-        console.log("⏳ no hay timer aún");
-        return false;
-      }
-
-      const now = Date.now();
-
-      console.log("🧠 shouldRun?", {
-        now,
-        next: saved,
-        diff: saved - now
-      });
-
-      return now >= saved;
-    }
-
-
-    function force(){
-      nextUpdate = 0;
-      localStorage.removeItem("lc_next_update");
-    }
-
-    
-    function initFromStorage(){
-      const saved = Number(localStorage.getItem("lc_next_update") || 0);
-      if(saved){
-        nextUpdate = saved;
-      }
-    }
-
-    
-    function schedule(fn, delay, key = "global"){
-      LaunchCore.scheduler.programar(key, fn, delay);
-    }
-
-    
-    return {
-      setNext,
-      getNext,
-      shouldRun,
-      force,
-      initFromStorage,
-      schedule // 👈 nuevo
-    };
-
-  })();
+    return now >= next;
+  };
 
 
 
@@ -789,7 +738,7 @@ LaunchCore.init = async function(){
       console.log("👁️ CORE visibility wake");
 
       if(!LaunchCore.timing.shouldRun()){
-        console.log("😴 CORE skip (too early)");
+        console.log("😴 visibility CORE skip (too early)");
         return;
       }
 
@@ -806,7 +755,7 @@ LaunchCore.init = async function(){
     console.log("🚀 CORE initial run");
 
     LaunchCore.execute("init", {
-      force: true
+      force: false
     });
 
   }catch(e){
