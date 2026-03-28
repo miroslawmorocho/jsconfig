@@ -508,6 +508,117 @@ LaunchCore.render = async function(data){
 };
 
 
+/* =====================================================
+    CORE STATE READER
+===================================================== */
+
+LaunchCore.readCacheState = function(){
+
+  const cached = localStorage.getItem("lc_data");
+
+  return {
+    cached,
+    nextUpdate: Number(localStorage.getItem("lc_next_update") || 0),
+    cachedVersion: localStorage.getItem("lc_data_version"),
+    now: Date.now()
+  };
+
+};
+
+
+/* =====================================================
+    CACHE RENDER ENGINE
+===================================================== */
+
+LaunchCore.renderFromCache = async function(rawCached){
+
+  const { data, control } = LaunchCore.normalize(rawCached);
+
+  await LaunchCore.render(data);
+
+  return control;
+
+};
+
+
+/* =====================================================
+    NEXT UPDATE SCHEDULER
+===================================================== */
+
+LaunchCore.scheduleNext = function(nextTime){
+
+  const now = Date.now();
+
+  let delay = nextTime - now;
+
+  if(delay > 0 && !isNaN(delay)){
+
+    const safeDelay = Math.max(delay, 5000);
+
+    LaunchCore.scheduler.programar(
+      "core-main",
+      () => LaunchCore.execute("scheduler"),
+      safeDelay
+    );
+
+  }
+
+};
+
+
+/* =====================================================
+    DATA COMMIT
+===================================================== */
+
+LaunchCore.commitData = function(raw){
+
+  if(raw?.siguienteActualizacionMs){
+
+    const delay = Number(raw.siguienteActualizacionMs);
+    const nextTime = Date.now() + delay;
+
+    localStorage.setItem("lc_next_update", nextTime);
+
+  }
+
+  localStorage.setItem("lc_data", JSON.stringify(raw));
+
+  const { control } = LaunchCore.normalize(raw);
+
+  if(control?.version){
+    localStorage.setItem("lc_data_version", String(control.version));
+  }
+
+};
+
+
+/* =====================================================
+    DECISION ENGINE
+===================================================== */
+
+LaunchCore.decide = function(state, options){
+
+  if(options.externalData){
+    return "EXTERNAL";
+  }
+
+  if(!state.cached){
+    return "FETCH";
+  }
+
+  if(!state.nextUpdate){
+    return "FETCH";
+  }
+
+  if(Date.now() >= state.nextUpdate){
+    return "FETCH";
+  }
+
+  return "CACHE";
+
+};
+
+
 
 /* =====================================================
     GLOBAL EXECUTION ENGINE
@@ -515,227 +626,67 @@ LaunchCore.render = async function(data){
 
 LaunchCore.run = async function(options = {}, source = "unknown") {
 
-  console.log("🧠 RUN llamado");
-
-  let {
-    force = false,
-    forceFetch = false
-  } = options;
-
-  console.log("🧠 RUN origen:", {
-    source,
-    ...options,
-    time: Date.now()
-  });
-
-  if(isRunning){
-    console.log("⛔ run bloqueado (ya en ejecución)");
-    return;
-  }
+  if(isRunning) return;
 
   isRunning = true;
-  cacheInvalidated = false; // 👈 RESET AQUÍ SIEMPRE
 
   try {
 
-    console.log("🚀 CORE run pipeline...");
+    const state = LaunchCore.readCacheState();
 
-    /* =================================================
-        CACHÉ EN LOCALSTORAGE
-    ================================================= */
-
-    const cached = localStorage.getItem("lc_data");
-
-    console.log("🧪 DEBUG CACHE", {
-      next: localStorage.getItem("lc_next_update"),
-      now: Date.now(),
-      diff: Number(localStorage.getItem("lc_next_update")) - Date.now()
-    });
-
-    if(cached){
-
-      try{
-
-        const rawCached = JSON.parse(cached);
-
-        const next = Number(localStorage.getItem("lc_next_update") || 0);
-
-        if(!next){
-          console.log("⚠️ sin next_update → invalidando");
-
-          localStorage.removeItem("lc_data");
-          cacheInvalidated = true;
-        }
-
-        const { data, control } = LaunchCore.normalize(rawCached);
-
-        const cachedVersion = localStorage.getItem("lc_data_version");
-        const currentVersion = control?.version;
-
-        if(!currentVersion){
-          console.log("⚠️ cache sin versión → invalidando");
-          localStorage.removeItem("lc_data");
-          cacheInvalidated = true;
-
-        } if(!cachedVersion){
-          console.log("⚠️ sin versión guardada → invalidando cache");
-          localStorage.removeItem("lc_data");
-          cacheInvalidated = true;
-
-        } else if(cachedVersion !== String(currentVersion)){
-
-          console.log("💥 cache inválido por versión");
-          localStorage.removeItem("lc_data");
-          cacheInvalidated = true;
-
-        } else {
-
-          console.log("⚡ usando cache válida");
-
-          await LaunchCore.render(data);
-
-          const now = Date.now();
-          const next = Number(localStorage.getItem("lc_next_update") || 0);
-          let delay = next - now;
-
-          console.log("🔥 CACHE delay REAL:", delay);
-
-          console.log("🔥 CACHE CONTROL:", control);
-
-          if(delay > 0 && !isNaN(delay)){
-
-            // 💥 EVITAR delays absurdos
-            const safeDelay = Math.max(delay, 5000);
-
-            console.log("🧠 programando en:", safeDelay);
-
-            LaunchCore.scheduler.programar(
-              "core-main",
-              () => LaunchCore.execute("scheduler"),
-              safeDelay
-            );
-
-          } else {
-            console.log("⚠️ tiempo vencido → fetch inmediato");
-
-            cacheInvalidated = true;
-
-            // 💥 CLAVE: forzar fetch YA
-            forceFetch = true;
-          }
-
-          // 💥 CLAVE: SALIR
-          if(!forceFetch){
-            isRunning = false;
-            return;
-          }
-
-        }
-
-      }catch(e){
-        console.warn("❌ cache corrupta");
-        localStorage.removeItem("lc_data");
-        cacheInvalidated = true;
-
-      }
-
-    }
-
-    const hasCache = !!localStorage.getItem("lc_data");
-
-    console.log("🧠 DECISIÓN FINAL", {
-      force,
-      forceFetch,
-      hasCache,
-      cacheInvalidated
-    });
-
-    if(!force && hasCache && !cacheInvalidated && !LaunchCore.timing.shouldRun()){
-
-      console.log("⏸ usando cache, no fetch");
-      isRunning = false;
-      return;
-    }
+    const decision = LaunchCore.decide(state, options);
 
     let raw;
 
-    // 🔥 USAR DATA EXTERNA SI EXISTE
-    if(options.externalData){
-      console.log("⚡ usando externalData (no fetch)");
+    if(decision === "CACHE"){
+
+      raw = JSON.parse(state.cached);
+
+      const control = await LaunchCore.renderFromCache(raw);
+
+      LaunchCore.scheduleNext(state.nextUpdate);
+
+      isRunning = false;
+      return;
+
+    }
+
+    if(decision === "EXTERNAL"){
 
       raw = options.externalData;
 
-    }else{
+    } else {
 
       raw = await LaunchCore.fetchWorker(
         LaunchCore.config.endpoint,
-        forceFetch
+        options.forceFetch
       );
 
     }
 
     if(!raw){
-      console.warn("Sin data");
+      isRunning = false;
       return;
     }
 
-    // 💥 CONVERTIR TIEMPO RELATIVO A ABSOLUTO
-    if(raw?.siguienteActualizacionMs){
+    LaunchCore.commitData(raw);
 
-      const delay = Number(raw.siguienteActualizacionMs);
-      const nextTime = Date.now() + delay;
+    const { data } = LaunchCore.normalize(raw);
 
-      // 💥 GUARDAR GLOBAL (FUENTE DE VERDAD)
-      localStorage.setItem("lc_next_update", nextTime);
-
-      console.log("⏳ next update en", delay);
-
-    }
-
-    localStorage.setItem("lc_data", JSON.stringify(raw));
-
-    // 🔥 NORMALIZAR
-    const { data, control } = LaunchCore.normalize(raw);
-
-    // 💥 guardar versión REAL
-    if(control?.version){
-      localStorage.setItem("lc_data_version", String(control.version));
-    }
-
-    // 👉 render SOLO data limpia
     await LaunchCore.render(data);
 
-    // 🧠 PROGRAMACIÓN CENTRALIZADA (FETCH REAL)
-    //const next = Number(localStorage.getItem("lc_next_update") || 0);
-    let delay = next - Date.now();
+    const next = Number(localStorage.getItem("lc_next_update") || 0);
 
-    console.log("🔥 FETCH delay REAL:", delay);
-
-    if(delay > 0 && !isNaN(delay)){
-
-      let finalDelay = delay + Math.random() * 2000;
-      finalDelay = Math.max(finalDelay, 5000);
-
-      console.log("🧠 CORE scheduling in", finalDelay);
-
-      LaunchCore.scheduler.programar(
-        "core-main",
-        () => LaunchCore.execute("scheduler"),
-        finalDelay
-      );
-
-    } else {
-
-      console.log("⚠️ FETCH sin timing válido");
-
-    }
+    LaunchCore.scheduleNext(next);
 
   } catch(e){
     console.error("❌ error en run:", e);
   }
 
   isRunning = false;
-}
+
+};
+
 
 
 /* =====================================================
