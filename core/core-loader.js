@@ -692,12 +692,20 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     ========================================= */
 
     if(decision === "CACHE"){
-      const { data } = LaunchCore.normalize(raw);
+      const normalized = LaunchCore.normalize(raw);
+
+      if(!normalized){
+        console.warn("⚠️ normalize devolvió null, run.cache");
+        isRunning = false;
+        return;
+      }
+
+      const { data } = normalized;
 
       if(data?.eventoCerrado !== undefined){
         LaunchCore.state.eventoCerrado = data.eventoCerrado;
       }
-      
+
       raw = JSON.parse(state.cached);
       
       await LaunchCore.renderFromCache(raw);
@@ -748,7 +756,15 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
        RENDER
     ========================================= */
 
-    const { data } = LaunchCore.normalize(raw);
+    const normalized = LaunchCore.normalize(raw);
+
+    if(!normalized){
+      console.warn("⚠️ normalize devolvió null, run:render");
+      isRunning = false;
+      return;
+    }
+
+    const { data } = normalized;
 
     // 🔥 SINCRONIZAR ESTADO GLOBAL
     if(data?.eventoCerrado !== undefined){
@@ -1050,7 +1066,7 @@ LaunchCore.init = async function(){
 
     // 🚀 PRIMER RUN
     LaunchCore.execute("init", {
-      force: true
+      force: false
     });
 
   }catch(e){
