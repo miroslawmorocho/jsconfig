@@ -546,31 +546,23 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     const cached = localStorage.getItem("lc_data");
 
+    console.log("🧪 DEBUG CACHE", {
+      next: localStorage.getItem("lc_next_update"),
+      now: Date.now(),
+      diff: Number(localStorage.getItem("lc_next_update")) - Date.now()
+    });
+
     if(cached){
 
       try{
 
         const rawCached = JSON.parse(cached);
 
-        // 🧠 RECUPERAR TIEMPO REAL AUNQUE SE HAYA IDO LA LUZ
-        if(rawCached?._nextUpdateAt){
+        const next = Number(localStorage.getItem("lc_next_update") || 0);
 
-          const now = Date.now();
-          let delay = rawCached._nextUpdateAt - now;
-
-          console.log("🧠 delay recalculado desde cache:", delay);
-
-          // 💥 SI YA PASÓ EL TIEMPO → FETCH YA
-          if(delay <= 0){
-            console.log("⏰ tiempo expirado → invalidando cache");
-            cacheInvalidated = true;
-          }
-
-        } else {
-
-          console.log("⚠️ cache sin _nextUpdateAt → invalidando");
+        if(!next){
+          console.log("⚠️ sin next_update → invalidando");
           cacheInvalidated = true;
-
         }
 
         const { data, control } = LaunchCore.normalize(rawCached);
@@ -601,9 +593,8 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
           await LaunchCore.render(data);
 
           const now = Date.now();
-          let delay = rawCached._nextUpdateAt - now;
-
-          console.log("🔥 CACHE delay REAL:", delay);
+          const next = Number(localStorage.getItem("lc_next_update") || 0);
+          let delay = next - now;
 
           console.log("🔥 CACHE delay REAL:", delay);
 
@@ -648,7 +639,10 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     const hasCache = !!localStorage.getItem("lc_data");
 
-      if(!force && hasCache && !cacheInvalidated && !LaunchCore.timing.shouldRun()){
+      const next = Number(localStorage.getItem("lc_next_update") || 0);
+      const now = Date.now();
+
+      if(!force && hasCache && !cacheInvalidated && now < next){
       console.log("⏸ usando cache, no fetch");
       isRunning = false;
       return;
@@ -679,12 +673,13 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     // 💥 CONVERTIR TIEMPO RELATIVO A ABSOLUTO
     if(raw?.siguienteActualizacionMs){
 
-      const now = Date.now();
+      const delay = Number(raw.siguienteActualizacionMs);
+      const nextTime = Date.now() + delay;
 
-      raw._nextUpdateAt = now + Number(raw.siguienteActualizacionMs);
+      // 💥 GUARDAR GLOBAL (FUENTE DE VERDAD)
+      localStorage.setItem("lc_next_update", nextTime);
 
-      // 💥 GUARDAR TAMBIÉN REFERENCIA DE ORIGEN
-      raw._fetchedAt = now;
+      console.log("⏳ next update en", delay);
 
     }
 
@@ -702,15 +697,12 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     await LaunchCore.render(data);
 
     // 🧠 PROGRAMACIÓN CENTRALIZADA (FETCH REAL)
-    let delay = 0;
-
-    if(raw?._nextUpdateAt){
-      delay = raw._nextUpdateAt - Date.now();
-    }
+    //const next = Number(localStorage.getItem("lc_next_update") || 0);
+    let delay = next - Date.now();
 
     console.log("🔥 FETCH delay REAL:", delay);
 
-    if(delay && !isNaN(delay)){
+    if(delay > 0 && !isNaN(delay)){
 
       let finalDelay = delay + Math.random() * 2000;
       finalDelay = Math.max(finalDelay, 5000);
@@ -793,10 +785,15 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
         localStorage.setItem("lc_data_version", pending);
         localStorage.removeItem("lc_pending_version");
 
-
-        // 💥 recalcular tiempo también aquí
         if(result.raw?.siguienteActualizacionMs){
-          result.raw._nextUpdateAt = Date.now() + Number(result.raw.siguienteActualizacionMs);
+
+          const delay = Number(result.raw.siguienteActualizacionMs);
+          const nextTime = Date.now() + delay;
+
+          localStorage.setItem("lc_next_update", nextTime);
+
+          console.log("⏳ (confirm) next update en", delay);
+
         }
 
         // 🔥 cachear data completa
