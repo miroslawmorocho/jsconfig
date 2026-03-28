@@ -517,7 +517,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
   console.log("🧠 RUN llamado");
 
-  const {
+  let {
     force = false,
     forceFetch = false
   } = options;
@@ -562,6 +562,8 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
         if(!next){
           console.log("⚠️ sin next_update → invalidando");
+
+          localStorage.removeItem("lc_data");
           cacheInvalidated = true;
         }
 
@@ -599,7 +601,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
           console.log("🔥 CACHE delay REAL:", delay);
 
           console.log("🔥 CACHE CONTROL:", control);
-          
+
           if(delay > 0 && !isNaN(delay)){
 
             // 💥 EVITAR delays absurdos
@@ -614,10 +616,12 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
             );
 
           } else {
-
             console.log("⚠️ tiempo vencido → fetch inmediato");
+
             cacheInvalidated = true;
 
+            // 💥 CLAVE: forzar fetch YA
+            forceFetch = true;
           }
 
           // 💥 CLAVE: SALIR
@@ -639,10 +643,15 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     const hasCache = !!localStorage.getItem("lc_data");
 
-      const next = Number(localStorage.getItem("lc_next_update") || 0);
-      const now = Date.now();
+    console.log("🧠 DECISIÓN FINAL", {
+      force,
+      forceFetch,
+      hasCache,
+      cacheInvalidated
+    });
 
-      if(!force && hasCache && !cacheInvalidated && now < next){
+    if(!force && hasCache && !cacheInvalidated && !LaunchCore.timing.shouldRun()){
+
       console.log("⏸ usando cache, no fetch");
       isRunning = false;
       return;
