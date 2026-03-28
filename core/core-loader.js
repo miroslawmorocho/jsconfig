@@ -552,6 +552,27 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
         const rawCached = JSON.parse(cached);
 
+        // 🧠 RECUPERAR TIEMPO REAL AUNQUE SE HAYA IDO LA LUZ
+        if(rawCached?._nextUpdateAt){
+
+          const now = Date.now();
+          let delay = rawCached._nextUpdateAt - now;
+
+          console.log("🧠 delay recalculado desde cache:", delay);
+
+          // 💥 SI YA PASÓ EL TIEMPO → FETCH YA
+          if(delay <= 0){
+            console.log("⏰ tiempo expirado → invalidando cache");
+            cacheInvalidated = true;
+          }
+
+        } else {
+
+          console.log("⚠️ cache sin _nextUpdateAt → invalidando");
+          cacheInvalidated = true;
+
+        }
+
         const { data, control } = LaunchCore.normalize(rawCached);
 
         const cachedVersion = localStorage.getItem("lc_data_version");
@@ -579,19 +600,10 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
           await LaunchCore.render(data);
 
-          let delay = 0;
+          const now = Date.now();
+          let delay = rawCached._nextUpdateAt - now;
 
-          if(rawCached?._nextUpdateAt){
-            delay = rawCached._nextUpdateAt - Date.now();
-          }
-
-          // 💥 fallback inteligente
-          if(delay <= 0 && rawCached?.siguienteActualizacionMs){
-            console.log("♻️ reconstruyendo timing desde cache");
-
-            rawCached._nextUpdateAt = Date.now() + Number(rawCached.siguienteActualizacionMs);
-            delay = rawCached._nextUpdateAt - Date.now();
-          }
+          console.log("🔥 CACHE delay REAL:", delay);
 
           console.log("🔥 CACHE delay REAL:", delay);
 
@@ -599,17 +611,22 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
           
           if(delay > 0 && !isNaN(delay)){
 
+            // 💥 EVITAR delays absurdos
+            const safeDelay = Math.max(delay, 5000);
+
+            console.log("🧠 programando en:", safeDelay);
+
             LaunchCore.scheduler.programar(
               "core-main",
               () => LaunchCore.execute("scheduler"),
-              Math.max(delay, 5000)
+              safeDelay
             );
 
           } else {
 
-            console.log("⚠️ cache sin timing válido → invalidando");
-
+            console.log("⚠️ tiempo vencido → fetch inmediato");
             cacheInvalidated = true;
+
           }
 
           // 💥 CLAVE: SALIR
@@ -661,7 +678,14 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     // 💥 CONVERTIR TIEMPO RELATIVO A ABSOLUTO
     if(raw?.siguienteActualizacionMs){
-      raw._nextUpdateAt = Date.now() + Number(raw.siguienteActualizacionMs);
+
+      const now = Date.now();
+
+      raw._nextUpdateAt = now + Number(raw.siguienteActualizacionMs);
+
+      // 💥 GUARDAR TAMBIÉN REFERENCIA DE ORIGEN
+      raw._fetchedAt = now;
+
     }
 
     localStorage.setItem("lc_data", JSON.stringify(raw));
