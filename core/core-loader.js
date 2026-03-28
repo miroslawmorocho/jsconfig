@@ -22,6 +22,7 @@ LaunchCore.state = {
 };
 
 let isRunning = false;
+let cacheInvalidated = false;
 
 LaunchCore.events = {};
 
@@ -533,10 +534,11 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
   }
 
   isRunning = true;
+  cacheInvalidated = false; // 👈 RESET AQUÍ SIEMPRE
 
   try {
 
-    console.log("🚀 CORE fetching...");
+    console.log("🚀 CORE run pipeline...");
 
     /* =================================================
         CACHÉ EN LOCALSTORAGE
@@ -558,11 +560,13 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
         if(!currentVersion){
           console.log("⚠️ cache sin versión → invalidando");
           localStorage.removeItem("lc_data");
+          cacheInvalidated = true;
 
         } else if(cachedVersion && cachedVersion !== String(currentVersion)){
 
           console.log("💥 cache inválido por versión");
           localStorage.removeItem("lc_data");
+          cacheInvalidated = true;
 
         } else {
 
@@ -571,11 +575,18 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
           await LaunchCore.render(data);
 
           if(control?.siguienteActualizacionMs){
+
             LaunchCore.scheduler.programar(
               "core-main",
               () => LaunchCore.execute("scheduler"),
               control.siguienteActualizacionMs
             );
+
+          } else {
+
+            console.log("⛔ sin siguienteActualizacionMs (cache)");
+
+            LaunchCore.scheduler.cancelar("core-main"); // 💥 LIMPIEZA
           }
 
           // 💥 CLAVE: SALIR
@@ -589,11 +600,15 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       }catch(e){
         console.warn("❌ cache corrupta");
         localStorage.removeItem("lc_data");
+        cacheInvalidated = true;
+
       }
 
     }
 
-    if(!force && !LaunchCore.timing.shouldRun()){
+    const hasCache = !!localStorage.getItem("lc_data");
+
+      if(!force && hasCache && !cacheInvalidated && !LaunchCore.timing.shouldRun()){
       console.log("⏸ usando cache, no fetch");
       isRunning = false;
       return;
@@ -639,10 +654,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
       let delay = control.siguienteActualizacionMs;
 
-      // pequeño jitter para evitar sincronización masiva
       delay += Math.random() * 2000;
-
-      // protección mínima
       delay = Math.max(delay, 5000);
 
       console.log("🧠 CORE scheduling in", delay);
@@ -654,7 +666,10 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       );
 
     } else {
+
       console.log("⛔ CORE: sin siguienteActualizacionMs");
+
+      LaunchCore.scheduler.cancelar("core-main"); // 💥 LIMPIEZA
     }
 
   } catch(e){
@@ -722,7 +737,7 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
         localStorage.removeItem("lc_pending_version");
 
         // 🔥 cachear data completa
-        localStorage.setItem("lc_last_data", JSON.stringify(result.raw));
+        localStorage.setItem("lc_data", JSON.stringify(result.raw));
 
         // 💥 EJECUCIÓN SIN FETCH EXTRA
         LaunchCore.run({
@@ -914,7 +929,7 @@ LaunchCore.init = async function(){
             localStorage.setItem("lc_data_version", pending);
             localStorage.removeItem("lc_pending_version");
 
-            localStorage.setItem("lc_last_data", JSON.stringify(result.raw));
+            localStorage.setItem("lc_data", JSON.stringify(result.raw));
 
             LaunchCore.run({
               force: true,
@@ -928,7 +943,7 @@ LaunchCore.init = async function(){
       );
     }
 
-    const cached = localStorage.getItem("lc_last_data");
+    const cached = localStorage.getItem("lc_data");
 
     if(cached){
 
@@ -955,7 +970,7 @@ LaunchCore.init = async function(){
     console.log("🚀 CORE initial run");
 
     LaunchCore.execute("init", {
-      force: false
+      force: true
     });
 
   }catch(e){
