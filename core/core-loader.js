@@ -21,12 +21,7 @@ LaunchCore.state = {
   eventoCerrado: false
 };
 
-LaunchCore.forceFresh = false;
-LaunchCore.lastFetchTime = 0;
-LaunchCore.lastGlobalFetch = 0;
-
 let isRunning = false;
-let lastRunTime = 0;
 
 LaunchCore.events = {};
 
@@ -102,7 +97,7 @@ LaunchCore.events = {};
 
     try{
 
-      let query = window.location.search || "?v=" + Date.now();
+      let query = window.location.search;
 
       let url = BASE_WORKER_URL.replace(/\/$/, "") +
                 endpoint +
@@ -120,16 +115,9 @@ LaunchCore.events = {};
 
       const res = await fetch(url, options);
 
-      LaunchCore.lastFetchTime = Date.now();
-      LaunchCore.lastGlobalFetch = Date.now(); // 🔥 NUEVO
-
       if(!res.ok) throw new Error("Worker error");
 
       const data = await res.json();
-
-      // 🔥 REGISTRAR FETCH GLOBAL
-      LaunchCore.lastFetchTime = Date.now();
-      LaunchCore.lastGlobalFetch = Date.now(); // 🔥 NUEVO
 
       return data;
 
@@ -172,27 +160,22 @@ LaunchCore.events = {};
         localStorage.removeItem("lc_timer_" + key);
         delete timers[key];
 
-        // 💣 VALIDACIÓN GLOBAL ANTES DE EJECUTAR
-        if(key === "bridge-main"){
+        // 🚫 no correr si tab oculta
+        if(document.hidden){
+          console.log("😴 skip scheduled (tab hidden)");
+          return;
+        }
 
-          // 🚫 no correr si tab oculta
-          if(document.hidden){
-            console.log("😴 skip scheduled (tab hidden)");
-            return;
-          }
+        // 🚫 no correr si no toca aún
+        if(!LaunchCore.timing.shouldRun()){
+          console.log("😴 skip scheduled (too early)");
+          return;
+        }
 
-          // 🚫 no correr si no toca aún
-          if(!LaunchCore.timing.shouldRun()){
-            console.log("😴 skip scheduled (too early)");
-            return;
-          }
-
-          // 🚫 no correr si evento cerrado
-          if(LaunchCore.state?.eventoCerrado){
-            console.log("🚫 skip scheduled (evento cerrado)");
-            return;
-          }
-
+        // 🚫 no correr si evento cerrado
+        if(LaunchCore.state?.eventoCerrado){
+          console.log("🚫 skip scheduled (evento cerrado)");
+          return;
         }
 
         fn();
@@ -238,6 +221,8 @@ LaunchCore.events = {};
     GLOBAL TIMING ENGINE (SINGLE SOURCE OF TRUTH)
   ===================================================== */
 
+  LaunchCore.timing = LaunchCore.timing || {};
+
   LaunchCore.timing.shouldRun = function(){
 
     const next = Number(localStorage.getItem("lc_timer_core-main") || 0);
@@ -248,11 +233,28 @@ LaunchCore.events = {};
     }
 
     const now = Date.now();
+    const diff = next - now;
+
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+
+    const parts = [];
+
+    if (d > 0) parts.push(`${d}d`);
+    if (h > 0) parts.push(`${h}h`);
+    if (m > 0) parts.push(`${m}m`);
+    parts.push(`${s}s`);
+
+    // por si todo es 0
+    const diffHuman = parts.length ? parts.join(" ") : "0s";
 
     console.log("🧠 shouldRun?", {
-      now,
-      next,
-      diff: next - now
+      now: new Date(now).toLocaleString(),
+      next: new Date(next).toLocaleString(),
+      diff_ms: diff,
+      diff_human: diffHuman
     });
 
     return now >= next;
@@ -269,7 +271,7 @@ LaunchCore.events = {};
     let initialized = false;
     let callbacks = [];     // 🔥 FALTABA
     let lastCheck = 0;      // 🔥 FALTABA
-    let minInterval = 30000; // 🔥 default (30s)
+    let minInterval = 2000; // 🔥 default (30s)
 
 
     function init(fn, interval){
@@ -297,9 +299,6 @@ LaunchCore.events = {};
 
       callbacks.push(fn);
 
-      if(interval){
-        minInterval = interval;
-      }
     }
 
 
@@ -507,28 +506,16 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
   const now = Date.now();
 
-  const THROTTLE_TIME = 2000; // o lo que quieras
-
-  if(!force && now - lastRunTime < THROTTLE_TIME){
-    console.log("⛔ run throttle");
-    return;
-  }
-
   if(isRunning){
     console.log("⛔ run bloqueado (ya en ejecución)");
     return;
   }
 
-  lastRunTime = now;
   isRunning = true;
 
   try {
 
     console.log("🚀 CORE fetching...");
-
-    if(force){
-      LaunchCore.timing.force();
-    }
 
     const cached = localStorage.getItem("lc_data");
 
@@ -628,8 +615,6 @@ LaunchCore.on("data:update", () => {
 
   console.log("🧠 CORE: data update recibido");
 
-  LaunchCore.timing.force();
-
   LaunchCore.execute("vc-data", {
     force: true,
     forceFetch: true
@@ -713,8 +698,6 @@ LaunchCore.init = async function(){
 
   try{
 
-    LaunchCore.timing.initFromStorage();
-
     // 🔥 cargar CSS globales base
     await LaunchCore.globals.flag();
 
@@ -744,9 +727,7 @@ LaunchCore.init = async function(){
 
       LaunchCore.execute("visibility");
 
-    }, 2000); // 🧠 Qué hace esto:
-    // 👉 Cuando el usuario vuelve: Espera mínimo X segundos desde último check
-    // Pregunta: shouldRun() Si toca → ejecuta
+    });
 
     await LaunchCore.use("versionChecker");
     console.log("🔥 LLAMANDO VERSION CHECKER...");
