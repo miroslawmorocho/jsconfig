@@ -641,6 +641,11 @@ LaunchCore.decide = function(state, options){
     return "EXTERNAL";
   }
 
+  // 🧠 🔥 NUEVO: ESTADO FINAL
+  if(es.isClosed){
+    return "CACHE";
+  }
+
   if(!es.hasCache){
     return "FETCH";
   }
