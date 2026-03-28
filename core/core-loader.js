@@ -590,7 +590,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
           console.log("🔥 CACHE CONTROL:", control);
           console.log("🔥 CACHE DELAY:", delay);
 
-          if(delay && !isNaN(delay)){
+          if(delay > 0 && !isNaN(delay)){
 
             LaunchCore.scheduler.programar(
               "core-main",
@@ -670,14 +670,14 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     // 👉 render SOLO data limpia
     await LaunchCore.render(data);
 
-    // 🧠 PROGRAMACIÓN CENTRALIZADA
+    // 🧠 PROGRAMACIÓN CENTRALIZADA (FETCH REAL)
     let delay = 0;
 
-    if(rawCached?._nextUpdateAt){
-      delay = rawCached._nextUpdateAt - Date.now();
+    if(raw?._nextUpdateAt){
+      delay = raw._nextUpdateAt - Date.now();
     }
 
-    console.log("🔥 CACHE delay REAL:", delay);
+    console.log("🔥 FETCH delay REAL:", delay);
 
     if(delay && !isNaN(delay)){
 
@@ -761,6 +761,12 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
         // 🔥 persistencia REAL
         localStorage.setItem("lc_data_version", pending);
         localStorage.removeItem("lc_pending_version");
+
+
+        // 💥 recalcular tiempo también aquí
+        if(result.raw?.siguienteActualizacionMs){
+          result.raw._nextUpdateAt = Date.now() + Number(result.raw.siguienteActualizacionMs);
+        }
 
         // 🔥 cachear data completa
         localStorage.setItem("lc_data", JSON.stringify(result.raw));
