@@ -260,21 +260,22 @@ LaunchCore.events = {};
 
     function shouldRun(){
 
-      const saved = Number(localStorage.getItem("lc_next_update") || 0);
+      const saved = Number(localStorage.getItem("lc_timer_core-main") || 0);
 
-      // 🚫 si nunca se ha programado → NO correr desde visibility
       if(!saved){
-        console.log("⏳ timing aún no inicializado");
+        console.log("⏳ no hay timer aún");
         return false;
       }
 
+      const now = Date.now();
+
       console.log("🧠 shouldRun?", {
-        now: Date.now(),
+        now,
         next: saved,
-        diff: saved - Date.now()
+        diff: saved - now
       });
 
-      return Date.now() >= saved;
+      return now >= saved;
     }
 
 
@@ -564,22 +565,49 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     return;
   }
 
-  /*if(isRunning){
+  if(isRunning){
     console.log("⛔ run bloqueado (ya en ejecución)");
     return;
-  }*/
+  }
 
   lastRunTime = now;
   isRunning = true;
 
   try {
 
-    console.log("🚀 Fetching worker...");
-
     console.log("🚀 CORE fetching...");
 
     if(force){
       LaunchCore.timing.force();
+    }
+
+    const cached = localStorage.getItem("lc_data");
+
+    if(cached){
+
+      console.log("⚡ usando cache");
+
+      const raw = JSON.parse(cached);
+
+      const { data, control } = LaunchCore.normalize(raw);
+
+      await LaunchCore.render(data);
+
+      if(control?.siguienteActualizacionMs){
+        console.log("🧠 scheduling desde cache...");
+
+        LaunchCore.scheduler.programar(
+          "core-main",
+          () => LaunchCore.execute("scheduler"),
+          control.siguienteActualizacionMs
+        );
+      }
+    }
+
+    if(!force && !LaunchCore.timing.shouldRun()){
+      console.log("⏸ usando cache, no fetch");
+      isRunning = false;
+      return;
     }
 
     const raw = await LaunchCore.fetchWorker(
@@ -591,6 +619,8 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       console.warn("Sin data");
       return;
     }
+
+    localStorage.setItem("lc_data", JSON.stringify(raw));
 
     // 🔥 NORMALIZAR
     const { data, control } = LaunchCore.normalize(raw);
@@ -765,8 +795,8 @@ LaunchCore.init = async function(){
 
       LaunchCore.execute("visibility");
 
-    }, 30000); // 🧠 Qué hace esto:
-    // 👉 Cuando el usuario vuelve: Espera mínimo 30s desde último check
+    }, 2000); // 🧠 Qué hace esto:
+    // 👉 Cuando el usuario vuelve: Espera mínimo X segundos desde último check
     // Pregunta: shouldRun() Si toca → ejecuta
 
     await LaunchCore.use("versionChecker");
