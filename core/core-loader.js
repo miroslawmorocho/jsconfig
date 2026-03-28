@@ -27,6 +27,77 @@ let cacheInvalidated = false;
 LaunchCore.events = {};
 
 
+/* =====================================================
+   STORAGE LAYER PRO (WITH SOURCE TRACKING)
+===================================================== */
+
+LaunchCore.storage = {
+
+  get(key, options = {}){
+
+    const { parse = false, source = "unknown" } = options;
+
+    const value = localStorage.getItem(key);
+
+    console.log("📥 STORAGE GET:", {
+      key,
+      value,
+      source
+    });
+
+    if(parse && value){
+      try{
+        return JSON.parse(value);
+      }catch(e){
+        console.warn("❌ STORAGE PARSE ERROR:", key);
+        return null;
+      }
+    }
+
+    return value;
+  },
+
+  set(key, value, options = {}){
+
+    const { stringify = false, source = "unknown" } = options;
+
+    let finalValue = value;
+
+    if(stringify){
+      try{
+        finalValue = JSON.stringify(value);
+      }catch(e){
+        console.warn("❌ STORAGE STRINGIFY ERROR:", key);
+        return;
+      }
+    }
+
+    localStorage.setItem(key, finalValue);
+
+    console.log("💾 STORAGE SET:", {
+      key,
+      value: finalValue,
+      source
+    });
+
+  },
+
+  remove(key, options = {}){
+
+    const { source = "unknown" } = options;
+
+    localStorage.removeItem(key);
+
+    console.log("🗑️ STORAGE REMOVE:", {
+      key,
+      source
+    });
+
+  }
+
+};
+
+
 (function(){
 
   const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
@@ -150,38 +221,30 @@ LaunchCore.events = {};
 
       const targetTime = Date.now() + delay;
 
-      localStorage.setItem("lc_timer_" + key, targetTime);
-
       function tick(){
 
         const now = Date.now();
         const remaining = targetTime - now;
 
         if(remaining <= 0){
-        localStorage.removeItem("lc_timer_" + key);
-        delete timers[key];
+          
+          delete timers[key];
 
-        // 🚫 no correr si tab oculta
-        if(document.hidden){
-          console.log("😴 skip scheduled (tab hidden)");
+          // 🚫 no correr si tab oculta
+          if(document.hidden){
+            console.log("😴 skip scheduled (tab hidden)");
+            return;
+          }
+
+          // 🚫 no correr si evento cerrado
+          if(LaunchCore.state?.eventoCerrado){
+            console.log("🚫 skip scheduled (evento cerrado)");
+            return;
+          }
+
+          fn();
           return;
         }
-
-        // 🚫 no correr si no toca aún
-        if(!LaunchCore.timing.shouldRun()){
-          console.log("😴 skip scheduled (too early)");
-          return;
-        }
-
-        // 🚫 no correr si evento cerrado
-        if(LaunchCore.state?.eventoCerrado){
-          console.log("🚫 skip scheduled (evento cerrado)");
-          return;
-        }
-
-        fn();
-        return;
-      }
 
         const nextDelay = Math.min(remaining, MAX_DELAY);
 
@@ -204,8 +267,6 @@ LaunchCore.events = {};
         delete timers[key];
       }
 
-      localStorage.removeItem("lc_timer_" + key);
-
       console.log("🧨 Scheduler cancelado:", key);
     }
 
@@ -215,51 +276,6 @@ LaunchCore.events = {};
     };
 
   })();
-
-
-
-  /* =====================================================
-    GLOBAL TIMING ENGINE (SINGLE SOURCE OF TRUTH)
-  ===================================================== */
-
-  LaunchCore.timing = LaunchCore.timing || {};
-
-  LaunchCore.timing.shouldRun = function(){
-
-    const next = Number(localStorage.getItem("lc_timer_core-main") || 0);
-
-    if(!next){
-      console.log("⏳ no hay timer");
-      return true; // importante 👀
-    }
-
-    const now = Date.now();
-    const diff = next - now;
-
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-
-    const parts = [];
-
-    if (d > 0) parts.push(`${d}d`);
-    if (h > 0) parts.push(`${h}h`);
-    if (m > 0) parts.push(`${m}m`);
-    parts.push(`${s}s`);
-
-    // por si todo es 0
-    const diffHuman = parts.length ? parts.join(" ") : "0s";
-
-    console.log("🧠 shouldRun?", {
-      now: new Date(now).toLocaleString(),
-      next: new Date(next).toLocaleString(),
-      diff_ms: diff,
-      diff_human: diffHuman
-    });
-
-    return now >= next;
-  };
 
 
 
@@ -508,18 +524,39 @@ LaunchCore.render = async function(data){
 };
 
 
+
+/* =====================================================
+    ENGINE STATE (FUENTE DE VERDAD DEL FRONT)
+===================================================== */
+
+LaunchCore.buildEngineState = function(state){
+
+  const now = Date.now();
+
+  LaunchCore.engineState = {
+    hasCache: !!state.cached,
+    hasNextUpdate: !!state.nextUpdate,
+    isExpired: now >= state.nextUpdate,
+    hasPendingVersion: !!LaunchCore.storage.get("lc_pending_version", {source: "buildEngineState:hasPendingVersion"}),
+    isClosed: LaunchCore.state?.eventoCerrado || false
+  };
+
+};
+
+
+
 /* =====================================================
     CORE STATE READER
 ===================================================== */
 
 LaunchCore.readCacheState = function(){
 
-  const cached = localStorage.getItem("lc_data");
+  const cached = LaunchCore.storage.get("lc_data", {source: "readCacheState:cached"});
 
   return {
     cached,
-    nextUpdate: Number(localStorage.getItem("lc_next_update") || 0),
-    cachedVersion: localStorage.getItem("lc_data_version"),
+    nextUpdate: Number(LaunchCore.storage.get("lc_next_update", {source: "readCacheState:nextUpdate"}) || 0),
+    cachedVersion: LaunchCore.storage.get("lc_data_version", {source: "readCacheState:cachedVersion"}),
     now: Date.now()
   };
 
@@ -577,16 +614,16 @@ LaunchCore.commitData = function(raw){
     const delay = Number(raw.siguienteActualizacionMs);
     const nextTime = Date.now() + delay;
 
-    localStorage.setItem("lc_next_update", nextTime);
+    LaunchCore.storage.set("lc_next_update", nextTime, {source: "commitData"});
 
   }
 
-  localStorage.setItem("lc_data", JSON.stringify(raw));
+  LaunchCore.storage.set("lc_data", raw, {stringify: true, source: "commitData"});
 
   const { control } = LaunchCore.normalize(raw);
 
   if(control?.version){
-    localStorage.setItem("lc_data_version", String(control.version));
+    LaunchCore.storage.set("lc_data_version", String(control.version), {source: "commitData"});
   }
 
 };
@@ -598,19 +635,21 @@ LaunchCore.commitData = function(raw){
 
 LaunchCore.decide = function(state, options){
 
+  const es = LaunchCore.engineState;
+
   if(options.externalData){
     return "EXTERNAL";
   }
 
-  if(!state.cached){
+  if(!es.hasCache){
     return "FETCH";
   }
 
-  if(!state.nextUpdate){
+  if(!es.hasNextUpdate){
     return "FETCH";
   }
 
-  if(Date.now() >= state.nextUpdate){
+  if(es.isExpired){
     return "FETCH";
   }
 
@@ -627,35 +666,50 @@ LaunchCore.decide = function(state, options){
 LaunchCore.run = async function(options = {}, source = "unknown") {
 
   if(isRunning) return;
-
   isRunning = true;
 
   try {
 
+    // 1. LEER ESTADO BASE
     const state = LaunchCore.readCacheState();
 
+    // 2. CONSTRUIR ESTADO REAL
+    LaunchCore.buildEngineState(state);
+
+    // 3. DECIDIR QUÉ HACER
     const decision = LaunchCore.decide(state, options);
 
-    let raw;
+    let raw = null;
+    let nextUpdate = state.nextUpdate;
+
+    /* =========================================
+       CACHE FLOW
+    ========================================= */
 
     if(decision === "CACHE"){
-
       raw = JSON.parse(state.cached);
 
-      const control = await LaunchCore.renderFromCache(raw);
+      await LaunchCore.renderFromCache(raw);
 
       LaunchCore.scheduleNext(state.nextUpdate);
 
-      isRunning = false;
+      isRunning = false; // 🔥 CRÍTICO
       return;
-
     }
+
+    /* =========================================
+       EXTERNAL FLOW (VC)
+    ========================================= */
 
     if(decision === "EXTERNAL"){
 
       raw = options.externalData;
 
     } else {
+
+      /* =========================================
+         FETCH FLOW
+      ========================================= */
 
       raw = await LaunchCore.fetchWorker(
         LaunchCore.config.endpoint,
@@ -665,19 +719,33 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     }
 
     if(!raw){
-      isRunning = false;
+      console.warn("⚠️ sin data (ni cache ni fetch)");
       return;
     }
 
+    /* =========================================
+       COMMIT (FUENTE DE VERDAD)
+    ========================================= */
+
     LaunchCore.commitData(raw);
+
+    const updatedState = LaunchCore.readCacheState();
+
+    nextUpdate = updatedState.nextUpdate;
+
+    /* =========================================
+       RENDER
+    ========================================= */
 
     const { data } = LaunchCore.normalize(raw);
 
     await LaunchCore.render(data);
 
-    const next = Number(localStorage.getItem("lc_next_update") || 0);
+    /* =========================================
+       SCHEDULE
+    ========================================= */
 
-    LaunchCore.scheduleNext(next);
+    LaunchCore.scheduleNext(nextUpdate);
 
   } catch(e){
     console.error("❌ error en run:", e);
@@ -709,26 +777,27 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 
   console.log("🧠 CORE: cambio detectado", version);
 
-  // 🔥 guardar pendiente (persistencia anti F5)
-  localStorage.setItem("lc_pending_version", version);
+  // 1. guardar versión pendiente
+  LaunchCore.storage.set("lc_pending_version", version, {source: "data:detected"});
 
-  // 🔥 cancelar confirmaciones anteriores
+  // 2. cancelar confirmaciones anteriores
   LaunchCore.scheduler.cancelar("vc-confirm");
 
   const delay = confirmDelay || 60000;
 
   const nextConfirm = Date.now() + delay;
-  localStorage.setItem("vc_next_confirm", nextConfirm);
+  LaunchCore.storage.set("vc_next_confirm", nextConfirm, {source: "data:detected"});
 
   console.log("⏳ confirm en", delay);
 
+  // 3. programar confirmación
   LaunchCore.scheduler.programar(
     "vc-confirm",
     async () => {
 
       console.log("🧠 CORE: confirmando contra WORKER...");
 
-      const pending = localStorage.getItem("lc_pending_version");
+      const pending = LaunchCore.storage.get("lc_pending_version", {source: "data:detected"});
       if(!pending) return;
 
       const result = await LaunchCore.getWorkerVersion();
@@ -741,32 +810,21 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 
         console.log("✅ DATA CONFIRMADA");
 
-        // 🔥 persistencia REAL
-        localStorage.setItem("lc_data_version", pending);
-        localStorage.removeItem("lc_pending_version");
+        // limpiar pendiente
+        LaunchCore.storage.remove("lc_pending_version", {source: "data:detected"});
 
-        if(result.raw?.siguienteActualizacionMs){
+        // 🔥 USAR TU INFRAESTRUCTURA
+        LaunchCore.commitData(result.raw);
 
-          const delay = Number(result.raw.siguienteActualizacionMs);
-          const nextTime = Date.now() + delay;
-
-          localStorage.setItem("lc_next_update", nextTime);
-
-          console.log("⏳ (confirm) next update en", delay);
-
-        }
-
-        // 🔥 cachear data completa
-        localStorage.setItem("lc_data", JSON.stringify(result.raw));
-
-        // 💥 EJECUCIÓN SIN FETCH EXTRA
-        LaunchCore.run({
-          force: true,
+        // 🔥 ejecutar con external (sin fetch)
+        LaunchCore.execute("vc-confirm", {
           externalData: result.raw
         });
 
       } else {
+
         console.log("⌛ worker aún no actualizado");
+
       }
 
     },
@@ -787,7 +845,6 @@ LaunchCore.on("code:update", async () => {
       return;
     }
 
-    // 🔥 obtener versión real de GitHub otra vez (seguro)
     const res = await fetch(LaunchCore.config.codeVersionUrl, {
       cache: "no-store"
     });
@@ -795,51 +852,106 @@ LaunchCore.on("code:update", async () => {
     const data = await res.json();
     const newVersion = String(data.commit);
 
-    const savedVersion = localStorage.getItem("lc_code_version");
+    const currentVersion = LaunchCore.storage.get("lc_code_version", {source: "code:update"});
 
-    console.log("💾 local code:", savedVersion);
+    console.log("💾 local code:", currentVersion);
     console.log("🌐 github code:", newVersion);
 
-    // 🧠 evitar reload infinito
-    if(savedVersion === newVersion){
+    // 🧠 MISMA VERSIÓN → NO HACER NADA
+    if(currentVersion === newVersion){
       console.log("😴 misma versión, no reload");
       return;
     }
 
     // 🔥 guardar nueva versión
-    localStorage.setItem("lc_code_version", newVersion);
+    LaunchCore.storage.set("lc_code_version", newVersion, {source: "code:update"});
 
-    console.log("🚀 recargando con nueva versión...");
-
-    /* =====================================================
-       🔥 URL VERSIONADA HUMANA (TU JOYA)
-    ===================================================== */
-
-    function fechaHumana(){
-      const d = new Date();
-      const pad = n => String(n).padStart(2, "0");
-
-      return (
-        d.getFullYear() +
-        pad(d.getMonth()+1) +
-        pad(d.getDate()) +
-        pad(d.getHours()) +
-        pad(d.getMinutes())
-      );
-    }
-
-    function buildUrl(){
-      return location.origin + location.pathname + "?v=" + fechaHumana();
-    }
-
-    // 💥 reload elegante (sin contaminar history)
-    window.location.replace(buildUrl());
+    // 🔥 delegar reload
+    LaunchCore.reloadWithVersion();
 
   } catch(e){
     console.warn("❌ error en code:update", e);
   }
 
 });
+
+    /* =====================================================
+       🔥 URL VERSIONADA HUMANA (TU JOYA)
+    ===================================================== */
+
+LaunchCore.reloadWithVersion = function(){
+
+  function fechaHumana(){
+    const d = new Date();
+    const pad = n => String(n).padStart(2, "0");
+
+    return (
+      d.getFullYear() +
+      pad(d.getMonth()+1) +
+      pad(d.getDate()) +
+      pad(d.getHours()) +
+      pad(d.getMinutes())
+    );
+  }
+
+  const url =
+    location.origin +
+    location.pathname +
+    "?v=" + fechaHumana();
+
+  console.log("🚀 recargando con nueva versión...");
+
+  window.location.replace(url);
+
+};
+
+
+
+/* =====================================================
+   RECOVER PENDING CONFIRM
+===================================================== */
+
+LaunchCore.recoverPendingConfirm = function(){
+
+  const savedConfirm = Number(LaunchCore.storage.get("vc_next_confirm", {source: "recoverPendingConfirm"}) || 0);
+
+  if(!savedConfirm || savedConfirm <= Date.now()){
+    return;
+  }
+
+  const delay = savedConfirm - Date.now();
+
+  console.log("⏳ retomando confirm en", delay);
+
+  LaunchCore.scheduler.programar(
+    "vc-confirm",
+    async () => {
+
+      const pending = LaunchCore.storage.get("lc_pending_version", {source: "recoverPendingConfirm"});
+      if(!pending) return;
+
+      const result = await LaunchCore.getWorkerVersion();
+
+      if(String(result?.version) === String(pending)){
+
+        console.log("✅ DATA CONFIRMADA (recovery)");
+
+        LaunchCore.storage.remove("lc_pending_version", {source: "recoverPendingConfirm"});
+
+        // 🔥 USAR INFRAESTRUCTURA MODERNA
+        LaunchCore.commitData(result.raw);
+
+        LaunchCore.execute("vc-recovery", {
+          externalData: result.raw
+        });
+
+      }
+
+    },
+    delay
+  );
+
+};
 
 
 
@@ -866,44 +978,35 @@ LaunchCore.init = async function(){
   LaunchCore.root = root;
 
   if(!root){
-    console.error(
-      "LaunchCore: Falta #launch-engine-root en el HTML del frontend.\n" +
-      "Debes agregar:\n" +
-      '<div id="launch-engine-root" data-project="..." data-product="..." data-page="..."></div>'
-    );
+    console.error("LaunchCore: Falta #launch-engine-root");
     return;
   }
 
-  // 🔥 guardar config global
+  // CONFIG
   LaunchCore.config.project = root.dataset.project;
   LaunchCore.config.product = root.dataset.product;
   LaunchCore.config.page = root.dataset.page;
 
   if(!LaunchCore.config.project || !LaunchCore.config.product || !LaunchCore.config.page){
-    console.error(
-      "LaunchCore: Faltan atributos data-* en #launch-engine-root",
-      LaunchCore.config
-    );
+    console.error("LaunchCore: Faltan atributos data-*");
     return;
   }
 
   const { project, product, page } = LaunchCore.config;
-  
+
   LaunchCore.config.endpoint = "/";
-  console.log("🧠 endpoint configurado (principal):", LaunchCore.config.endpoint);
 
   const base = LaunchCore.paths.projects + `${project}/${product}/`;
-
   const moduleUrl = base + page + "-module.js";
 
   try{
 
-    // 🔥 cargar CSS globales base
+    // GLOBALS
     await LaunchCore.globals.flag();
 
-    // 🔥 cargar módulo dinámicamente
+    // MODULE
     await LaunchCore.loadScript(moduleUrl);
-    
+
     const module = LaunchCore.modules[page];
 
     if(!module){
@@ -915,64 +1018,21 @@ LaunchCore.init = async function(){
       await module.init();
     }
 
-    // 🧠 VISIBILITY GLOBAL (CORE MANDA)
+    // VISIBILITY
     LaunchCore.visibility.init(() => {
-
       console.log("👁️ CORE visibility wake");
-
-      if(!LaunchCore.timing.shouldRun()){
-        console.log("😴 visibility CORE skip (too early)");
-        return;
-      }
-
       LaunchCore.execute("visibility");
-
     });
 
-    // 🔥 RETOMAR CONFIRM SI EXISTE
-    const savedConfirm = Number(localStorage.getItem("vc_next_confirm") || 0);
+    // 🔥 RECOVERY LIMPIO
+    LaunchCore.recoverPendingConfirm();
 
-    if(savedConfirm && savedConfirm > Date.now()){
-
-      const delay = savedConfirm - Date.now();
-
-      console.log("⏳ retomando confirm en", delay);
-
-      LaunchCore.scheduler.programar(
-        "vc-confirm",
-        async () => {
-
-          const pending = localStorage.getItem("lc_pending_version");
-          if(!pending) return;
-
-          const result = await LaunchCore.getWorkerVersion();
-
-          if(String(result?.version) === String(pending)){
-
-            console.log("✅ DATA CONFIRMADA (recovery)");
-
-            localStorage.setItem("lc_data_version", pending);
-            localStorage.removeItem("lc_pending_version");
-
-            localStorage.setItem("lc_data", JSON.stringify(result.raw));
-
-            LaunchCore.run({
-              force: true,
-              externalData: result.raw
-            });
-
-          }
-
-        },
-        delay
-      );
-    }
-
+    // VERSION CHECKER
     await LaunchCore.use("versionChecker");
 
     console.log("🔥 LLAMANDO VERSION CHECKER...");
 
-    // 🚀 SOLO 1 RUN
+    // 🚀 PRIMER RUN
     LaunchCore.execute("init", {
       force: true
     });
