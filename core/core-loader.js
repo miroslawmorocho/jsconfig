@@ -671,7 +671,13 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     await LaunchCore.render(data);
 
     // 🧠 PROGRAMACIÓN CENTRALIZADA
-    const delay = Number(control?.siguienteActualizacionMs);
+    let delay = 0;
+
+    if(rawCached?._nextUpdateAt){
+      delay = rawCached._nextUpdateAt - Date.now();
+    }
+
+    console.log("🔥 CACHE delay REAL:", delay);
 
     if(delay && !isNaN(delay)){
 
