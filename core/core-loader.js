@@ -585,11 +585,18 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
             delay = rawCached._nextUpdateAt - Date.now();
           }
 
+          // 💥 fallback inteligente
+          if(delay <= 0 && rawCached?.siguienteActualizacionMs){
+            console.log("♻️ reconstruyendo timing desde cache");
+
+            rawCached._nextUpdateAt = Date.now() + Number(rawCached.siguienteActualizacionMs);
+            delay = rawCached._nextUpdateAt - Date.now();
+          }
+
           console.log("🔥 CACHE delay REAL:", delay);
 
           console.log("🔥 CACHE CONTROL:", control);
-          console.log("🔥 CACHE DELAY:", delay);
-
+          
           if(delay > 0 && !isNaN(delay)){
 
             LaunchCore.scheduler.programar(
