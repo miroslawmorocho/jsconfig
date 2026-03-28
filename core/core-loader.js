@@ -310,7 +310,7 @@ LaunchCore.events = {};
     let lastCheck = 0;      // 🔥 FALTABA
     let minInterval = 30000; // 🔥 default (30s)
 
-    
+
     function init(fn, interval){
 
       if(!initialized){
@@ -529,7 +529,7 @@ LaunchCore.render = async function(data){
     GLOBAL EXECUTION ENGINE
 ===================================================== */
 
-LaunchCore.run = async function(options = {}) {
+LaunchCore.run = async function(options = {}, source = "unknown") {
 
   console.log("🧠 RUN llamado");
 
@@ -539,8 +539,8 @@ LaunchCore.run = async function(options = {}) {
   } = options;
 
   console.log("🧠 RUN origen:", {
-    force,
-    forceFetch,
+    source,
+    ...options,
     time: Date.now()
   });
 
@@ -626,7 +626,7 @@ LaunchCore.execute = function(source = "unknown", options = {}){
 
   console.log("🧠 EXECUTE desde:", source);
 
-  return LaunchCore.run(options);
+  return LaunchCore.run(options, source);
 };
 
 
@@ -752,7 +752,7 @@ LaunchCore.init = async function(){
         return;
       }
 
-      LaunchCore.execute("visibility", { force: true });
+      LaunchCore.execute("visibility");
 
     }, 30000); // 🧠 Qué hace esto:
     // 👉 Cuando el usuario vuelve: Espera mínimo 30s desde último check
@@ -760,6 +760,13 @@ LaunchCore.init = async function(){
 
     await LaunchCore.use("versionChecker");
     console.log("🔥 LLAMANDO VERSION CHECKER...");
+
+    // 🚀 PRIMER DISPARO (BOOTSTRAP)
+    console.log("🚀 CORE initial run");
+
+    LaunchCore.execute("init", {
+      force: true
+    });
 
   }catch(e){
     console.error("Auto-init error:", e);
