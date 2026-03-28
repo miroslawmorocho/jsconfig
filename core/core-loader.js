@@ -546,7 +546,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     const cached = localStorage.getItem("lc_data");
 
-    if(cached && !force){
+    if(cached){
 
       try{
 
@@ -762,6 +762,11 @@ LaunchCore.on("code:update", async () => {
 
   try {
 
+    if(!LaunchCore.config.codeVersionUrl){
+      console.warn("⚠️ codeVersionUrl no definido");
+      return;
+    }
+
     // 🔥 obtener versión real de GitHub otra vez (seguro)
     const res = await fetch(LaunchCore.config.codeVersionUrl, {
       cache: "no-store"
@@ -943,32 +948,11 @@ LaunchCore.init = async function(){
       );
     }
 
-    const cached = localStorage.getItem("lc_data");
-
-    if(cached){
-
-      try{
-        const parsed = JSON.parse(cached);
-
-        console.log("⚡ usando cache local inmediata");
-
-        LaunchCore.run({
-          force: true,
-          externalData: parsed
-        });
-
-      }catch(e){
-        console.warn("❌ cache corrupta");
-      }
-
-    }
-
     await LaunchCore.use("versionChecker");
+
     console.log("🔥 LLAMANDO VERSION CHECKER...");
 
-    // 🚀 PRIMER DISPARO (BOOTSTRAP)
-    console.log("🚀 CORE initial run");
-
+    // 🚀 SOLO 1 RUN
     LaunchCore.execute("init", {
       force: true
     });
@@ -1062,9 +1046,14 @@ LaunchCore.globals.versionChecker = async function(){
 
   await LaunchCore.loadScript(url);
 
+  const codeVersionUrl = LaunchCore.paths.base + "version.json";
+
+  // 💥 HACERLO GLOBAL
+  LaunchCore.config.codeVersionUrl = codeVersionUrl;
+
   window.initVersionChecker({
     versionUrl: dataVersionUrl, // worker data version
-    codeVersionUrl: LaunchCore.paths.base + "version.json", // versión de código estático de Github
+    codeVersionUrl, // versión de código estático de Github
     workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
     checkInterval: 1*60*1000, // PRODUCCIÓN 15*60*1000 o incluso 60*60*1000,
     confirmDelay: 1*60*1000, // PRODUCCIÓN 3 * 60 * 1000,
