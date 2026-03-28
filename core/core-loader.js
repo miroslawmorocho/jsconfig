@@ -404,9 +404,6 @@ LaunchCore.events = {};
 })();
 
 
-/* =====================================================
-    NORMALIZADOR
-===================================================== */
 
 /* =====================================================
    DATA NORMALIZER (CORE MANDA)
@@ -418,9 +415,9 @@ LaunchCore.normalize = function(raw){
 
   if(!raw) return null;
 
-  // 🔥 separar control global (CORE lo usa)
   const control = {
-    siguienteActualizacionMs: raw.siguienteActualizacionMs
+    siguienteActualizacionMs: raw.siguienteActualizacionMs,
+    version: raw?.status?.version // 🔥 NUEVO
   };
 
   let data = {};
@@ -429,7 +426,6 @@ LaunchCore.normalize = function(raw){
 
     case "bridge":
       data = raw.evento || {};
-      delete data.siguienteActualizacionMs; // por si viene duplicado
       break;
 
     case "captura":
@@ -440,14 +436,41 @@ LaunchCore.normalize = function(raw){
       data = raw.pricing || {};
       break;
 
+    case "status": // 😏 opcional
+      data = raw.status || {};
+      break;
+
     default:
       console.warn("⚠️ Página no reconocida en normalizer:", page);
       data = {};
   }
 
   return {
-    data,     // 👉 lo que usa la página
-    control   // 👉 lo que usa la CORE
+    data,
+    control
+  };
+
+};
+
+
+
+/* =====================================================
+    CONFIRMAR VERSION DEL WORKER
+===================================================== */
+
+LaunchCore.getWorkerVersion = async function(){
+
+  const res = await LaunchCore.fetchWorker(
+    LaunchCore.config.endpoint,
+    true
+  );
+
+  const normalized = LaunchCore.normalize(res);
+
+  return {
+    version: normalized?.control?.version,
+    raw: res,                // 🔥 ORO: ya tienes la data
+    normalized              // 🔥 doble oro
   };
 
 };
@@ -504,8 +527,6 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     time: Date.now()
   });
 
-  const now = Date.now();
-
   if(isRunning){
     console.log("⛔ run bloqueado (ya en ejecución)");
     return;
@@ -517,27 +538,59 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     console.log("🚀 CORE fetching...");
 
+    /* =================================================
+        CACHÉ EN LOCALSTORAGE
+    ================================================= */
+
     const cached = localStorage.getItem("lc_data");
 
-    if(cached){
+    if(cached && !force){
 
-      console.log("⚡ usando cache");
+      try{
 
-      const raw = JSON.parse(cached);
+        const rawCached = JSON.parse(cached);
 
-      const { data, control } = LaunchCore.normalize(raw);
+        const { data, control } = LaunchCore.normalize(rawCached);
 
-      await LaunchCore.render(data);
+        const cachedVersion = localStorage.getItem("lc_data_version");
+        const currentVersion = control?.version;
 
-      if(control?.siguienteActualizacionMs){
-        console.log("🧠 scheduling desde cache...");
+        if(!currentVersion){
+          console.log("⚠️ cache sin versión → invalidando");
+          localStorage.removeItem("lc_data");
 
-        LaunchCore.scheduler.programar(
-          "core-main",
-          () => LaunchCore.execute("scheduler"),
-          control.siguienteActualizacionMs
-        );
+        } else if(cachedVersion && cachedVersion !== String(currentVersion)){
+
+          console.log("💥 cache inválido por versión");
+          localStorage.removeItem("lc_data");
+
+        } else {
+
+          console.log("⚡ usando cache válida");
+
+          await LaunchCore.render(data);
+
+          if(control?.siguienteActualizacionMs){
+            LaunchCore.scheduler.programar(
+              "core-main",
+              () => LaunchCore.execute("scheduler"),
+              control.siguienteActualizacionMs
+            );
+          }
+
+          // 💥 CLAVE: SALIR
+          if(!forceFetch){
+            isRunning = false;
+            return;
+          }
+
+        }
+
+      }catch(e){
+        console.warn("❌ cache corrupta");
+        localStorage.removeItem("lc_data");
       }
+
     }
 
     if(!force && !LaunchCore.timing.shouldRun()){
@@ -546,10 +599,22 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       return;
     }
 
-    const raw = await LaunchCore.fetchWorker(
-      LaunchCore.config.endpoint,
-      forceFetch
-    );
+    let raw;
+
+    // 🔥 USAR DATA EXTERNA SI EXISTE
+    if(options.externalData){
+      console.log("⚡ usando externalData (no fetch)");
+
+      raw = options.externalData;
+
+    }else{
+
+      raw = await LaunchCore.fetchWorker(
+        LaunchCore.config.endpoint,
+        forceFetch
+      );
+
+    }
 
     if(!raw){
       console.warn("Sin data");
@@ -560,6 +625,11 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     // 🔥 NORMALIZAR
     const { data, control } = LaunchCore.normalize(raw);
+
+    // 💥 guardar versión REAL
+    if(control?.version){
+      localStorage.setItem("lc_data_version", String(control.version));
+    }
 
     // 👉 render SOLO data limpia
     await LaunchCore.render(data);
@@ -611,23 +681,123 @@ LaunchCore.execute = function(source = "unknown", options = {}){
     EVENT HANDLERS
 ===================================================== */
 
-LaunchCore.on("data:update", () => {
+LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 
-  console.log("🧠 CORE: data update recibido");
+  console.log("🧠 CORE: cambio detectado", version);
 
-  LaunchCore.execute("vc-data", {
-    force: true,
-    forceFetch: true
-  });
+  // 🔥 guardar pendiente (persistencia anti F5)
+  localStorage.setItem("lc_pending_version", version);
+
+  // 🔥 cancelar confirmaciones anteriores
+  LaunchCore.scheduler.cancelar("vc-confirm");
+
+  const delay = confirmDelay || 60000;
+
+  const nextConfirm = Date.now() + delay;
+  localStorage.setItem("vc_next_confirm", nextConfirm);
+
+  console.log("⏳ confirm en", delay);
+
+  LaunchCore.scheduler.programar(
+    "vc-confirm",
+    async () => {
+
+      console.log("🧠 CORE: confirmando contra WORKER...");
+
+      const pending = localStorage.getItem("lc_pending_version");
+      if(!pending) return;
+
+      const result = await LaunchCore.getWorkerVersion();
+
+      const workerVersion = result?.version;
+
+      console.log("🛰️ worker version:", workerVersion);
+
+      if(String(workerVersion) === String(pending)){
+
+        console.log("✅ DATA CONFIRMADA");
+
+        // 🔥 persistencia REAL
+        localStorage.setItem("lc_data_version", pending);
+        localStorage.removeItem("lc_pending_version");
+
+        // 🔥 cachear data completa
+        localStorage.setItem("lc_last_data", JSON.stringify(result.raw));
+
+        // 💥 EJECUCIÓN SIN FETCH EXTRA
+        LaunchCore.run({
+          force: true,
+          externalData: result.raw
+        });
+
+      } else {
+        console.log("⌛ worker aún no actualizado");
+      }
+
+    },
+    delay
+  );
 
 });
 
 
-LaunchCore.on("code:update", () => {
+LaunchCore.on("code:update", async () => {
 
-  console.log("🧠 CORE: code update recibido");
+  console.log("💥 CORE: CODE UPDATE DETECTADO");
 
-  location.reload();
+  try {
+
+    // 🔥 obtener versión real de GitHub otra vez (seguro)
+    const res = await fetch(LaunchCore.config.codeVersionUrl, {
+      cache: "no-store"
+    });
+
+    const data = await res.json();
+    const newVersion = String(data.commit);
+
+    const savedVersion = localStorage.getItem("lc_code_version");
+
+    console.log("💾 local code:", savedVersion);
+    console.log("🌐 github code:", newVersion);
+
+    // 🧠 evitar reload infinito
+    if(savedVersion === newVersion){
+      console.log("😴 misma versión, no reload");
+      return;
+    }
+
+    // 🔥 guardar nueva versión
+    localStorage.setItem("lc_code_version", newVersion);
+
+    console.log("🚀 recargando con nueva versión...");
+
+    /* =====================================================
+       🔥 URL VERSIONADA HUMANA (TU JOYA)
+    ===================================================== */
+
+    function fechaHumana(){
+      const d = new Date();
+      const pad = n => String(n).padStart(2, "0");
+
+      return (
+        d.getFullYear() +
+        pad(d.getMonth()+1) +
+        pad(d.getDate()) +
+        pad(d.getHours()) +
+        pad(d.getMinutes())
+      );
+    }
+
+    function buildUrl(){
+      return location.origin + location.pathname + "?v=" + fechaHumana();
+    }
+
+    // 💥 reload elegante (sin contaminar history)
+    window.location.replace(buildUrl());
+
+  } catch(e){
+    console.warn("❌ error en code:update", e);
+  }
 
 });
 
@@ -679,18 +849,8 @@ LaunchCore.init = async function(){
 
   const { project, product, page } = LaunchCore.config;
   
-  /* =====================================================
-    ENDPOINT POR PÁGINA
-  ===================================================== */
-
-  const endpointMap = {
-    bridge: "/",
-    capture: "/captura",
-    pricing: "/pricing"
-  };
-
-  LaunchCore.config.endpoint = endpointMap[page] || "";
-  console.log("🧠 endpoint seteado:", LaunchCore.config.endpoint);
+  LaunchCore.config.endpoint = "/";
+  console.log("🧠 endpoint configurado (principal):", LaunchCore.config.endpoint);
 
   const base = LaunchCore.paths.projects + `${project}/${product}/`;
 
@@ -728,6 +888,65 @@ LaunchCore.init = async function(){
       LaunchCore.execute("visibility");
 
     });
+
+    // 🔥 RETOMAR CONFIRM SI EXISTE
+    const savedConfirm = Number(localStorage.getItem("vc_next_confirm") || 0);
+
+    if(savedConfirm && savedConfirm > Date.now()){
+
+      const delay = savedConfirm - Date.now();
+
+      console.log("⏳ retomando confirm en", delay);
+
+      LaunchCore.scheduler.programar(
+        "vc-confirm",
+        async () => {
+
+          const pending = localStorage.getItem("lc_pending_version");
+          if(!pending) return;
+
+          const result = await LaunchCore.getWorkerVersion();
+
+          if(String(result?.version) === String(pending)){
+
+            console.log("✅ DATA CONFIRMADA (recovery)");
+
+            localStorage.setItem("lc_data_version", pending);
+            localStorage.removeItem("lc_pending_version");
+
+            localStorage.setItem("lc_last_data", JSON.stringify(result.raw));
+
+            LaunchCore.run({
+              force: true,
+              externalData: result.raw
+            });
+
+          }
+
+        },
+        delay
+      );
+    }
+
+    const cached = localStorage.getItem("lc_last_data");
+
+    if(cached){
+
+      try{
+        const parsed = JSON.parse(cached);
+
+        console.log("⚡ usando cache local inmediata");
+
+        LaunchCore.run({
+          force: true,
+          externalData: parsed
+        });
+
+      }catch(e){
+        console.warn("❌ cache corrupta");
+      }
+
+    }
 
     await LaunchCore.use("versionChecker");
     console.log("🔥 LLAMANDO VERSION CHECKER...");
