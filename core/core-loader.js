@@ -692,8 +692,14 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     ========================================= */
 
     if(decision === "CACHE"){
-      raw = JSON.parse(state.cached);
+      const { data } = LaunchCore.normalize(raw);
 
+      if(data?.eventoCerrado !== undefined){
+        LaunchCore.state.eventoCerrado = data.eventoCerrado;
+      }
+      
+      raw = JSON.parse(state.cached);
+      
       await LaunchCore.renderFromCache(raw);
 
       LaunchCore.scheduleNext(state.nextUpdate);
@@ -743,6 +749,11 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     ========================================= */
 
     const { data } = LaunchCore.normalize(raw);
+
+    // 🔥 SINCRONIZAR ESTADO GLOBAL
+    if(data?.eventoCerrado !== undefined){
+      LaunchCore.state.eventoCerrado = data.eventoCerrado;
+    }
 
     await LaunchCore.render(data);
 
