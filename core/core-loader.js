@@ -579,7 +579,13 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
           await LaunchCore.render(data);
 
-          const delay = Number(control?.siguienteActualizacionMs);
+          let delay = 0;
+
+          if(rawCached?._nextUpdateAt){
+            delay = rawCached._nextUpdateAt - Date.now();
+          }
+
+          console.log("🔥 CACHE delay REAL:", delay);
 
           console.log("🔥 CACHE CONTROL:", control);
           console.log("🔥 CACHE DELAY:", delay);
@@ -644,6 +650,11 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     if(!raw){
       console.warn("Sin data");
       return;
+    }
+
+    // 💥 CONVERTIR TIEMPO RELATIVO A ABSOLUTO
+    if(raw?.siguienteActualizacionMs){
+      raw._nextUpdateAt = Date.now() + Number(raw.siguienteActualizacionMs);
     }
 
     localStorage.setItem("lc_data", JSON.stringify(raw));
