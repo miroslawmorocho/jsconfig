@@ -306,11 +306,17 @@ LaunchCore.events = {};
   LaunchCore.visibility = (function(){
 
     let initialized = false;
+    let callbacks = [];     // 🔥 FALTABA
+    let lastCheck = 0;      // 🔥 FALTABA
+    let minInterval = 30000; // 🔥 default (30s)
 
-
+    
     function init(fn, interval){
+
       if(!initialized){
+
         document.addEventListener("visibilitychange", () => {
+
           if(document.hidden) return;
 
           const now = Date.now();
@@ -319,8 +325,10 @@ LaunchCore.events = {};
             return;
           }
 
-          callbacks.forEach(fn => fn());
+          callbacks.forEach(cb => cb());
+
           lastCheck = now;
+
         });
 
         initialized = true;
@@ -340,7 +348,6 @@ LaunchCore.events = {};
       }
     }
 
-    
     return {
       init,
       updateInterval
