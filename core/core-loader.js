@@ -249,6 +249,7 @@ LaunchCore.events = {};
       localStorage.setItem("lc_next_update", nextUpdate);
 
       console.log("🧠 [Timing] next update in", delay);
+      console.log("🧠 next update at:", new Date(nextUpdate).toLocaleTimeString());
     }
 
     
@@ -261,7 +262,17 @@ LaunchCore.events = {};
 
       const saved = Number(localStorage.getItem("lc_next_update") || 0);
 
-      if(!saved) return true; // nunca ha corrido → fetch
+      // 🚫 si nunca se ha programado → NO correr desde visibility
+      if(!saved){
+        console.log("⏳ timing aún no inicializado");
+        return false;
+      }
+
+      console.log("🧠 shouldRun?", {
+        now: Date.now(),
+        next: saved,
+        diff: saved - Date.now()
+      });
 
       return Date.now() >= saved;
     }
