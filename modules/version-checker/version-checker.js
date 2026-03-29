@@ -71,20 +71,16 @@ function initVersionChecker(config){
 
 
       // 🔥 evitar emitir si ya tenemos esta versión
-      if(String(currentVersion) === String(data)){
-        log("😴 misma versión en cache → ignorando");
-      } 
+      if(String(currentVersion) !== String(data)){
 
-      if(
-        String(currentVersion) !== String(data) &&
-        String(lastDetected) !== String(data)
-      ){
-
-        log("🟡 DATA CAMBIO DETECTADO");
-
-        LaunchCore.storage.set("vc_last_detected", data, {
-          source: "vc:detected"
-        });
+        if(String(lastDetected) === String(data)){
+          log("♻️ versión ya detectada pero no confirmada → reintentando");
+        } else {
+          log("🟡 DATA CAMBIO DETECTADO");
+          LaunchCore.storage.set("vc_last_detected", data, {
+            source: "vc:detected"
+          });
+        }
 
         LaunchCore.emit("data:detected", {
           version: data,
