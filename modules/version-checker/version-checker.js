@@ -59,12 +59,26 @@ function initVersionChecker(config){
 
       log("data", data);
 
-      if(lastDataVersion && lastDataVersion !== data){
+      // 🔥 versión actual en cache REAL
+      const currentVersion = LaunchCore.storage.get(
+                              "lc_data_version",
+                              { source: "vc:currentVersion" }
+      );
+
+      log("📦 current (cache)", currentVersion);
+
+      // 🔥 evitar emitir si ya tenemos esta versión
+      if(String(currentVersion) === String(data)){
+        log("😴 misma versión en cache → ignorando");
+      } else if(lastDataVersion && lastDataVersion !== data){
+
         log("🟡 DATA CAMBIO DETECTADO");
+
         LaunchCore.emit("data:detected", {
           version: data,
           confirmDelay: config.confirmDelay
         });
+
       }
 
       lastDataVersion = data;

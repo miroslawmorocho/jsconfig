@@ -208,7 +208,9 @@ LaunchCore.storage = {
 
     let timers = {};
 
-    function programar(key, fn, delay){
+    function programar(key, fn, delay, options = {}){
+
+      const { ignoreClosed = false } = options;
 
       cancelar(key); // 🔥 SIEMPRE limpiar antes
 
@@ -236,8 +238,8 @@ LaunchCore.storage = {
             return;
           }
 
-          // 🚫 no correr si evento cerrado
-          if(LaunchCore.state?.eventoCerrado){
+          // 🚫 no correr si evento cerrado EXCEPTO VC que puede reabrir
+          if(LaunchCore.state?.eventoCerrado && !ignoreClosed){
             console.log("🚫 skip scheduled (evento cerrado)");
             return;
           }
@@ -924,7 +926,8 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
       }
 
     },
-    delay
+    delay,
+    { ignoreClosed: true } // 🔥 CLAVE
   );
 
 });
@@ -1044,7 +1047,8 @@ LaunchCore.recoverPendingConfirm = function(){
       }
 
     },
-    delay
+    delay,
+    { ignoreClosed: true } // 🔥 CLAVE
   );
 
 };
