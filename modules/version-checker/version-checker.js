@@ -57,8 +57,6 @@ function initVersionChecker(config){
       const dataRes = await fetch(config.versionUrl, { cache: "no-store" });
       const data = String((await dataRes.json()).version);
 
-      log("data", data);
-
       // 🔥 versión actual en cache REAL
       const currentVersion = LaunchCore.storage.get("lc_data_version", {
                               source: "vc:currentVersion"
