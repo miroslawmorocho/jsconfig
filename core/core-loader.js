@@ -27,10 +27,12 @@ let cacheInvalidated = false;
 LaunchCore.events = {};
 
 
+
 /* =====================================================
-   STORAGE LAYER PRO (WITH SOURCE TRACKING)
+   2. CORE UTILS (storage, helpers, fetch, scheduler)
 ===================================================== */
 
+// ===== STORAGE LAYER PRO (WITH SOURCE TRACKING) =====
 LaunchCore.storage = {
 
   get(key, options = {}){
@@ -98,14 +100,13 @@ LaunchCore.storage = {
 };
 
 
+
 (function(){
 
   const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
-
-  /* =====================================================
-    EVENT BUS
-  ===================================================== */
-
+  
+  // ===============  EVENT BUS ==========================
+  
   LaunchCore.on = function(event, fn){
     if(!this.events[event]) this.events[event] = [];
     this.events[event].push(fn);
@@ -117,15 +118,14 @@ LaunchCore.storage = {
   };
 
 
-  /* =====================================================
-    CORE GLOBAL
-  ===================================================== */
-
+  
+  // ===========  CORE GLOBAL ============================
+  
   LaunchCore.globals = LaunchCore.globals || {};
 
-  /* =====================================================
-    HELPERS (CSS / JS)
-  ===================================================== */
+
+
+  // ============  CARGAR JS ===============
 
   LaunchCore.loadScript = function(src){
     return new Promise((resolve)=>{
@@ -144,6 +144,9 @@ LaunchCore.storage = {
   };
 
 
+
+  // ============  CARGAR CSS ===============
+
   LaunchCore.loadCSS = function(href){
     return new Promise((resolve)=>{
 
@@ -161,10 +164,10 @@ LaunchCore.storage = {
     });
   };
 
-  /* =====================================================
-    FETCH WORKER (UNIFICADO)
-  ===================================================== */
 
+  
+  // ============  FETCH WORKER (UNIFICADO) ===============
+  
   LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
     const MAX_RETRIES = 3;
@@ -220,10 +223,10 @@ LaunchCore.storage = {
 
   };
 
-  /* =====================================================
-    SCHEDULER (REPROGRAMACIÓN)
-  ===================================================== */
+  
 
+  // ===========  SCHEDULER (REPROGRAMACIÓN) =============
+  
   LaunchCore.scheduler = (function(){
 
     let timers = {};
@@ -251,12 +254,6 @@ LaunchCore.storage = {
         if(remaining <= 0){
           
           delete timers[key];
-
-          // 🚫 no correr si evento cerrado EXCEPTO VC que puede reabrir
-          /*if(LaunchCore.state?.eventoCerrado && !ignoreClosed){
-            console.log("🚫 skip scheduled (evento cerrado)");
-            return;
-          }*/
 
           fn();
           return;
@@ -301,11 +298,9 @@ LaunchCore.storage = {
   })();
 
 
-
-  /* =====================================================
-    VISIBILITY CONTROL (GLOBAL)
-  ===================================================== */
-
+  
+  // =========  VISIBILITY CONTROL (GLOBAL) ==============
+  
   LaunchCore.visibility = (function(){
 
     let initialized = false;
@@ -354,12 +349,11 @@ LaunchCore.storage = {
     };
 
   })();
+
   
 
-  /* =====================================================
-    COUNTDOWN (GLOBAL)
-  ===================================================== */
-
+  // =============  COUNTDOWN (GLOBAL) ===================
+  
   LaunchCore.countdown = (function(){
 
     let interval = null;
@@ -426,11 +420,10 @@ LaunchCore.storage = {
   })();
 
 
-  /* =====================================================
-    READY (espera a que responda el worker y carga el div
-    donde se inyecta la tabla de precios de pricing)
-  ===================================================== */
 
+  // ===== READY (espera a que responda el worker y carga el div
+  // donde se inyecta la tabla de precios de pricing) ==========
+  
   LaunchCore.onReady = function(fn){
 
     if(document.readyState === "loading"){
@@ -446,8 +439,10 @@ LaunchCore.storage = {
 
 
 /* =====================================================
-   DATA NORMALIZER (CORE MANDA)
+   3. CORE ENGINE (normalize, commit, decision, run)
 ===================================================== */
+
+// =========   DATA NORMALIZER (CORE MANDA) ============
 
 LaunchCore.normalize = function(raw){
 
@@ -494,168 +489,7 @@ LaunchCore.normalize = function(raw){
 
 
 
-/* =====================================================
-    SMART VERSION CHECK
-===================================================== */
-
-LaunchCore.smartCheckNow = function(){
-
-  console.log("🧠 smart check → ping VC");
-
-  if(window.__vcCheckNow){
-    window.__vcCheckNow();
-  }
-
-};
-
-
-
-/* =====================================================
-    CONFIRMAR VERSION DEL WORKER
-===================================================== */
-
-LaunchCore.getWorkerVersion = async function(){
-
-  const res = await LaunchCore.fetchWorker(
-    LaunchCore.config.endpoint,
-    true
-  );
-
-  const normalized = LaunchCore.normalize(res);
-
-  return {
-    version: normalized?.control?.version,
-    raw: res,                // 🔥 ORO: ya tienes la data
-    normalized              // 🔥 doble oro
-  };
-
-};
-
-
-
-/* =====================================================
-    ESTADO DEL LANZAMIENTO (luego)
-===================================================== */
-
-/*LaunchCore.globalState = {
-  eventoCerrado: raw.evento?.eventoCerrado || false,
-  pricingEstado: raw.pricing?.estado || "unknown"
-};*/
-
-
-
-/* =====================================================
-    RENDER MACHINE
-===================================================== */
-
-LaunchCore.render = async function(data){
-
-  const page = LaunchCore.config.page;
-  const module = LaunchCore.modules[page];
-
-  if(!module){
-    console.warn("No hay módulo para render:", page);
-    return;
-  }
-
-  await module.render(data);
-
-};
-
-
-
-/* =====================================================
-    ENGINE STATE (FUENTE DE VERDAD DEL FRONT)
-===================================================== */
-
-LaunchCore.buildEngineState = function(state){
-
-  const now = Date.now();
-
-  LaunchCore.engineState = {
-    hasCache: !!state.cached,
-    hasNextUpdate: !!state.nextUpdate,
-    isExpired: now >= state.nextUpdate,
-    hasPendingVersion: !!LaunchCore.storage.get("lc_pending_version", {source: "buildEngineState:hasPendingVersion"}),
-    isClosed: LaunchCore.state?.eventoCerrado || false
-  };
-
-};
-
-
-
-/* =====================================================
-    CORE STATE READER
-===================================================== */
-
-LaunchCore.readCacheState = function(){
-
-  const cached = LaunchCore.storage.get("lc_data", {source: "readCacheState:cached"});
-
-  return {
-    cached,
-    nextUpdate: Number(LaunchCore.storage.get("lc_next_update", {source: "readCacheState:nextUpdate"}) || 0),
-    cachedVersion: LaunchCore.storage.get("lc_data_version", {source: "readCacheState:cachedVersion"}),
-    now: Date.now()
-  };
-
-};
-
-
-/* =====================================================
-    CACHE RENDER ENGINE
-===================================================== */
-
-LaunchCore.renderFromCache = async function(rawCached){
-
-  const { data, control } = LaunchCore.normalize(rawCached);
-
-  await LaunchCore.render(data);
-
-  return control;
-
-};
-
-
-/* =====================================================
-    NEXT UPDATE SCHEDULER
-===================================================== */
-
-LaunchCore.scheduleNext = function(nextTime){
-
-  const now = Date.now();
-
-  let delay = nextTime - now;
-
-  if(delay <= 0 || isNaN(delay)){
-    console.warn("💀 INVALID DELAY → NO SCHEDULE", delay);
-  }
-
-  if(delay > 0 && !isNaN(delay)){
-
-    const safeDelay = Math.max(delay, 5000);
-
-    console.log("🧪 scheduleNext debug:", {
-      nextTime,
-      now,
-      delay,
-      safeDelay
-    });
-
-    LaunchCore.scheduler.programar(
-      "core-main",
-      () => LaunchCore.execute("scheduleNext"),
-      safeDelay
-    );
-
-  }
-
-};
-
-
-/* =====================================================
-    DATA COMMIT
-===================================================== */
+// ===============  DATA COMMIT ========================
 
 LaunchCore.commitData = function(raw){
 
@@ -699,9 +533,43 @@ LaunchCore.commitData = function(raw){
 };
 
 
-/* =====================================================
-    DECISION ENGINE
-===================================================== */
+
+// =============== CORE STATE READER ===================
+
+LaunchCore.readCacheState = function(){
+
+  const cached = LaunchCore.storage.get("lc_data", {source: "readCacheState:cached"});
+
+  return {
+    cached,
+    nextUpdate: Number(LaunchCore.storage.get("lc_next_update", {source: "readCacheState:nextUpdate"}) || 0),
+    cachedVersion: LaunchCore.storage.get("lc_data_version", {source: "readCacheState:cachedVersion"}),
+    now: Date.now()
+  };
+
+};
+
+
+
+// =========  ENGINE STATE (FUENTE DE VERDAD DEL FRONT) ===========
+
+LaunchCore.buildEngineState = function(state){
+
+  const now = Date.now();
+
+  LaunchCore.engineState = {
+    hasCache: !!state.cached,
+    hasNextUpdate: !!state.nextUpdate,
+    isExpired: now >= state.nextUpdate,
+    hasPendingVersion: !!LaunchCore.storage.get("lc_pending_version", {source: "buildEngineState:hasPendingVersion"}),
+    isClosed: LaunchCore.state?.eventoCerrado || false
+  };
+
+};
+
+
+
+// ==============  DECISION ENGINE =====================
 
 LaunchCore.decide = function(state, options){
 
@@ -732,9 +600,7 @@ LaunchCore.decide = function(state, options){
 
 
 
-/* =====================================================
-    EXECUTION FLOW
-===================================================== */
+// ================  EXECUTION FLOW ====================
 
 LaunchCore.executeFlow = async function(decision, state, options){
 
@@ -788,9 +654,8 @@ LaunchCore.executeFlow = async function(decision, state, options){
 };
 
 
-/* =====================================================
-    GLOBAL EXECUTION ENGINE
-===================================================== */
+
+// ============  GLOBAL EXECUTION ENGINE ================
 
 LaunchCore.run = async function(options = {}, source = "unknown") {
 
@@ -871,8 +736,45 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
 
 /* =====================================================
-    EXECUTION SOURCE
+   4. CORE HELP FUNCTIONS
 ===================================================== */
+
+// ==============  NEXT UPDATE SCHEDULER ===============
+
+LaunchCore.scheduleNext = function(nextTime){
+
+  const now = Date.now();
+
+  let delay = nextTime - now;
+
+  if(delay <= 0 || isNaN(delay)){
+    console.warn("💀 INVALID DELAY → NO SCHEDULE", delay);
+  }
+
+  if(delay > 0 && !isNaN(delay)){
+
+    const safeDelay = Math.max(delay, 5000);
+
+    console.log("🧪 scheduleNext debug:", {
+      nextTime,
+      now,
+      delay,
+      safeDelay
+    });
+
+    LaunchCore.scheduler.programar(
+      "core-main",
+      () => LaunchCore.execute("scheduleNext"),
+      safeDelay
+    );
+
+  }
+
+};
+
+
+
+// ================   EXECUTION SOURCE ==================
 
 LaunchCore.execute = function(source = "unknown", options = {}){
 
@@ -882,9 +784,66 @@ LaunchCore.execute = function(source = "unknown", options = {}){
 };
 
 
+
+// ============  SMART VERSION CHECK ===================
+
+LaunchCore.smartCheckNow = function(){
+
+  console.log("🧠 smart check → ping VC");
+
+  if(window.__vcCheckNow){
+    window.__vcCheckNow();
+  }
+
+};
+
+
+
+// =============  CONFIRMAR VERSION DEL WORKER ================
+
+LaunchCore.getWorkerVersion = async function(){
+
+  const res = await LaunchCore.fetchWorker(
+    LaunchCore.config.endpoint,
+    true
+  );
+
+  const normalized = LaunchCore.normalize(res);
+
+  return {
+    version: normalized?.control?.version,
+    raw: res,                // 🔥 ORO: ya tienes la data
+    normalized              // 🔥 doble oro
+  };
+
+};
+
+
+
 /* =====================================================
-    EVENT HANDLERS
+   5. MACHINE (BOOT / READY / UPDATING / CLOSED)
 ===================================================== */
+
+// ============  ESTADOS DEL SISTEMA ===================
+
+LaunchCore.machine = {
+  state: "BOOT", // estado actual
+
+  STATES: {
+    BOOT: "BOOT",
+    READY: "READY",
+    UPDATING: "UPDATING",
+    CLOSED: "CLOSED"
+  }
+};
+
+
+
+/* =====================================================
+   6. EVENT SYSTEM (on, emit, handlers)
+===================================================== */
+
+// ================ DATA UPDATE ========================
 
 LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 
@@ -974,6 +933,9 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 });
 
 
+
+// ================== CODE UPDATE ==========================
+
 LaunchCore.on("code:update", async () => {
 
   console.log("💥 CORE: CODE UPDATE DETECTADO");
@@ -1015,117 +977,10 @@ LaunchCore.on("code:update", async () => {
 
 });
 
-    /* =====================================================
-       🔥 URL VERSIONADA HUMANA (TU JOYA)
-    ===================================================== */
-
-LaunchCore.reloadWithVersion = function(){
-
-  function fechaHumana(){
-    const d = new Date();
-    const pad = n => String(n).padStart(2, "0");
-
-    return (
-      d.getFullYear() +
-      pad(d.getMonth()+1) +
-      pad(d.getDate()) +
-      pad(d.getHours()) +
-      pad(d.getMinutes())
-    );
-  }
-
-  const url =
-    location.origin +
-    location.pathname +
-    "?v=" + fechaHumana();
-
-  console.log("🚀 recargando con nueva versión...");
-
-  window.location.replace(url);
-
-};
-
 
 
 /* =====================================================
-   RECOVER PENDING CONFIRM
-===================================================== */
-
-LaunchCore.recoverPendingConfirm = function(){
-
-  const savedConfirm = Number(LaunchCore.storage.get("vc_next_confirm", {source: "recoverPendingConfirm"}) || 0);
-
-  if(!savedConfirm || savedConfirm <= Date.now()){
-    return;
-  }
-
-  const delay = savedConfirm - Date.now();
-
-  console.log("⏳ retomando confirm en", delay);
-
-  LaunchCore.scheduler.programar(
-    "vc-confirm",
-    async () => {
-
-      console.log("🧠 CORE: confirmando contra WORKER...");
-
-      const pending = LaunchCore.storage.get("lc_pending_version", {source: "data:detected"});
-      if(!pending) return;
-
-      const result = await LaunchCore.getWorkerVersion();
-
-      const workerVersion = result?.version;
-
-      console.log("🛰️ worker version:", workerVersion);
-
-      if(String(workerVersion) === String(pending)){
-
-        console.log("✅ DATA CONFIRMADA");
-
-        // limpiar pendientes
-        LaunchCore.storage.remove("lc_pending_version", {source: "data:detected confirmed"});
-        LaunchCore.storage.remove("vc_last_detected", {source: "data:detected confirmed"});
-        LaunchCore.storage.remove("vc_next_confirm", {source: "data:detected confirmed"});
-
-
-        // 🔥 USAR TU INFRAESTRUCTURA
-        LaunchCore.commitData(result.raw);
-
-        // 🔥 ejecutar con external (sin fetch)
-        LaunchCore.execute("vc-confirm", {
-          externalData: result.raw
-        });
-
-      } else {
-
-        console.log("⌛ worker aún no actualizado");
-
-      }
-
-    },
-    delay,
-    { ignoreClosed: true, allowHidden: true } // 🔥 CLAVE
-  );
-
-};
-
-
-
-/* =====================================================
-   MODULE REGISTRY (AUTO INIT)
-===================================================== */
-
-LaunchCore.modules = {};
-
-
-LaunchCore.register = function(name, fn){
-  LaunchCore.modules[name] = fn;
-};
-
-
-
-/* =====================================================
-   ORQUESTADOR (INIT)
+   9. ORCHESTRATOR (init)
 ===================================================== */
 
 LaunchCore.init = async function(){
@@ -1203,8 +1058,10 @@ LaunchCore.init = async function(){
 
 
 /* =====================================================
-   MÓDULOS GLOBALES (darkmode, carousel, etc.)
+   7. GLOBAL MODULES (darkmode, carousel, etc.)
 ===================================================== */
+
+// ========== ACTIVADOR DE FUNCIONES GLOBALES ==========
 
 LaunchCore.use = async function(name){
 
@@ -1220,6 +1077,9 @@ LaunchCore.use = async function(name){
 };
 
 
+
+// ================== MODO OSCURO ====================
+
 LaunchCore.globals.darkmode = async function(){
 
   const darkmodePath = "modules/darkmode/darkmode"
@@ -1234,6 +1094,9 @@ LaunchCore.globals.darkmode = async function(){
 
 };
 
+
+
+// ====================== CARRUSEL ==========================
 
 LaunchCore.globals.carousel = async function(){
 
@@ -1262,6 +1125,9 @@ LaunchCore.globals.carousel = async function(){
 };
 
 
+
+// =============== SCROLL (PÁGINA PRICING) ===================
+
 LaunchCore.globals.scroll = async function(){
 
   const scrollPath = "modules/scroll/scroll"
@@ -1269,6 +1135,9 @@ LaunchCore.globals.scroll = async function(){
 
 };
 
+
+
+// ===================VERSION CHECKER =======================
 
 LaunchCore.globals.versionChecker = async function(){
 
@@ -1300,6 +1169,9 @@ LaunchCore.globals.versionChecker = async function(){
 };
 
 
+
+// ================= CSS DE BANDERAS ======================
+
 LaunchCore.globals.flag = async function(){
 
   await LaunchCore.loadCSS(
@@ -1310,9 +1182,7 @@ LaunchCore.globals.flag = async function(){
 
 
 
-/* =====================================================
-   VERSION IN URL
-===================================================== */
+// =================  VERSION IN URL ======================
 
 document.addEventListener("click", function(e){
 
@@ -1348,3 +1218,81 @@ document.addEventListener("click", function(e){
   }
 
 });
+
+
+
+/* =====================================================
+   8. OTRAS FUNCIONES
+===================================================== */
+
+// ==========  RENDER MACHINE ==================
+
+LaunchCore.render = async function(data){
+
+  const page = LaunchCore.config.page;
+  const module = LaunchCore.modules[page];
+
+  if(!module){
+    console.warn("No hay módulo para render:", page);
+    return;
+  }
+
+  await module.render(data);
+
+};
+
+
+
+// ============ CACHE RENDER ENGINE ===============
+
+
+LaunchCore.renderFromCache = async function(rawCached){
+
+  const { data, control } = LaunchCore.normalize(rawCached);
+
+  await LaunchCore.render(data);
+
+  return control;
+
+};
+
+
+
+// =========== URL VERSIONADA HUMANA =================
+
+LaunchCore.reloadWithVersion = function(){
+
+  function fechaHumana(){
+    const d = new Date();
+    const pad = n => String(n).padStart(2, "0");
+
+    return (
+      d.getFullYear() +
+      pad(d.getMonth()+1) +
+      pad(d.getDate()) +
+      pad(d.getHours()) +
+      pad(d.getMinutes())
+    );
+  }
+
+  const url =
+    location.origin +
+    location.pathname +
+    "?v=" + fechaHumana();
+
+  console.log("🚀 recargando con nueva versión...");
+
+  window.location.replace(url);
+
+};
+
+
+
+// ============== MODULE REGISTRY (AUTO INIT) ===================
+
+LaunchCore.modules = {};
+
+
+LaunchCore.register = function(name, fn){
+  LaunchCore.modules[name] = fn;
+};
