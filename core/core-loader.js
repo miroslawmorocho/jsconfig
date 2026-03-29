@@ -679,6 +679,8 @@ LaunchCore.commitData = function(raw){
 
   const { data } = normalized;
 
+  console.log("📦 siguienteActualizacionMs:", raw?.siguienteActualizacionMs, data?.siguienteActualizacionMs);
+
   if(data?.eventoCerrado !== undefined){
     LaunchCore.state.eventoCerrado = data.eventoCerrado;
   }
