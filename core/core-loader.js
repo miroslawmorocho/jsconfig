@@ -252,12 +252,6 @@ LaunchCore.storage = {
           
           delete timers[key];
 
-          // 🚫 no correr si tab oculta
-          if(document.hidden){
-            console.log("😴 skip scheduled (tab hidden)");
-            return;
-          }
-
           // 🚫 no correr si evento cerrado EXCEPTO VC que puede reabrir
           /*if(LaunchCore.state?.eventoCerrado && !ignoreClosed){
             console.log("🚫 skip scheduled (evento cerrado)");
