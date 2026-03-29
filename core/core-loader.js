@@ -167,35 +167,55 @@ LaunchCore.storage = {
 
   LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
-    try{
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000;
 
-      let query = window.location.search;
+    let attempt = 0;
 
-      let url = BASE_WORKER_URL.replace(/\/$/, "") +
-                endpoint +
-                query;
+    while(attempt < MAX_RETRIES){
 
-      console.log("🌐 FETCH URL:", url);
+      try{
 
-      if(force){
-        url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+        let query = window.location.search;
+
+        let url = BASE_WORKER_URL.replace(/\/$/, "") +
+                  endpoint +
+                  query;
+
+        if(force){
+          url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+        }
+
+        console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
+
+        const options = force
+          ? { cache: "no-store" }
+          : {};
+
+        const res = await fetch(url, options);
+
+        if(!res.ok){
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+
+        return data;
+
+      }catch(e){
+
+        console.warn(`⚠️ fetch intento ${attempt + 1} falló`, e);
+
+        attempt++;
+
+        if(attempt >= MAX_RETRIES){
+          console.error("💀 fetch falló definitivamente");
+          return null;
+        }
+
+        await new Promise(r => setTimeout(r, RETRY_DELAY));
       }
 
-      const options = force
-        ? { cache: "no-store" }
-        : {};
-
-      const res = await fetch(url, options);
-
-      if(!res.ok) throw new Error("Worker error");
-
-      const data = await res.json();
-
-      return data;
-
-    }catch(e){
-      console.warn("LaunchCore fetch error:", e);
-      return null;
     }
 
   };
