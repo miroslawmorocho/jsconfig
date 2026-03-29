@@ -41,11 +41,11 @@ LaunchCore.storage = {
 
     const value = localStorage.getItem(key);
 
-    console.log("📥 STORAGE GET:", {
+    /*console.log("📥 STORAGE GET:", {
       key,
       value,
       source
-    });
+    });*/
 
     if(parse && value){
       try{
@@ -76,11 +76,11 @@ LaunchCore.storage = {
 
     localStorage.setItem(key, finalValue);
 
-    console.log("💾 STORAGE SET:", {
+    /*console.log("💾 STORAGE SET:", {
       key,
       value: finalValue,
       source
-    });
+    });*/
 
   },
 
@@ -90,10 +90,10 @@ LaunchCore.storage = {
 
     localStorage.removeItem(key);
 
-    console.log("🗑️ STORAGE REMOVE:", {
+    /*console.log("🗑️ STORAGE REMOVE:", {
       key,
       source
-    });
+    });*/
 
   }
 
@@ -485,6 +485,56 @@ LaunchCore.phase.execute = async function(ctx, options){
 
 
 
+// ============ FASE NORMALIZACIÓN =====================
+
+LaunchCore.phase.process = function(ctx){
+
+  const normalized = LaunchCore.normalize(ctx.result.raw);
+
+  if(!normalized){
+    console.warn("⚠️ normalize devolvió null");
+    return;
+  }
+
+  const { data } = normalized;
+
+  if(data?.eventoCerrado !== undefined){
+    LaunchCore.state.eventoCerrado = data.eventoCerrado;
+
+    if(data.eventoCerrado === true){
+      LaunchCore.setState("CLOSED");
+    }
+  }
+
+  ctx.data = data;
+};
+
+
+
+// ============ FASE DE RENDERIZACIÓN ==================
+
+LaunchCore.phase.render = async function(ctx){
+
+  await LaunchCore.render(ctx.data);
+
+  if(LaunchCore.machine.state !== "CLOSED"){
+    LaunchCore.setState("READY");
+  }
+
+};
+
+
+
+// ========= FASE DE PROGRAMACIÓN (SCHEDULE) ===========
+
+LaunchCore.phase.schedule = function(ctx){
+
+  LaunchCore.scheduleNext(ctx.result.nextUpdate);
+
+};
+
+
+
 // =========   DATA NORMALIZER (CORE MANDA) ============
 
 LaunchCore.normalize = function(raw){
@@ -707,10 +757,9 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
   try {
 
-    // 1. STATE BASE
     const state = LaunchCore.readCacheState();
 
-    // 2. SYNC DESDE CACHE (solo estado global)
+    // 🔹 pre-sync (lo dejamos por ahora)
     if(state.cached){
       try{
         const raw = JSON.parse(state.cached);
@@ -719,61 +768,33 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
         if(normalized?.data?.eventoCerrado !== undefined){
           LaunchCore.state.eventoCerrado = normalized.data.eventoCerrado;
         }
-
       }catch(e){
         console.warn("❌ error pre-sync cache");
       }
     }
 
-    const ctx = {
-      state
-    };
-
-    // 3. BUILD ENGINE STATE
     LaunchCore.buildEngineState(state);
 
-    // 4. 🔥 FASE DECISION
+    // 🔥 CONTEXTO GLOBAL DEL PIPELINE
+    const ctx = { state };
+
+    // 🔥 FASES
     LaunchCore.phase.decide(ctx, options);
 
-    // 5. 🔥 FASE EXECUTION
     await LaunchCore.phase.execute(ctx, options);
 
-    const result = ctx.result;
+    if(!ctx.result) return;
 
-    if(!result) return;
+    LaunchCore.phase.process(ctx);
 
-    // 6. NORMALIZE + RENDER
-    const normalized = LaunchCore.normalize(result.raw);
+    await LaunchCore.phase.render(ctx);
 
-    if(!normalized){
-      console.warn("⚠️ normalize devolvió null");
-      return;
-    }
-
-    const { data } = normalized;
-
-    if(data?.eventoCerrado !== undefined){
-      LaunchCore.state.eventoCerrado = data.eventoCerrado;
-
-      if(data.eventoCerrado === true){
-        LaunchCore.setState("CLOSED");
-      }
-    }
-
-    await LaunchCore.render(data);
-
-    if(LaunchCore.machine.state !== "CLOSED"){
-      LaunchCore.setState("READY");
-    }
-
-    // 7. SCHEDULE
-    LaunchCore.scheduleNext(result.nextUpdate);
+    LaunchCore.phase.schedule(ctx);
 
   } catch(e){
 
     console.error("❌ error en run:", e);
 
-    // 🔥 SOLO AQUÍ manejas errores → reinicias pipeline
     if(e.message === "FETCH_FAILED"){
       console.warn("🔁 reintentando con forceFetch");
       return LaunchCore.execute("retry-fetch", { forceFetch: true });
