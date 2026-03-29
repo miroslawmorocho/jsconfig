@@ -696,14 +696,37 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     // 1. LEER ESTADO BASE
     const state = LaunchCore.readCacheState();
 
+    // 🔥 SI HAY CACHE → sincronizar estado ANTES de decidir
+    if(state.cached){
+      try{
+        const raw = JSON.parse(state.cached);
+        const normalized = LaunchCore.normalize(raw);
+
+        if(normalized?.data?.eventoCerrado !== undefined){
+          LaunchCore.state.eventoCerrado = normalized.data.eventoCerrado;
+        }
+
+      }catch(e){
+        console.warn("❌ error pre-sync cache");
+      }
+    }
+
     // 2. CONSTRUIR ESTADO REAL
     LaunchCore.buildEngineState(state);
+
+    console.log("🧠 DEBUG STATE:", {
+      cached: !!state.cached,
+      eventoCerrado: LaunchCore.state.eventoCerrado,
+      nextUpdate: state.nextUpdate
+    });
 
     // 3. DECIDIR QUÉ HACER
     const decision = LaunchCore.decide(state, options);
 
     let raw = null;
     let nextUpdate = state.nextUpdate;
+
+    console.log("🎯 DECISION:", decision);
 
     /* =========================================
        CACHE FLOW
