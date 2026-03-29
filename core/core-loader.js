@@ -448,6 +448,76 @@ LaunchCore.phase = {};
 
 
 
+// =========== FASE 0: PRIMERA LECTURA =================
+
+LaunchCore.phase.input = function(ctx){
+  ctx.state = LaunchCore.readCacheState();
+};
+
+
+
+// =========== FASE DE RENDER INMEDIATO DESDE CACHÉ ===========
+
+LaunchCore.phase.bootstrap = async function(ctx){
+
+  const state = ctx.state;
+
+  if(!state.cached) return;
+
+  try{
+
+    const raw = JSON.parse(state.cached);
+    const { data } = LaunchCore.normalize(raw);
+
+    await LaunchCore.render(data);
+
+    ctx.bootstrapped = true;
+
+    console.log("⚡ bootstrap → render desde cache");
+
+  }catch(e){
+    console.warn("❌ bootstrap error");
+  }
+
+};
+
+
+
+// ======== FASE DE SINCRONIZACIÓN (NO HAY CACHÉ) ==========
+
+LaunchCore.phase.sync = function(ctx){
+
+  const state = ctx.state;
+
+  if(!state.cached) return;
+
+  try{
+
+    const raw = JSON.parse(state.cached);
+    const normalized = LaunchCore.normalize(raw);
+
+    if(normalized?.data?.eventoCerrado !== undefined){
+      LaunchCore.state.eventoCerrado = normalized.data.eventoCerrado;
+    }
+
+    console.log("🔄 sync estado desde cache");
+
+  }catch(e){
+    console.warn("❌ error en phase.sync");
+  }
+
+};
+
+
+
+// ========= FASE DE CONSTRUCCIÓN DEL ESTADO ===========
+
+LaunchCore.phase.buildEngineState = function(ctx){
+  LaunchCore.buildEngineState(ctx.state);
+};
+
+
+
 // ================ FASE DE DECISIÓN ======================
 
 LaunchCore.phase.decide = function(ctx, options){
@@ -537,68 +607,6 @@ LaunchCore.phase.schedule = function(ctx){
 
   LaunchCore.scheduleNext(ctx.result.nextUpdate);
 
-};
-
-
-
-// =========== FASE DE RENDER INMEDIATO DESDE CACHÉ ===========
-
-LaunchCore.phase.bootstrap = async function(ctx){
-
-  const state = ctx.state;
-
-  if(!state.cached) return;
-
-  try{
-
-    const raw = JSON.parse(state.cached);
-    const { data } = LaunchCore.normalize(raw);
-
-    await LaunchCore.render(data);
-
-    ctx.bootstrapped = true;
-
-    console.log("⚡ bootstrap → render desde cache");
-
-  }catch(e){
-    console.warn("❌ bootstrap error");
-  }
-
-};
-
-
-
-// ======== FASE DE SINCRONIZACIÓN (NO HAY CACHÉ) ==========
-
-LaunchCore.phase.sync = function(ctx){
-
-  const state = ctx.state;
-
-  if(!state.cached) return;
-
-  try{
-
-    const raw = JSON.parse(state.cached);
-    const normalized = LaunchCore.normalize(raw);
-
-    if(normalized?.data?.eventoCerrado !== undefined){
-      LaunchCore.state.eventoCerrado = normalized.data.eventoCerrado;
-    }
-
-    console.log("🔄 sync estado desde cache");
-
-  }catch(e){
-    console.warn("❌ error en phase.sync");
-  }
-
-};
-
-
-
-// ========= FASE DE CONSTRUCCIÓN DEL ESTADO ===========
-
-LaunchCore.phase.buildEngineState = function(ctx){
-  LaunchCore.buildEngineState(ctx.state);
 };
 
 
@@ -825,13 +833,10 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
   try {
 
-    // 🔥 INPUT (FASE 0 realmente)
-    const state = LaunchCore.readCacheState();
+    const ctx = {};
 
-    // 🔥 CONTEXTO GLOBAL DEL PIPELINE
-    const ctx = { state };
+    LaunchCore.phase.input(ctx);
 
-    // 🔥 FASES
     await LaunchCore.phase.bootstrap(ctx);
 
     LaunchCore.phase.sync(ctx);
