@@ -609,6 +609,24 @@ LaunchCore.scheduleNext = function(nextTime){
 
 LaunchCore.commitData = function(raw){
 
+  if(!raw){
+    console.warn("❌ intentando guardar raw null → abort");
+    return;
+  }
+
+  const normalized = LaunchCore.normalize(raw);
+
+  if(!normalized){
+    console.warn("⚠️ normalize devolvió null en commit");
+    return;
+  }
+
+  const { data } = normalized;
+
+  if(data?.eventoCerrado !== undefined){
+    LaunchCore.state.eventoCerrado = data.eventoCerrado;
+  }
+
   if(raw?.siguienteActualizacionMs){
 
     const delay = Number(raw.siguienteActualizacionMs);
@@ -692,29 +710,52 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     ========================================= */
 
     if(decision === "CACHE"){
-      const normalized = LaunchCore.normalize(raw);
 
-      if(!normalized){
-        console.warn("⚠️ normalize devolvió null, run.cache");
-        isRunning = false;
-        return;
-      }
+    if(!state.cached){
+      console.warn("⚠️ cache vacío, forzando fetch");
+      isRunning = false;
+      return LaunchCore.execute("cache-miss", { forceFetch: true });
+    }
 
-      const { data } = normalized;
+    let raw;
 
-      if(data?.eventoCerrado !== undefined){
-        LaunchCore.state.eventoCerrado = data.eventoCerrado;
-      }
-
+    try{
       raw = JSON.parse(state.cached);
-      
-      await LaunchCore.renderFromCache(raw);
+    }catch(e){
+      console.warn("❌ cache corrupto");
+      isRunning = false;
+      return LaunchCore.execute("cache-corrupt", { forceFetch: true });
+    }
 
-      LaunchCore.scheduleNext(state.nextUpdate);
+    if(!raw){
+      console.warn("⚠️ cache null, forzando fetch");
+      isRunning = false;
+      return LaunchCore.execute("cache-null", { forceFetch: true });
+    }
 
-      isRunning = false; // 🔥 CRÍTICO
+    // 🔥 AHORA SÍ normalizamos (ya existe raw)
+    const normalized = LaunchCore.normalize(raw);
+
+    if(!normalized){
+      console.warn("⚠️ normalize devolvió null, run.cache");
+      isRunning = false;
       return;
     }
+
+    const { data } = normalized;
+
+    // 🔥 sincronizar estado REAL del backend
+    if(data?.eventoCerrado !== undefined){
+      LaunchCore.state.eventoCerrado = data.eventoCerrado;
+    }
+
+    await LaunchCore.renderFromCache(raw);
+
+    LaunchCore.scheduleNext(state.nextUpdate);
+
+    isRunning = false;
+    return;
+  }
 
     /* =========================================
        EXTERNAL FLOW (VC)
