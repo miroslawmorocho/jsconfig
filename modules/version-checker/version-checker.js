@@ -70,7 +70,12 @@ function initVersionChecker(config){
       // 🔥 evitar emitir si ya tenemos esta versión
       if(String(currentVersion) === String(data)){
         log("😴 misma versión en cache → ignorando");
-      } else if(lastDataVersion && lastDataVersion !== data){
+      } 
+      
+      if(
+        String(currentVersion) !== String(data) &&
+        String(lastDataVersion) !== String(data)
+      ){
 
         log("🟡 DATA CAMBIO DETECTADO");
 
