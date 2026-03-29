@@ -100,6 +100,12 @@ function initVersionChecker(config){
     }
 
     checking = false;
+
+    if(pendingForcedCheck){
+      pendingForcedCheck = false;
+      log("🔁 ejecutando check pendiente");
+      check();
+    }
   }
 
   /* =====================================================
@@ -112,5 +118,17 @@ function initVersionChecker(config){
 
   check(); // primer disparo
 
-  window.__vcCheckNow = check;
+  let pendingForcedCheck = false;
+
+  window.__vcCheckNow = function(){
+
+    if(checking){
+      pendingForcedCheck = true;
+      log("⏳ busy → en cola");
+      return;
+    }
+
+    log("🚀 forced check");
+    check();
+  };
 }
