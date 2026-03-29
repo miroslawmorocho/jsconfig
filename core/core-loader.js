@@ -499,29 +499,10 @@ LaunchCore.normalize = function(raw){
 
 LaunchCore.smartCheckNow = function(){
 
-  const currentVersion = Number(
-    LaunchCore.storage.get("lc_data_version", {source: "smartCheckNow"}) || 0
-  );
+  console.log("🧠 smart check → ping VC");
 
-  if(!currentVersion){
-    console.log("🧠 sin versión → fetch inmediato");
-    LaunchCore.execute("smart:no-version", { forceFetch: true });
-    return;
-  }
-
-  const now = Date.now();
-  const margin = 5 * 60 * 1000; // 5 minutos
-
-  if(now > currentVersion + margin){
-
-    console.log("🚀 versión vieja → check inmediato VC");
-
-    if(window.__vcCheckNow){
-      window.__vcCheckNow();
-    }
-
-  } else {
-    console.log("😴 versión reciente → no check");
+  if(window.__vcCheckNow){
+    window.__vcCheckNow();
   }
 
 };
