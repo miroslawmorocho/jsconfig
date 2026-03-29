@@ -711,7 +711,6 @@ LaunchCore.decide = function(state, options){
     return "EXTERNAL";
   }
 
-  // 🧠 🔥 NUEVO: ESTADO FINAL
   if(es.isClosed){
     return "CACHE";
   }
@@ -729,9 +728,64 @@ LaunchCore.decide = function(state, options){
   }
 
   return "CACHE";
-
 };
 
+
+
+/* =====================================================
+    EXECUTION FLOW
+===================================================== */
+
+LaunchCore.executeFlow = async function(decision, state, options){
+
+  let raw = null;
+
+  switch(decision){
+
+    case "CACHE": {
+
+      const parsed = JSON.parse(state.cached);
+
+      await LaunchCore.renderFromCache(parsed);
+
+      return {
+        nextUpdate: state.nextUpdate,
+        raw: parsed
+      };
+    }
+
+    case "FETCH": {
+
+      raw = await LaunchCore.fetchWorker(
+        LaunchCore.config.endpoint,
+        options.forceFetch
+      );
+
+      if(!raw) throw new Error("FETCH_FAILED");
+
+      LaunchCore.commitData(raw);
+
+      return {
+        raw,
+        nextUpdate: LaunchCore.readCacheState().nextUpdate
+      };
+    }
+
+    case "EXTERNAL": {
+
+      raw = options.externalData;
+
+      LaunchCore.commitData(raw);
+
+      return {
+        raw,
+        nextUpdate: LaunchCore.readCacheState().nextUpdate
+      };
+    }
+
+  }
+
+};
 
 
 /* =====================================================
@@ -745,10 +799,10 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
   try {
 
-    // 1. LEER ESTADO BASE
+    // 1. STATE BASE
     const state = LaunchCore.readCacheState();
 
-    // 🔥 SI HAY CACHE → sincronizar estado ANTES de decidir
+    // 2. SYNC DESDE CACHE (solo estado global)
     if(state.cached){
       try{
         const raw = JSON.parse(state.cached);
@@ -763,140 +817,51 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       }
     }
 
-    // 2. CONSTRUIR ESTADO REAL
+    // 3. BUILD ENGINE STATE
     LaunchCore.buildEngineState(state);
 
-    console.log("🧠 DEBUG STATE:", {
-      cached: !!state.cached,
-      eventoCerrado: LaunchCore.state.eventoCerrado,
-      nextUpdate: state.nextUpdate
-    });
-
-    // 3. DECIDIR QUÉ HACER
+    // 4. DECISION
     const decision = LaunchCore.decide(state, options);
-
-    let raw = null;
-    let nextUpdate = state.nextUpdate;
 
     console.log("🎯 DECISION:", decision);
 
-    /* =========================================
-       CACHE FLOW
-    ========================================= */
+    // 5. EXECUTE FLOW
+    const result = await LaunchCore.executeFlow(decision, state, options);
 
-    if(decision === "CACHE"){
-
-    if(!state.cached){
-      console.warn("⚠️ cache vacío, forzando fetch");
-      isRunning = false;
-      return LaunchCore.execute("cache-miss", { forceFetch: true });
+    if(!result || !result.raw){
+      console.warn("⚠️ sin resultado");
+      return;
     }
 
-    let raw;
-
-    try{
-      raw = JSON.parse(state.cached);
-    }catch(e){
-      console.warn("❌ cache corrupto");
-      isRunning = false;
-      return LaunchCore.execute("cache-corrupt", { forceFetch: true });
-    }
-
-    if(!raw){
-      console.warn("⚠️ cache null, forzando fetch");
-      isRunning = false;
-      return LaunchCore.execute("cache-null", { forceFetch: true });
-    }
-
-    // 🔥 AHORA SÍ normalizamos (ya existe raw)
-    const normalized = LaunchCore.normalize(raw);
+    // 6. NORMALIZE + RENDER
+    const normalized = LaunchCore.normalize(result.raw);
 
     if(!normalized){
-      console.warn("⚠️ normalize devolvió null, run.cache");
-      isRunning = false;
+      console.warn("⚠️ normalize devolvió null");
       return;
     }
 
     const { data } = normalized;
 
-    // 🔥 sincronizar estado REAL del backend
-    if(data?.eventoCerrado !== undefined){
-      LaunchCore.state.eventoCerrado = data.eventoCerrado;
-    }
-
-    await LaunchCore.renderFromCache(raw);
-
-    LaunchCore.scheduleNext(state.nextUpdate);
-
-    isRunning = false;
-    return;
-  }
-
-    /* =========================================
-       EXTERNAL FLOW (VC)
-    ========================================= */
-
-    if(decision === "EXTERNAL"){
-
-      raw = options.externalData;
-
-    } else {
-
-      /* =========================================
-         FETCH FLOW
-      ========================================= */
-
-      raw = await LaunchCore.fetchWorker(
-        LaunchCore.config.endpoint,
-        options.forceFetch
-      );
-
-    }
-
-    if(!raw){
-      console.warn("⚠️ sin data (ni cache ni fetch)");
-      return;
-    }
-
-    /* =========================================
-       COMMIT (FUENTE DE VERDAD)
-    ========================================= */
-
-    LaunchCore.commitData(raw);
-
-    const updatedState = LaunchCore.readCacheState();
-
-    nextUpdate = updatedState.nextUpdate;
-
-    /* =========================================
-       RENDER
-    ========================================= */
-
-    const normalized = LaunchCore.normalize(raw);
-
-    if(!normalized){
-      console.warn("⚠️ normalize devolvió null, run:render");
-      isRunning = false;
-      return;
-    }
-
-    const { data } = normalized;
-
-    // 🔥 SINCRONIZAR ESTADO GLOBAL
     if(data?.eventoCerrado !== undefined){
       LaunchCore.state.eventoCerrado = data.eventoCerrado;
     }
 
     await LaunchCore.render(data);
 
-    /* =========================================
-       SCHEDULE
-    ========================================= */
-
-    LaunchCore.scheduleNext(nextUpdate);
+    // 7. SCHEDULE
+    LaunchCore.scheduleNext(result.nextUpdate);
 
   } catch(e){
+
     console.error("❌ error en run:", e);
+
+    // 🔥 SOLO AQUÍ manejas errores → reinicias pipeline
+    if(e.message === "FETCH_FAILED"){
+      console.warn("🔁 reintentando con forceFetch");
+      return LaunchCore.execute("retry-fetch", { forceFetch: true });
+    }
+
   }
 
   isRunning = false;
