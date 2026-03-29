@@ -1034,10 +1034,7 @@ LaunchCore.init = async function(){
       console.log("👁️ visibility → smart check");
       LaunchCore.smartCheckNow();
     });
-
-    // 🔥 RECOVERY LIMPIO
-    LaunchCore.recoverPendingConfirm();
-
+    
     // VERSION CHECKER
     await LaunchCore.use("versionChecker");
 
