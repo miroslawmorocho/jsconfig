@@ -111,4 +111,6 @@ function initVersionChecker(config){
   setInterval(check, config.checkInterval);
 
   check(); // primer disparo
+
+  window.__vcCheckNow = check;
 }

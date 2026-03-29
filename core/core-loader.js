@@ -474,6 +474,41 @@ LaunchCore.normalize = function(raw){
 
 
 /* =====================================================
+    SMART VERSION CHECK
+===================================================== */
+
+LaunchCore.smartCheckNow = function(){
+
+  const currentVersion = Number(
+    LaunchCore.storage.get("lc_data_version", {source: "smartCheckNow"}) || 0
+  );
+
+  if(!currentVersion){
+    console.log("🧠 sin versión → fetch inmediato");
+    LaunchCore.execute("smart:no-version", { forceFetch: true });
+    return;
+  }
+
+  const now = Date.now();
+  const margin = 5 * 60 * 1000; // 5 minutos
+
+  if(now > currentVersion + margin){
+
+    console.log("🚀 versión vieja → check inmediato VC");
+
+    if(window.__vcCheckNow){
+      window.__vcCheckNow();
+    }
+
+  } else {
+    console.log("😴 versión reciente → no check");
+  }
+
+};
+
+
+
+/* =====================================================
     CONFIRMAR VERSION DEL WORKER
 ===================================================== */
 
@@ -881,7 +916,21 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
   // 2. cancelar confirmaciones anteriores
   LaunchCore.scheduler.cancelar("vc-confirm");
 
-  const delay = confirmDelay || 60000;
+  const currentVersion = Number(
+    LaunchCore.storage.get("lc_data_version", {source: "data:detected"}) || 0
+  );
+
+  const now = Date.now();
+  const margin = 5 * 60 * 1000;
+
+  let delay;
+
+  if(now > currentVersion + margin){
+    console.log("🚀 confirm inmediato (versión vieja)");
+    delay = 0;
+  } else {
+    delay = confirmDelay || 60000;
+  }
 
   const nextConfirm = Date.now() + delay;
   LaunchCore.storage.set("vc_next_confirm", nextConfirm, {source: "data:detected"});
@@ -1123,8 +1172,8 @@ LaunchCore.init = async function(){
 
     // VISIBILITY
     LaunchCore.visibility.init(() => {
-      console.log("👁️ CORE visibility wake");
-      LaunchCore.execute("visibility");
+      console.log("👁️ visibility → smart check");
+      LaunchCore.smartCheckNow();
     });
 
     // 🔥 RECOVERY LIMPIO
@@ -1139,6 +1188,7 @@ LaunchCore.init = async function(){
     LaunchCore.execute("init", {
       force: false
     });
+    LaunchCore.smartCheckNow();
 
   }catch(e){
     console.error("Auto-init error:", e);
