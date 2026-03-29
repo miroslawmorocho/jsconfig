@@ -259,10 +259,10 @@ LaunchCore.storage = {
           }
 
           // 🚫 no correr si evento cerrado EXCEPTO VC que puede reabrir
-          if(LaunchCore.state?.eventoCerrado && !ignoreClosed){
+          /*if(LaunchCore.state?.eventoCerrado && !ignoreClosed){
             console.log("🚫 skip scheduled (evento cerrado)");
             return;
-          }
+          }*/
 
           fn();
           return;
@@ -917,8 +917,8 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
   // 2. cancelar confirmaciones anteriores
   LaunchCore.scheduler.cancelar("vc-confirm");
 
-  const currentVersion = Number(
-    LaunchCore.storage.get("lc_data_version", {source: "data:detected"}) || 0
+  const detectedAt = Number(
+    LaunchCore.storage.get("vc_last_detected", {source: "data:detected"}) || 0
   );
 
   const now = Date.now();
@@ -926,7 +926,7 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 
   let delay;
 
-  if(now > currentVersion + margin){
+  if(now > detectedAt + margin){
     console.log("🚀 confirm inmediato (versión vieja)");
     delay = 0;
   } else {
