@@ -447,6 +447,7 @@ LaunchCore.storage = {
 LaunchCore.phase = {};
 
 
+// ============= FASES DEL RUN =========================
 
 // =========== FASE 0: PRIMERA LECTURA =================
 
@@ -609,6 +610,73 @@ LaunchCore.phase.schedule = function(ctx){
 
 };
 
+
+
+// ========== FASE DE ACTUALIZACIÓN DE DATA ============
+
+LaunchCore.phase.resumeTimers = function(){
+
+  const pending = LaunchCore.storage.get("lc_pending_version", {
+    source: "resumeTimers"
+  });
+
+  if(!pending) return;
+
+  const nextConfirm = Number(
+    LaunchCore.storage.get("vc_next_confirm", {source: "resumeTimers"})
+  );
+
+  if(!nextConfirm) return;
+
+  const now = Date.now();
+  const delay = Math.max(0, nextConfirm - now);
+
+  console.log("⏳ reanudando confirm en", delay);
+
+  LaunchCore.scheduler.programar(
+    "vc-confirm",
+    async () => {
+
+      console.log("🧠 CORE: confirmando (resume)...");
+
+      const pending = LaunchCore.storage.get("lc_pending_version");
+      if(!pending) return;
+
+      const result = await LaunchCore.getWorkerVersion();
+      const workerVersion = result?.version;
+
+      if(String(workerVersion) === String(pending)){
+
+        console.log("✅ DATA CONFIRMADA (resume)");
+
+        LaunchCore.storage.remove("lc_pending_version");
+        LaunchCore.storage.remove("vc_last_detected");
+        LaunchCore.storage.remove("vc_next_confirm");
+
+        LaunchCore.commitData(result.raw);
+
+        // 🔥 mini pipeline
+        const ctx = {
+          result: {
+            raw: result.raw,
+            nextUpdate: LaunchCore.readCacheState().nextUpdate
+          }
+        };
+
+        LaunchCore.phase.process(ctx);
+        await LaunchCore.phase.render(ctx);
+        LaunchCore.phase.schedule(ctx);
+
+      } else {
+        console.log("⌛ aún no lista (resume)");
+      }
+
+    },
+    delay,
+    { ignoreClosed: true, allowHidden: true }
+  );
+
+};
 
 
 // =========   DATA NORMALIZER (CORE MANDA) ============
@@ -990,6 +1058,135 @@ LaunchCore.renderFromCache = async function(rawCached){
 
 
 /* =====================================================
+   CONFIRMACIÓN DE DATA DESDE EL WORKER (VC DATA CHECK)
+===================================================== */
+
+// ============== CONTENEDOR ===========================
+
+LaunchCore.vc = {};
+
+
+
+// ======== FUNCIÓN PARA PROGRAMAR CONFIRMACIÓN ========
+
+LaunchCore.vc.scheduleConfirm = function({ delay }){
+
+  const nextConfirm = Date.now() + delay;
+
+  LaunchCore.storage.set("vc_next_confirm", nextConfirm);
+
+  console.log("⏳ confirm en", delay);
+
+  LaunchCore.scheduler.programar(
+    "vc-confirm",
+    LaunchCore.vc.confirm, // 🔥 reutilización real
+    delay,
+    { ignoreClosed: true, allowHidden: true }
+  );
+};
+
+
+
+// ======= FUNCIÓN PARA CONFIRMAR DATA =================
+
+LaunchCore.vc.confirm = async function(){
+
+  console.log("🧠 VC: confirmando...");
+
+  const pending = LaunchCore.storage.get("lc_pending_version");
+  if(!pending) return;
+
+  const result = await LaunchCore.getWorkerVersion();
+  const workerVersion = result?.version;
+
+  console.log("🛰️ worker version:", workerVersion);
+
+  if(String(workerVersion) === String(pending)){
+
+    console.log("✅ DATA CONFIRMADA");
+
+    LaunchCore.storage.remove("lc_pending_version");
+    LaunchCore.storage.remove("vc_last_detected");
+    LaunchCore.storage.remove("vc_next_confirm");
+
+    LaunchCore.commitData(result.raw);
+
+    // 🔥 reutilizas pipeline
+    const ctx = {
+      result: {
+        raw: result.raw,
+        nextUpdate: LaunchCore.readCacheState().nextUpdate
+      }
+    };
+
+    LaunchCore.phase.process(ctx);
+    return LaunchCore.phase.render(ctx)
+      .then(() => LaunchCore.phase.schedule(ctx));
+
+  } else {
+    console.log("⌛ aún no lista");
+  }
+
+};
+
+
+
+// ======== FUNCIÓN PARA DETECTAR CAMBIOS ==============
+
+LaunchCore.vc.detect = function({ version, confirmDelay }){
+
+  const currentPending = LaunchCore.storage.get("lc_pending_version");
+
+  if(String(currentPending) === String(version)){
+    console.log("♻️ misma versión pendiente → NO reprogramar");
+    return;
+  }
+
+  console.log("🧠 VC: cambio detectado", version);
+
+  LaunchCore.storage.set("lc_pending_version", version);
+
+  LaunchCore.scheduler.cancelar("vc-confirm");
+
+  const detectedAt = Number(
+    LaunchCore.storage.get("vc_last_detected") || 0
+  );
+
+  const now = Date.now();
+  const margin = 5 * 60 * 1000;
+
+  let delay = (now > detectedAt + margin)
+    ? 0
+    : (confirmDelay || 60000);
+
+  LaunchCore.vc.scheduleConfirm({ delay });
+};
+
+
+
+// ====== FUNCIÓN PARA REANUDAR CONFIRMACIÓN ===========
+
+LaunchCore.vc.resume = function(){
+
+  const pending = LaunchCore.storage.get("lc_pending_version");
+  if(!pending) return;
+
+  const nextConfirm = Number(
+    LaunchCore.storage.get("vc_next_confirm")
+  );
+
+  if(!nextConfirm) return;
+
+  const delay = Math.max(0, nextConfirm - Date.now());
+
+  console.log("🔁 VC resume → delay:", delay);
+
+  LaunchCore.vc.scheduleConfirm({ delay });
+};
+
+
+
+/* =====================================================
    5. MACHINE (BOOT / READY / UPDATING / CLOSED)
 ===================================================== */
 
@@ -1069,102 +1266,7 @@ LaunchCore.on("state:change", ({from, to}) => {
 
 // ================ DATA UPDATE ========================
 
-LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
-
-  const currentPending = LaunchCore.storage.get("lc_pending_version", {
-    source: "data:detected"
-  });
-
-  if(String(currentPending) === String(version)){
-    console.log("♻️ misma versión pendiente → NO reprogramar");
-    return;
-  }
-
-  console.log("🧠 CORE: cambio detectado", version);
-
-  // 1. guardar versión pendiente
-  LaunchCore.storage.set("lc_pending_version", version, {source: "data:detected"});
-
-  // 2. cancelar confirmaciones anteriores
-  LaunchCore.scheduler.cancelar("vc-confirm");
-
-  const detectedAt = Number(
-    LaunchCore.storage.get("vc_last_detected", {source: "data:detected"}) || 0
-  );
-
-  const now = Date.now();
-  const margin = 5 * 60 * 1000;
-
-  let delay;
-
-  if(now > detectedAt + margin){
-    console.log("🚀 confirm inmediato (versión vieja)");
-    delay = 0;
-  } else {
-    delay = confirmDelay || 60000;
-  }
-
-  const nextConfirm = Date.now() + delay;
-  LaunchCore.storage.set("vc_next_confirm", nextConfirm, {source: "data:detected"});
-
-  console.log("⏳ confirm en", delay);
-
-  // 3. programar confirmación
-  LaunchCore.scheduler.programar(
-    "vc-confirm",
-    async () => {
-
-      console.log("🧠 CORE: confirmando contra WORKER...");
-
-      const pending = LaunchCore.storage.get("lc_pending_version", {source: "data:detected"});
-      if(!pending) return;
-
-      const result = await LaunchCore.getWorkerVersion();
-
-      const workerVersion = result?.version;
-
-      console.log("🛰️ worker version:", workerVersion);
-
-      if(String(workerVersion) === String(pending)){
-
-        console.log("✅ DATA CONFIRMADA");
-
-        // limpiar pendientes
-        LaunchCore.storage.remove("lc_pending_version", {source: "data:detected confirmed"});
-        LaunchCore.storage.remove("vc_last_detected", {source: "data:detected confirmed"});
-        LaunchCore.storage.remove("vc_next_confirm", {source: "data:detected confirmed"});
-
-
-        // 🔥 guardar data como siempre
-        LaunchCore.commitData(result.raw);
-
-        // 🔥 mini pipeline directo
-        const ctx = {
-          result: {
-            raw: result.raw,
-            nextUpdate: LaunchCore.readCacheState().nextUpdate
-          }
-        };
-
-        // 🔥 SOLO lo necesario
-        LaunchCore.phase.process(ctx);
-        await LaunchCore.phase.render(ctx);
-        LaunchCore.phase.schedule(ctx);
-
-        console.log("⚡ VC → aplicado sin run completo");
-
-      } else {
-
-        console.log("⌛ worker aún no actualizado");
-
-      }
-
-    },
-    delay,
-    { ignoreClosed: true, allowHidden: true } // 🔥 CLAVE
-  );
-
-});
+LaunchCore.on("data:detected", LaunchCore.vc.detect);
 
 
 
@@ -1275,6 +1377,9 @@ LaunchCore.init = async function(){
     await LaunchCore.use("versionChecker");
 
     console.log("🔥 LLAMANDO VERSION CHECKER...");
+
+    // REANUDANDO DATA CONFIRM SI LO HAY
+    LaunchCore.vc.resume();
 
     // 🚀 PRIMER RUN
     LaunchCore.execute("init", {
