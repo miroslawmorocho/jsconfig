@@ -442,6 +442,49 @@ LaunchCore.storage = {
    3. CORE ENGINE (normalize, commit, decision, run)
 ===================================================== */
 
+// =========== CONTENEDOR DE FASES ===================
+
+LaunchCore.phase = {};
+
+
+
+// ================ FASE DECISIÓN ======================
+
+LaunchCore.phase.decide = function(ctx, options){
+
+  const decision = LaunchCore.decide(ctx.state, options);
+
+  console.log("🎯 DECISION:", decision);
+
+  if(decision === "FETCH"){
+    LaunchCore.setState("UPDATING");
+  }
+
+  ctx.decision = decision;
+};
+
+
+
+// ================ FASE DECISIÓN ======================
+
+LaunchCore.phase.execute = async function(ctx, options){
+
+  const result = await LaunchCore.executeFlow(
+    ctx.decision,
+    ctx.state,
+    options
+  );
+
+  if(!result || !result.raw){
+    console.warn("⚠️ sin resultado");
+    return;
+  }
+
+  ctx.result = result;
+};
+
+
+
 // =========   DATA NORMALIZER (CORE MANDA) ============
 
 LaunchCore.normalize = function(raw){
@@ -682,21 +725,22 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       }
     }
 
+    const ctx = {
+      state
+    };
+
     // 3. BUILD ENGINE STATE
     LaunchCore.buildEngineState(state);
 
-    // 4. DECISION
-    const decision = LaunchCore.decide(state, options);
+    // 4. 🔥 FASE DECISION
+    LaunchCore.phase.decide(ctx, options);
 
-    console.log("🎯 DECISION:", decision);
+    // 5. 🔥 FASE EXECUTION
+    await LaunchCore.phase.execute(ctx, options);
 
-    // 5. EXECUTE FLOW
-    const result = await LaunchCore.executeFlow(decision, state, options);
+    const result = ctx.result;
 
-    if(!result || !result.raw){
-      console.warn("⚠️ sin resultado");
-      return;
-    }
+    if(!result) return;
 
     // 6. NORMALIZE + RENDER
     const normalized = LaunchCore.normalize(result.raw);
@@ -710,9 +754,17 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     if(data?.eventoCerrado !== undefined){
       LaunchCore.state.eventoCerrado = data.eventoCerrado;
+
+      if(data.eventoCerrado === true){
+        LaunchCore.setState("CLOSED");
+      }
     }
 
     await LaunchCore.render(data);
+
+    if(LaunchCore.machine.state !== "CLOSED"){
+      LaunchCore.setState("READY");
+    }
 
     // 7. SCHEDULE
     LaunchCore.scheduleNext(result.nextUpdate);
@@ -820,6 +872,38 @@ LaunchCore.getWorkerVersion = async function(){
 
 
 
+// ==========  RENDER MACHINE ==================
+
+LaunchCore.render = async function(data){
+
+  const page = LaunchCore.config.page;
+  const module = LaunchCore.modules[page];
+
+  if(!module){
+    console.warn("No hay módulo para render:", page);
+    return;
+  }
+
+  await module.render(data);
+
+};
+
+
+
+// ============ CACHE RENDER ENGINE ===============
+
+LaunchCore.renderFromCache = async function(rawCached){
+
+  const { data, control } = LaunchCore.normalize(rawCached);
+
+  await LaunchCore.render(data);
+
+  return control;
+
+};
+
+
+
 /* =====================================================
    5. MACHINE (BOOT / READY / UPDATING / CLOSED)
 ===================================================== */
@@ -833,9 +917,64 @@ LaunchCore.machine = {
     BOOT: "BOOT",
     READY: "READY",
     UPDATING: "UPDATING",
+    WARNING: "WARNING",
     CLOSED: "CLOSED"
   }
 };
+
+
+
+// ================= FIJAR ESTADOS ====================
+
+LaunchCore.setState = function(newState){
+
+  const prev = LaunchCore.machine.state;
+
+  if(prev === newState) return;
+
+  console.log(`🧠 STATE: ${prev} → ${newState}`);
+
+  LaunchCore.machine.state = newState;
+
+  LaunchCore.emit("state:change", {
+    from: prev,
+    to: newState
+  });
+
+};
+
+
+
+// ============HACIENDO FUNCIONAR A LOS ESTADOS ===============
+
+LaunchCore.on("state:change", ({from, to}) => {
+
+  console.log("🎛 reaccionando a estado:", to);
+
+  switch(to){
+
+    case "BOOT":
+      // nada o logs
+      break;
+
+    case "READY":
+      // UI activa
+      break;
+
+    case "UPDATING":
+      // mostrar loading si quieres
+      break;
+
+    case "WARNING":
+    // mostrar loading si quieres
+    break;
+
+    case "CLOSED":
+      console.log("🚫 sistema cerrado");
+      break;
+  }
+
+});
 
 
 
@@ -985,6 +1124,8 @@ LaunchCore.on("code:update", async () => {
 
 LaunchCore.init = async function(){
 
+  LaunchCore.setState("BOOT");
+
   const root = document.getElementById("launch-engine-root");
   LaunchCore.root = root;
 
@@ -1048,9 +1189,17 @@ LaunchCore.init = async function(){
 
   }catch(e){
     console.error("Auto-init error:", e);
+    LaunchCore.setState("WARNING");
   }
 
+  LaunchCore.setState("READY");
+
 };
+
+
+
+
+
 
 
 
@@ -1221,39 +1370,6 @@ document.addEventListener("click", function(e){
 /* =====================================================
    8. OTRAS FUNCIONES
 ===================================================== */
-
-// ==========  RENDER MACHINE ==================
-
-LaunchCore.render = async function(data){
-
-  const page = LaunchCore.config.page;
-  const module = LaunchCore.modules[page];
-
-  if(!module){
-    console.warn("No hay módulo para render:", page);
-    return;
-  }
-
-  await module.render(data);
-
-};
-
-
-
-// ============ CACHE RENDER ENGINE ===============
-
-
-LaunchCore.renderFromCache = async function(rawCached){
-
-  const { data, control } = LaunchCore.normalize(rawCached);
-
-  await LaunchCore.render(data);
-
-  return control;
-
-};
-
-
 
 // =========== URL VERSIONADA HUMANA =================
 
