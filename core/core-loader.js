@@ -1135,13 +1135,23 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
         LaunchCore.storage.remove("vc_next_confirm", {source: "data:detected confirmed"});
 
 
-        // 🔥 USAR TU INFRAESTRUCTURA
+        // 🔥 guardar data como siempre
         LaunchCore.commitData(result.raw);
 
-        // 🔥 ejecutar con external (sin fetch)
-        LaunchCore.execute("vc-confirm", {
-          externalData: result.raw
-        });
+        // 🔥 mini pipeline directo
+        const ctx = {
+          result: {
+            raw: result.raw,
+            nextUpdate: LaunchCore.readCacheState().nextUpdate
+          }
+        };
+
+        // 🔥 SOLO lo necesario
+        LaunchCore.phase.process(ctx);
+        await LaunchCore.phase.render(ctx);
+        LaunchCore.phase.schedule(ctx);
+
+        console.log("⚡ VC → aplicado sin run completo");
 
       } else {
 
