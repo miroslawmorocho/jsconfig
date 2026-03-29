@@ -823,13 +823,16 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
   if(isRunning) return;
   isRunning = true;
 
-  try {   
+  try {
+
+    // 🔥 INPUT (FASE 0 realmente)
+    const state = LaunchCore.readCacheState();
 
     // 🔥 CONTEXTO GLOBAL DEL PIPELINE
     const ctx = { state };
 
     // 🔥 FASES
-    LaunchCore.phase.bootstrap(ctx);
+    await LaunchCore.phase.bootstrap(ctx);
 
     LaunchCore.phase.sync(ctx);
 
