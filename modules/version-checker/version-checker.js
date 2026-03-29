@@ -67,9 +67,8 @@ function initVersionChecker(config){
       });
 
       log("📦 current (cache)", currentVersion);
-      log("🧠 last detected", lastDetected);
-
-
+      if(lastDetected) {log("🧠 last detected", lastDetected);}
+      
       // 🔥 evitar emitir si ya tenemos esta versión
       if(String(currentVersion) !== String(data)){
 
