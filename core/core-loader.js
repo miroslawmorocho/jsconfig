@@ -908,8 +908,9 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 
         console.log("✅ DATA CONFIRMADA");
 
-        // limpiar pendiente
+        // limpiar pendientes
         LaunchCore.storage.remove("lc_pending_version", {source: "data:detected"});
+        LaunchCore.storage.remove("vc_last_detected", {source: "data:detected"});
 
         // 🔥 USAR TU INFRAESTRUCTURA
         LaunchCore.commitData(result.raw);

@@ -60,24 +60,33 @@ function initVersionChecker(config){
       log("data", data);
 
       // 🔥 versión actual en cache REAL
-      const currentVersion = LaunchCore.storage.get(
-                              "lc_data_version",
-                              { source: "vc:currentVersion" }
-      );
+      const currentVersion = LaunchCore.storage.get("lc_data_version", {
+                              source: "vc:currentVersion"
+      });
+
+      const lastDetected = LaunchCore.storage.get("vc_last_detected", {
+                            source: "vc:lastDetected"
+      });
 
       log("📦 current (cache)", currentVersion);
+      log("🧠 last detected", lastDetected);
+
 
       // 🔥 evitar emitir si ya tenemos esta versión
       if(String(currentVersion) === String(data)){
         log("😴 misma versión en cache → ignorando");
       } 
-      
+
       if(
         String(currentVersion) !== String(data) &&
-        String(lastDataVersion) !== String(data)
+        String(lastDetected) !== String(data)
       ){
 
         log("🟡 DATA CAMBIO DETECTADO");
+
+        LaunchCore.storage.set("vc_last_detected", data, {
+          source: "vc:detected"
+        });
 
         LaunchCore.emit("data:detected", {
           version: data,
