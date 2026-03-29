@@ -633,13 +633,24 @@ LaunchCore.scheduleNext = function(nextTime){
 
   let delay = nextTime - now;
 
+  if(delay <= 0 || isNaN(delay)){
+    console.warn("💀 INVALID DELAY → NO SCHEDULE", delay);
+  }
+
   if(delay > 0 && !isNaN(delay)){
 
     const safeDelay = Math.max(delay, 5000);
 
+    console.log("🧪 scheduleNext debug:", {
+      nextTime,
+      now,
+      delay,
+      safeDelay
+    });
+
     LaunchCore.scheduler.programar(
       "core-main",
-      () => LaunchCore.execute("scheduler"),
+      () => LaunchCore.execute("scheduleNext"),
       safeDelay
     );
 
@@ -672,7 +683,7 @@ LaunchCore.commitData = function(raw){
     LaunchCore.state.eventoCerrado = data.eventoCerrado;
   }
 
-  if(raw?.siguienteActualizacionMs){
+  if(raw?.siguienteActualizacionMs !== undefined){
 
     const delay = Number(raw.siguienteActualizacionMs);
     const nextTime = Date.now() + delay;
@@ -916,11 +927,6 @@ LaunchCore.execute = function(source = "unknown", options = {}){
 
 LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 
-  console.log("🧠 CORE: cambio detectado", version);
-
-  // 1. guardar versión pendiente
-  LaunchCore.storage.set("lc_pending_version", version, {source: "data:detected"});
-
   const currentPending = LaunchCore.storage.get("lc_pending_version", {
     source: "data:detected"
   });
@@ -929,6 +935,11 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
     console.log("♻️ misma versión pendiente → NO reprogramar");
     return;
   }
+
+  console.log("🧠 CORE: cambio detectado", version);
+
+  // 1. guardar versión pendiente
+  LaunchCore.storage.set("lc_pending_version", version, {source: "data:detected"});
 
   // 2. cancelar confirmaciones anteriores
   LaunchCore.scheduler.cancelar("vc-confirm");
@@ -1095,29 +1106,44 @@ LaunchCore.recoverPendingConfirm = function(){
     "vc-confirm",
     async () => {
 
-      const pending = LaunchCore.storage.get("lc_pending_version", {source: "recoverPendingConfirm"});
+      console.log("🧠 CORE: confirmando contra WORKER...");
+
+      const pending = LaunchCore.storage.get("lc_pending_version", {source: "data:detected"});
       if(!pending) return;
 
       const result = await LaunchCore.getWorkerVersion();
 
-      if(String(result?.version) === String(pending)){
+      const workerVersion = result?.version;
 
-        console.log("✅ DATA CONFIRMADA (recovery)");
+      console.log("🛰️ worker version:", workerVersion);
 
-        LaunchCore.storage.remove("lc_pending_version", {source: "recoverPendingConfirm"});
+      if(String(workerVersion) === String(pending)){
 
-        // 🔥 USAR INFRAESTRUCTURA MODERNA
+        console.log("✅ DATA CONFIRMADA");
+
+        // limpiar pendientes
+        LaunchCore.storage.remove("lc_pending_version", {source: "data:detected confirmed"});
+        LaunchCore.storage.remove("vc_last_detected", {source: "data:detected confirmed"});
+        LaunchCore.storage.remove("vc_next_confirm", {source: "data:detected confirmed"});
+
+
+        // 🔥 USAR TU INFRAESTRUCTURA
         LaunchCore.commitData(result.raw);
 
-        LaunchCore.execute("vc-recovery", {
+        // 🔥 ejecutar con external (sin fetch)
+        LaunchCore.execute("vc-confirm", {
           externalData: result.raw
         });
+
+      } else {
+
+        console.log("⌛ worker aún no actualizado");
 
       }
 
     },
     delay,
-    { ignoreClosed: true } // 🔥 CLAVE
+    { ignoreClosed: true, allowHidden: true } // 🔥 CLAVE
   );
 
 };
