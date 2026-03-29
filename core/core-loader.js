@@ -260,11 +260,8 @@ LaunchCore.storage = {
         }
 
         if(document.hidden && !options.allowHidden){
-          console.log("😴 skip scheduled (tab hidden)");
-          
-          // 🔥 REPROGRAMAR
-          timers[key] = setTimeout(tick, 5000);
-          return;
+          console.log("😴 paused:", key);
+          return; // 🔥 NO listeners aquí
         }
 
         const nextDelay = Math.min(remaining, MAX_DELAY);
@@ -960,17 +957,18 @@ LaunchCore.scheduleNext = function(nextTime){
 
     const safeDelay = Math.max(delay, 5000);
 
-    console.log("🧪 scheduleNext debug:", {
+    /*console.log("🧪 scheduleNext debug:", {
       nextTime,
       now,
       delay,
       safeDelay
-    });
+    });*/
 
     LaunchCore.scheduler.programar(
       "core-main",
       () => LaunchCore.execute("scheduleNext"),
-      safeDelay
+      safeDelay,
+      { allowHidden: false } // 🔥 ESTO
     );
 
   }
@@ -1369,8 +1367,15 @@ LaunchCore.init = async function(){
 
     // VISIBILITY
     LaunchCore.visibility.init(() => {
-      console.log("👁️ visibility → smart check");
-      LaunchCore.smartCheckNow();
+
+      console.log("👁️ visibility → resume scheduler");
+
+      // 🔥 reintentar jobs importantes
+      LaunchCore.vc.resume();
+
+      // 🔥 reintentar core si había algo pendiente
+      LaunchCore.execute("visibility");
+
     });
     
     // VERSION CHECKER
