@@ -268,8 +268,15 @@ LaunchCore.storage = {
           return;
         }
 
-        const nextDelay = Math.min(remaining, MAX_DELAY);
+        if(document.hidden && !options.allowHidden){
+          console.log("😴 skip scheduled (tab hidden)");
+          
+          // 🔥 REPROGRAMAR
+          timers[key] = setTimeout(tick, 5000);
+          return;
+        }
 
+        const nextDelay = Math.min(remaining, MAX_DELAY);
         timers[key] = setTimeout(tick, nextDelay);
       }
 
@@ -914,6 +921,15 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
   // 1. guardar versión pendiente
   LaunchCore.storage.set("lc_pending_version", version, {source: "data:detected"});
 
+  const currentPending = LaunchCore.storage.get("lc_pending_version", {
+    source: "data:detected"
+  });
+
+  if(String(currentPending) === String(version)){
+    console.log("♻️ misma versión pendiente → NO reprogramar");
+    return;
+  }
+
   // 2. cancelar confirmaciones anteriores
   LaunchCore.scheduler.cancelar("vc-confirm");
 
@@ -980,7 +996,7 @@ LaunchCore.on("data:detected", ({ version, confirmDelay }) => {
 
     },
     delay,
-    { ignoreClosed: true } // 🔥 CLAVE
+    { ignoreClosed: true, allowHidden: true } // 🔥 CLAVE
   );
 
 });
