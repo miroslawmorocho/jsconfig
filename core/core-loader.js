@@ -27,6 +27,7 @@ let queue = [];
 let isRunning = false;
 
 LaunchCore.events = {};
+LaunchCore.vc.checkNow = () => window.__vcCheckNow?.();
 
 
 
@@ -494,6 +495,23 @@ LaunchCore.phase.bootstrap = async function(ctx){
 
     console.log("⚡ bootstrap → render desde cache");
 
+    // 🔥 LOG PRO
+    if(state.nextUpdate){
+
+      const ms = state.nextUpdate - Date.now();
+
+      const human = formatTime(ms);
+
+      console.log(
+        `📦 nextUpdate → ${human} (${ms}ms)`
+      );
+
+      if(ms <= 0){
+        console.log("⚠️ YA DEBIÓ ACTUALIZAR (fetch inmediato)");
+      }
+
+    }
+
   }catch(e){
     console.warn("❌ bootstrap error");
   }
@@ -520,7 +538,7 @@ LaunchCore.phase.sync = function(ctx){
     }
 
     console.log("🔄 sync estado desde cache");
-
+    
   }catch(e){
     console.warn("❌ error en phase.sync");
   }
@@ -762,26 +780,31 @@ LaunchCore.commitData = function(raw){
     return;
   }
 
-  const { data } = normalized;
-
-  console.log("📦 siguienteActualizacionMs:", raw?.siguienteActualizacionMs, data?.siguienteActualizacionMs);
+  const { data, control } = normalized;
 
   if(data?.eventoCerrado !== undefined){
     LaunchCore.state.eventoCerrado = data.eventoCerrado;
   }
 
-  if(raw?.siguienteActualizacionMs !== undefined){
+  const delay = Number(data?.siguienteActualizacionMs);
 
-    const delay = Number(raw.siguienteActualizacionMs);
+  if(Number.isFinite(delay) && delay > 0){
+
     const nextTime = Date.now() + delay;
 
     LaunchCore.storage.set("lc_next_update", nextTime, {source: "commitData"});
 
+    const ms = nextTime - Date.now();
+
+    console.log(
+      `📦 nextUpdate guardado → (${ms}ms) ${formatTime(ms)}`
+    );
+
+  }else{
+    console.warn("⚠️ delay inválido → no se guarda nextUpdate", delay);
   }
 
   LaunchCore.storage.set("lc_data", raw, {stringify: true, source: "commitData"});
-
-  const { control } = LaunchCore.normalize(raw);
 
   if(control?.version){
     LaunchCore.storage.set("lc_data_version", String(control.version), {source: "commitData"});
@@ -1115,8 +1138,8 @@ LaunchCore.smartCheckNow = function(){
 
   console.log("🧠 smart check → ping VC");
 
-  if(window.__vcCheckNow){
-    window.__vcCheckNow();
+  if(LaunchCore.vc.checkNow){
+    LaunchCore.vc.checkNow();
   }
 
 };
@@ -1187,6 +1210,33 @@ LaunchCore.canFetch = function(){
 
   return true;
 };
+
+
+
+// =============== FORMATEAR TIME ====================
+
+function formatTime(ms){
+
+  if(ms <= 0) return "AHORA";
+
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+
+  const seconds = s % 60;
+  const minutes = m % 60;
+  const hours = h % 24;
+
+  let parts = [];
+
+  if(d > 0) parts.push(`${d}d`);
+  if(h > 0 || d > 0) parts.push(`${hours}h`);
+  if(m > 0 || h > 0 || d > 0) parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+
+  return parts.join(" ");
+}
 
 
 
@@ -1515,7 +1565,7 @@ LaunchCore.init = async function(){
 
     // 🚀 FORZAR CHECK REAL
     // console.log("🚀 visibility → forcing VC check");
-    window.__vcCheckNow?.();
+    LaunchCore.vc.checkNow();
 
     const pendingFetch = LaunchCore.storage.get("lc_fetch_pending", {
       source: "visibility.init"
@@ -1557,11 +1607,6 @@ LaunchCore.init = async function(){
   LaunchCore.setState("READY");
 
 };
-
-
-
-
-
 
 
 
