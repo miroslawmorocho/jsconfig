@@ -1503,6 +1503,7 @@ LaunchCore.on("code:update", async () => {
 LaunchCore.init = async function(){
 
   LaunchCore.setState("BOOT");
+  console.log("🚀 BOOT: LaunchCore iniciado");
 
   const root = document.getElementById("launch-engine-root");
   LaunchCore.root = root;
