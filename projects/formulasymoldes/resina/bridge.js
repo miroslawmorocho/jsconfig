@@ -152,32 +152,12 @@ async function renderBotones() {
         ).then(r => r.text());
       }
 
-      // 🔥 obtener índice de la clase desde el DOM
-      const index = Array.from(
-        document.querySelectorAll(".clase-boton")
-      ).indexOf(el);
-
-      // 🔥 sacar ICS correcto desde localStorage (data ya normalizado)
-      const icsData = window.__LAUNCH_DATA__?.calendarICS?.[index];
-
       el.innerHTML = calendarTemplateCache
         .replace("{{texto}}", data.texto)
         .replace("{{google}}", data.google)
-        .replace("{{ics}}", icsData ? "#" : "#"); // 👈 ya no usamos href directo
+        .replace("{{ics}}", data.ics)
+        .replace("{{nombre}}", data.nombre || "evento.ics"); // 👈 AQUÍ
 
-      // 🔥 interceptar click para descarga
-      if (icsData) {
-        const link = el.querySelector(".calendar-menu-inline a:last-child");
-
-        link.addEventListener("click", function(e) {
-          e.preventDefault();
-
-          const a = document.createElement("a");
-          a.href = icsData.url;
-          a.download = icsData.nombre;
-          a.click();
-        });
-      }
     }
 
     // 🔥 LINK NORMAL
