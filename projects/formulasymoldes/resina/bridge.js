@@ -29,8 +29,6 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(data){
 
-  window.__LAUNCH_DATA__ = data;
-
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
   if (data.eventoCerrado) {        
 
@@ -130,7 +128,7 @@ async function renderBotones() {
 
   const botones = document.querySelectorAll(".clase-boton");
 
-  for (const [index, el] of botones.entries()) {
+  for (const el of botones) {
 
     const raw = el.dataset.boton;
     if (!raw) continue;
@@ -152,40 +150,16 @@ async function renderBotones() {
         ).then(r => r.text());
       }
 
-      // 🔥 meter HTML
       el.innerHTML = calendarTemplateCache
         .replace("{{texto}}", data.texto)
         .replace("{{google}}", data.google)
-        .replace("{{ics}}", "#")
-        .replace("{{nombre}}", "evento.ics");
+        .replace("{{ics}}", data.ics);
 
-      // 🔥 BOTÓN APPLE/OUTLOOK
-      const link = el.querySelector("[data-ics]");
-
-      link.addEventListener("click", function(e) {
-        e.preventDefault();
-
-        const url = data.ics; // 👈 ESTE ES EL BUENO
-
-        // 📱 MOBILE
-        if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
-          window.open(url, "_blank");
-          return;
-        }
-
-        // 💻 DESKTOP
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "evento.ics";
-
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      });
     }
 
     // 🔥 LINK NORMAL
     if (data.tipo === "link") {
+
       el.innerHTML = `
         <a href="${data.url}" target="_blank">
           ${data.texto}
