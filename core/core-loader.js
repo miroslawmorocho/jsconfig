@@ -1056,6 +1056,7 @@ LaunchCore.execute = function(source = "unknown", options = {}){
   queue.push({ source, options, type });
 
   console.log("📦 queue:", queue.map(q => q.type));
+  console.log("🎯 currentJob:", currentJob?.type);
 
   processQueue();
 };
@@ -1507,26 +1508,32 @@ LaunchCore.init = async function(){
     // VISIBILITY
     LaunchCore.visibility.init(() => {
 
-      console.log("👁️ visibility → resume scheduler");
+    console.log("👁️ visibility → resume scheduler");
 
-      LaunchCore.vc.resume();
+    // 🔁 reanuda timers
+    LaunchCore.vc.resume();
 
-      const pendingFetch = LaunchCore.storage.get("lc_fetch_pending", {source: "visibility.init"});
+    // 🚀 FORZAR CHECK REAL
+    // console.log("🚀 visibility → forcing VC check");
+    window.__vcCheckNow?.();
 
-      if(pendingFetch){
-
-        console.log("🔥 reintentando fetch pendiente");
-
-        LaunchCore.storage.remove("lc_fetch_pending", {source: "visibility.init"});
-
-        LaunchCore.execute("visibility", { forceFetch: true });
-
-        return; // 🔥 IMPORTANTE: no doble execute
-      }
-
-      LaunchCore.execute("visibility");
-
+    const pendingFetch = LaunchCore.storage.get("lc_fetch_pending", {
+      source: "visibility.init"
     });
+
+    if(pendingFetch){
+
+      console.log("🔥 reintentando fetch pendiente");
+
+      LaunchCore.storage.remove("lc_fetch_pending", {
+        source: "visibility.init"
+      });
+
+      LaunchCore.execute("visibility", { forceFetch: true });
+      return;
+    }
+
+  });
     
     // VERSION CHECKER
     await LaunchCore.use("versionChecker");
