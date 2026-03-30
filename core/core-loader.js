@@ -18,7 +18,7 @@ LaunchCore.config = {
 };
 
 LaunchCore.state = {
-  eventoCerrado: false
+  launchStatus: "pre"
 };
 
 let currentJob = null;
@@ -519,33 +519,6 @@ LaunchCore.phase.bootstrap = async function(ctx){
 
 
 
-// ======== FASE DE SINCRONIZACIÓN (NO HAY CACHÉ) ==========
-
-LaunchCore.phase.sync = function(ctx){
-
-  const state = ctx.state;
-
-  if(!state.cached) return;
-
-  try{
-
-    const raw = JSON.parse(state.cached);
-    const normalized = LaunchCore.normalize(raw);
-
-    if(normalized?.data?.eventoCerrado !== undefined){
-      LaunchCore.state.eventoCerrado = normalized.data.eventoCerrado;
-    }
-
-    console.log("🔄 sync estado desde cache");
-    
-  }catch(e){
-    console.warn("❌ error en phase.sync");
-  }
-
-};
-
-
-
 // ========= FASE DE CONSTRUCCIÓN DEL ESTADO ===========
 
 LaunchCore.phase.buildEngineState = function(ctx){
@@ -781,10 +754,6 @@ LaunchCore.commitData = function(raw){
 
   const { data, control } = normalized;
 
-  if(data?.eventoCerrado !== undefined){
-    LaunchCore.state.eventoCerrado = data.eventoCerrado;
-  }
-
   const delay = Number(data?.siguienteActualizacionMs);
 
   if(Number.isFinite(delay) && delay > 0){
@@ -867,7 +836,7 @@ LaunchCore.buildEngineState = function(state){
     hasNextUpdate: !!state.nextUpdate,
     isExpired: now >= state.nextUpdate,
     hasPendingVersion: !!LaunchCore.storage.get("lc_pending_version", {source: "buildEngineState:hasPendingVersion"}),
-    isClosed: LaunchCore.state?.eventoCerrado || false
+    isClosed: LaunchCore.state?.launchStatus === "closed"
   };
 
 };
@@ -1002,7 +971,6 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     LaunchCore.phase.input(ctx);
     await LaunchCore.phase.bootstrap(ctx);
-    LaunchCore.phase.sync(ctx);
     LaunchCore.phase.buildEngineState(ctx);
     LaunchCore.phase.decide(ctx, options);
     await LaunchCore.phase.execute(ctx, options);
