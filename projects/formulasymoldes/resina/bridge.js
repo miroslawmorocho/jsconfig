@@ -29,8 +29,8 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(data){
 
-  window.__LAUNCH_DATA__ = data;
-  
+  //window.__LAUNCH_DATA__ = data;
+
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
   if (data.eventoCerrado) {        
 
@@ -226,6 +226,27 @@ async function renderComponentes() {
   
 
 // botones de calendario
+document.addEventListener("click", function(e) {
+
+  const link = e.target.closest("[data-ics]");
+
+  if (!link) return;
+
+  e.preventDefault(); // 🔥 evita scroll raro
+
+  const url = link.dataset.ics;
+  const nombre = link.dataset.name || "evento.ics";
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombre;
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+});
+
 document.addEventListener("click", function(e) {
 
   const toggle = e.target.closest(".calendar-toggle");
