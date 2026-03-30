@@ -606,12 +606,11 @@ LaunchCore.phase.process = function(ctx){
 
   const { data } = normalized;
 
-  if(data?.eventoCerrado !== undefined){
-    LaunchCore.state.eventoCerrado = data.eventoCerrado;
+  // 🔥 nuevo sistema de estado basado en pricing.estado
+  const status = LaunchCore.state.launchStatus;
 
-    if(data.eventoCerrado === true){
-      LaunchCore.setState("CLOSED");
-    }
+  if (status === "closed") {
+    LaunchCore.setState("CLOSED");
   }
 
   ctx.data = data;
@@ -726,10 +725,15 @@ LaunchCore.normalize = function(raw){
 
   const control = {
     siguienteActualizacionMs: raw.siguienteActualizacionMs,
-    version: raw?.status?.version // 🔥 NUEVO
+    version: raw?.status?.version
   };
 
   let data = {};
+
+  // 🔥 nuevo estado global del launch (desde pricing)
+  if (raw?.pricing?.estado) {
+    LaunchCore.state.launchStatus = raw.pricing.estado;
+  }
 
   switch(page){
 
@@ -743,10 +747,6 @@ LaunchCore.normalize = function(raw){
 
     case "pricing":
       data = raw.pricing || {};
-      break;
-
-    case "status": // 😏 opcional
-      data = raw.status || {};
       break;
 
     default:
@@ -791,12 +791,15 @@ LaunchCore.commitData = function(raw){
 
     const nextTime = Date.now() + delay;
 
-    LaunchCore.storage.set("lc_next_update", nextTime, {source: "commitData"});
+    // 🔥 clave dinámica por página
+    const key = `lc_next_update_${LaunchCore.config.page}`;
+
+    LaunchCore.storage.set(key, nextTime, {source: "commitData"});
 
     const ms = nextTime - Date.now();
 
     console.log(
-      `📦 nextUpdate guardado → (${ms}ms) ${formatTime(ms)}`
+      `📦 nextUpdate (${LaunchCore.config.page}) → (${ms}ms) ${formatTime(ms)}`
     );
 
   }else{
@@ -815,7 +818,7 @@ LaunchCore.commitData = function(raw){
 
 // =============== CORE STATE READER ===================
 
-LaunchCore.readCacheState = function(){
+/*LaunchCore.readCacheState = function(){
 
   const cached = LaunchCore.storage.get("lc_data", {source: "readCacheState:cached"});
 
@@ -826,7 +829,30 @@ LaunchCore.readCacheState = function(){
     now: Date.now()
   };
 
+};*/
+
+
+LaunchCore.readCacheState = function(){
+
+  const page = LaunchCore.config.page;
+  const key = `lc_next_update_${page}`;
+
+  const cached = LaunchCore.storage.get("lc_data", {source: "readCacheState:cached"});
+
+  return{
+    cached,
+    nextUpdate:Number(
+      LaunchCore.storage.get(key,{source:"readCacheState:nextUpdate"}) || 0
+    ),
+    cachedVersion: LaunchCore.storage.get("lc_data_version", {source: "readCacheState:cachedVersion"}),
+    now: Date.now()
+  };
+
 };
+
+
+
+
 
 
 
