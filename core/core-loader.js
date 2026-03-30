@@ -22,7 +22,6 @@ LaunchCore.state = {
 };
 
 let isRunning = false;
-let cacheInvalidated = false;
 
 LaunchCore.events = {};
 
@@ -545,6 +544,8 @@ LaunchCore.phase.execute = async function(ctx, options){
 
   if(!result || !result.raw){
     console.warn("⚠️ sin resultado");
+
+    ctx.skipSchedule = true; // 🔥 CLAVE
     return;
   }
 
@@ -636,7 +637,7 @@ LaunchCore.phase.resumeTimers = function(){
 
       console.log("🧠 CORE: confirmando (resume)...");
 
-      const pending = LaunchCore.storage.get("lc_pending_version");
+      const pending = LaunchCore.storage.get("lc_pending_version", {source: "phase.resumeTimers"});
       if(!pending) return;
 
       const result = await LaunchCore.getWorkerVersion();
@@ -646,9 +647,9 @@ LaunchCore.phase.resumeTimers = function(){
 
         console.log("✅ DATA CONFIRMADA (resume)");
 
-        LaunchCore.storage.remove("lc_pending_version");
-        LaunchCore.storage.remove("vc_last_detected");
-        LaunchCore.storage.remove("vc_next_confirm");
+        LaunchCore.storage.remove("lc_pending_version", {source: "phase.resumeTimers"});
+        LaunchCore.storage.remove("vc_last_detected", {source: "phase.resumeTimers"});
+        LaunchCore.storage.remove("vc_next_confirm", {source: "phase.resumeTimers"});
 
         LaunchCore.commitData(result.raw);
 
@@ -857,13 +858,14 @@ LaunchCore.executeFlow = async function(decision, state, options){
     case "FETCH": {
 
       if(!LaunchCore.canFetch()){
-        
+  
         console.log("⏸️ FETCH pospuesto (hidden)");
 
-        // 🔥 devolvemos estado SIN fetch
+        LaunchCore.storage.set("lc_fetch_pending", true, {source: "executeFlow:FETCH"});
+
         return {
           raw: null,
-          nextUpdate: state.nextUpdate // mantenemos el mismo
+          nextUpdate: state.nextUpdate
         };
       }
 
@@ -930,7 +932,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     await LaunchCore.phase.execute(ctx, options);
 
-    if(!ctx.result) return;
+    if(!ctx.result || ctx.skipSchedule) return;
 
     LaunchCore.phase.process(ctx);
 
@@ -1103,7 +1105,7 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
 
   const nextConfirm = Date.now() + delay;
 
-  LaunchCore.storage.set("vc_next_confirm", nextConfirm);
+  LaunchCore.storage.set("vc_next_confirm", nextConfirm, {source: "scheduleConfirm"});
 
   console.log("⏳ confirm en", delay);
 
@@ -1123,7 +1125,12 @@ LaunchCore.vc.confirm = async function(){
 
   console.log("🧠 VC: confirmando...");
 
-  const pending = LaunchCore.storage.get("lc_pending_version");
+  if(!LaunchCore.canFetch()){
+    console.log("🚫 VC fetch bloqueado (hidden)");
+    return;
+  }
+
+  const pending = LaunchCore.storage.get("lc_pending_version", {source: "vc.confirm"});
   if(!pending) return;
 
   const result = await LaunchCore.getWorkerVersion();
@@ -1135,9 +1142,9 @@ LaunchCore.vc.confirm = async function(){
 
     console.log("✅ DATA CONFIRMADA");
 
-    LaunchCore.storage.remove("lc_pending_version");
-    LaunchCore.storage.remove("vc_last_detected");
-    LaunchCore.storage.remove("vc_next_confirm");
+    LaunchCore.storage.remove("lc_pending_version", {source: "vc.confirm"});
+    LaunchCore.storage.remove("vc_last_detected", {source: "vc.confirm"});
+    LaunchCore.storage.remove("vc_next_confirm", {source: "vc.confirm"});
 
     LaunchCore.commitData(result.raw);
 
@@ -1165,7 +1172,7 @@ LaunchCore.vc.confirm = async function(){
 
 LaunchCore.vc.detect = function({ version, confirmDelay }){
 
-  const currentPending = LaunchCore.storage.get("lc_pending_version");
+  const currentPending = LaunchCore.storage.get("lc_pending_version", {source: "vc.detect"});
 
   if(String(currentPending) === String(version)){
     console.log("♻️ misma versión pendiente → NO reprogramar");
@@ -1174,12 +1181,12 @@ LaunchCore.vc.detect = function({ version, confirmDelay }){
 
   console.log("🧠 VC: cambio detectado", version);
 
-  LaunchCore.storage.set("lc_pending_version", version);
+  LaunchCore.storage.set("lc_pending_version", version, {source: "vc.detect"});
 
   LaunchCore.scheduler.cancelar("vc-confirm");
 
   const detectedAt = Number(
-    LaunchCore.storage.get("vc_last_detected") || 0
+    LaunchCore.storage.get("vc_last_detected", {source: "vc.detect"}) || 0
   );
 
   const now = Date.now();
@@ -1198,11 +1205,11 @@ LaunchCore.vc.detect = function({ version, confirmDelay }){
 
 LaunchCore.vc.resume = function(){
 
-  const pending = LaunchCore.storage.get("lc_pending_version");
+  const pending = LaunchCore.storage.get("lc_pending_version", {source: "vc.resume"});
   if(!pending) return;
 
   const nextConfirm = Number(
-    LaunchCore.storage.get("vc_next_confirm")
+    LaunchCore.storage.get("vc_next_confirm", {source: "vc.resume"})
   );
 
   if(!nextConfirm) return;
@@ -1402,10 +1409,21 @@ LaunchCore.init = async function(){
 
       console.log("👁️ visibility → resume scheduler");
 
-      // 🔥 reintentar jobs importantes
       LaunchCore.vc.resume();
 
-      // 🔥 reintentar core si había algo pendiente
+      const pendingFetch = LaunchCore.storage.get("lc_fetch_pending", {source: "visibility.init"});
+
+      if(pendingFetch){
+
+        console.log("🔥 reintentando fetch pendiente");
+
+        LaunchCore.storage.remove("lc_fetch_pending", {source: "visibility.init"});
+
+        LaunchCore.execute("visibility", { forceFetch: true });
+
+        return; // 🔥 IMPORTANTE: no doble execute
+      }
+
       LaunchCore.execute("visibility");
 
     });
