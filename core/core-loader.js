@@ -21,6 +21,7 @@ LaunchCore.state = {
   eventoCerrado: false
 };
 
+let currentJob = null;
 let lastFetchAt = 0;
 let queue = [];
 let isRunning = false;
@@ -1053,6 +1054,8 @@ LaunchCore.execute = function(source = "unknown", options = {}){
   }
 
   queue.push({ source, options, type });
+
+  console.log("📦 queue:", queue.map(q => q.type));
 
   processQueue();
 };
