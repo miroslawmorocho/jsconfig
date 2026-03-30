@@ -1,48 +1,43 @@
-LaunchCore.register("pricing", async function(){
+LaunchCore.register("pricing", {
 
-const root = LaunchCore.root;
+  init: async function(){
 
-  const { project, product, page } = LaunchCore.config;
+    const root = LaunchCore.root;
 
-  const url = LaunchCore.paths.projects + `${project}/${product}/${page}`;
+    const { project, product, page } = LaunchCore.config;
 
-  // 🔥 CSS primero
-  await LaunchCore.loadCSS(url + ".css");
+    const url = LaunchCore.paths.projects + `${project}/${product}/${page}`;
 
-  // 🔥 HTML
-  let html = "";
-  try{
-    html = await fetch(url + ".html").then(r=>r.text());
-  }catch(e){
-    console.error("Error cargando HTML:", e);
-    return;
-  }
+    // CSS
+    await LaunchCore.loadCSS(url + ".css");
 
-  root.innerHTML = html;
-
-  // 🔥 módulos globales
-  await LaunchCore.use("darkmode");
-  await LaunchCore.use("carousel");
-  await LaunchCore.use("scroll");
-  await LaunchCore.use("versionChecker");
-
-  // 🔥 lógica propia
-  await LaunchCore.loadScript(url + ".js");
-
-  // 🔥 conectar render con CORE
-  window.initLaunchEngine = async function(force, externalData){
-
-    if(externalData){
-      await cargarPricing(externalData);
+    // HTML
+    let html = "";
+    try{
+      html = await fetch(url + ".html").then(r=>r.text());
+    }catch(e){
+      console.error("Error cargando HTML:", e);
       return;
     }
 
-    const data = await LaunchCore.fetchWorker(LaunchCore.config.endpoint, force);
+    root.innerHTML = html;
+
+    // globales
+    await LaunchCore.use("darkmode");
+    await LaunchCore.use("carousel");
+    await LaunchCore.use("scroll");
+    await LaunchCore.use("versionChecker");
+
+    // lógica (TU archivo pricing.js)
+    await LaunchCore.loadScript(url + ".js");
+
+  },
+
+  render: async function(data){
+
+    // 🔥 AQUÍ SOLO PINTAS
     await cargarPricing(data);
 
-  };
-
-  // 🔥 PRIMER RENDER (cuando TODO está listo)
-  await LaunchCore.run();
+  }
 
 });
