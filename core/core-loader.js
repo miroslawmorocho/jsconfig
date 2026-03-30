@@ -913,7 +913,11 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
 LaunchCore.run = async function(options = {}, source = "unknown") {
 
-  if(isRunning) return;
+  if(isRunning){
+    console.warn("⛔ run bloqueado (ya en ejecución)");
+    return;
+  }
+  
   isRunning = true;
 
   try {
@@ -932,7 +936,10 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
     await LaunchCore.phase.execute(ctx, options);
 
-    if(!ctx.result || ctx.skipSchedule) return;
+    if(!ctx.result || ctx.skipSchedule){
+      console.warn("🛑 run abortado (sin resultado o skip)");
+      return;
+    }
 
     LaunchCore.phase.process(ctx);
 
@@ -949,9 +956,9 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       return LaunchCore.execute("retry-fetch", { forceFetch: true });
     }
 
+  } finally {    
+    isRunning = false;
   }
-
-  isRunning = false;
 
 };
 
@@ -999,7 +1006,7 @@ LaunchCore.scheduleNext = function(nextTime){
 
 // ================   EXECUTION SOURCE ==================
 
-LaunchCore.execute = function(source = "unknown", options = {}){
+LaunchCore.execute = async function(source = "unknown", options = {}){
 
   console.log("🧠 EXECUTE desde:", source);
 
