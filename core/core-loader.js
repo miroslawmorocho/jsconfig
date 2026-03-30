@@ -21,6 +21,8 @@ LaunchCore.state = {
   eventoCerrado: false
 };
 
+let lastFetchAt = 0;
+let queue = [];
 let isRunning = false;
 
 LaunchCore.events = {};
@@ -180,13 +182,30 @@ LaunchCore.storage = {
 
         let query = window.location.search;
 
-        let url = BASE_WORKER_URL.replace(/\/$/, "") +
+        let url = BASE_WORKER_URL.replace(/\/$/, "") + endpoint;
+
+        // 🔥 SOLO VC usa versión
+        if(force && LaunchCore.vc?.version){
+          url += `?v=${LaunchCore.vc.version}`;
+        }
+
+        // 🔥 si NO es force, respeta query original
+        if(!force && query){
+          url += query;
+        }
+
+        // 🔥 cache buster solo si force
+        if(force){
+          url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+        }
+
+        /*let url = BASE_WORKER_URL.replace(/\/$/, "") +
                   endpoint +
                   query;
 
         if(force){
           url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
-        }
+        }*/
 
         console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
 
@@ -201,6 +220,8 @@ LaunchCore.storage = {
         }
 
         const data = await res.json();
+
+        lastFetchAt = Date.now();
 
         return data;
 
@@ -810,10 +831,23 @@ LaunchCore.decide = function(state, options){
 
   const es = LaunchCore.engineState;
 
+  const JUST_FETCHED_THRESHOLD = 3000;
+
+  // 🔥 1. prioridad absoluta
   if(options.externalData){
     return "EXTERNAL";
   }
 
+  // 🔥 2. evitar doble fetch
+  if(
+    !options.forceFetch &&
+    Date.now() - lastFetchAt < JUST_FETCHED_THRESHOLD
+  ){
+    console.log("🧠 skip fetch (recién actualizado)");
+    return "CACHE";
+  }
+
+  // 🔥 3. reglas normales
   if(es.isClosed){
     return "CACHE";
   }
@@ -913,27 +947,15 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
 LaunchCore.run = async function(options = {}, source = "unknown") {
 
-  if(isRunning){
-    console.warn("⛔ run bloqueado (ya en ejecución)");
-    return;
-  }
-  
-  isRunning = true;
-
   try {
 
     const ctx = {};
 
     LaunchCore.phase.input(ctx);
-
     await LaunchCore.phase.bootstrap(ctx);
-
     LaunchCore.phase.sync(ctx);
-
     LaunchCore.phase.buildEngineState(ctx);
-
     LaunchCore.phase.decide(ctx, options);
-
     await LaunchCore.phase.execute(ctx, options);
 
     if(!ctx.result || ctx.skipSchedule){
@@ -942,9 +964,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     }
 
     LaunchCore.phase.process(ctx);
-
     await LaunchCore.phase.render(ctx);
-
     LaunchCore.phase.schedule(ctx);
 
   } catch(e){
@@ -956,8 +976,6 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       return LaunchCore.execute("retry-fetch", { forceFetch: true });
     }
 
-  } finally {    
-    isRunning = false;
   }
 
 };
@@ -1006,13 +1024,85 @@ LaunchCore.scheduleNext = function(nextTime){
 
 // ================   EXECUTION SOURCE ==================
 
-LaunchCore.execute = async function(source = "unknown", options = {}){
+LaunchCore.execute = function(source = "unknown", options = {}){
 
-  console.log("🧠 EXECUTE desde:", source);
+  const type = getJobType(source, options);
 
-  return LaunchCore.run(options, source);
+  console.log("🧠 ENQUEUE:", source, "| type:", type);
+
+  // 🔥 REGLA 1: no duplicar FETCH_FORCE
+  const alreadyQueued = queue.some(q => q.type === type);
+
+  if(type === "FETCH_FORCE" && alreadyQueued){
+    console.log("🚫 ya hay FETCH_FORCE en cola");
+    return;
+  }
+
+  // 🔥 REGLA 2: si hay FETCH_FORCE, ignorar NORMAL
+  const hasForce = queue.some(q => q.type === "FETCH_FORCE");
+
+  // 🔥 REGLA 3: no duplicar contra el que ya corre
+  if(currentJob && currentJob.type === type){
+    console.log("🚫 mismo tipo ya corriendo");
+    return;
+  }
+
+  if(type === "NORMAL" && hasForce){
+    console.log("🚫 NORMAL ignorado (hay FETCH_FORCE)");
+    return;
+  }
+
+  queue.push({ source, options, type });
+
+  processQueue();
 };
 
+
+
+// =============== PROCESS QUEUE =======================
+
+async function processQueue(){
+
+  if(isRunning) return;
+  if(queue.length === 0) return;
+
+  const job = queue.shift();
+
+  currentJob = job;
+  isRunning = true;
+
+  console.log("🚀 RUN:", job.source, "| type:", job.type);
+
+  try{
+
+    await LaunchCore.run(job.options, job.source);
+
+  }catch(e){
+    console.error("❌ error en job:", job.source, e);
+  }
+
+  currentJob = null;
+  isRunning = false;
+
+  processQueue();
+}
+
+
+
+// ================= JOB TYPE ==========================
+
+function getJobType(source, options){
+
+  if(options?.forceFetch) return "FETCH_FORCE";
+
+  if(source === "vc-confirm") return "FETCH_FORCE";
+
+  if(source === "visibility") return "NORMAL";
+
+  if(source === "scheduleNext") return "NORMAL";
+
+  return "NORMAL";
+}
 
 
 // ============  SMART VERSION CHECK ===================
