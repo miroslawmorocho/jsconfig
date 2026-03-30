@@ -856,14 +856,32 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
     case "FETCH": {
 
+      if(!LaunchCore.canFetch()){
+        
+        console.log("⏸️ FETCH pospuesto (hidden)");
+
+        // 🔥 devolvemos estado SIN fetch
+        return {
+          raw: null,
+          nextUpdate: state.nextUpdate // mantenemos el mismo
+        };
+      }
+
+      LaunchCore.setState?.("UPDATING"); // opcional si ya tienes FSM
+
       raw = await LaunchCore.fetchWorker(
         LaunchCore.config.endpoint,
         options.forceFetch
       );
 
-      if(!raw) throw new Error("FETCH_FAILED");
+      if(!raw){
+        LaunchCore.setState?.("WARNING");
+        throw new Error("FETCH_FAILED");
+      }
 
       LaunchCore.commitData(raw);
+
+      LaunchCore.setState?.("READY");
 
       return {
         raw,
@@ -955,7 +973,7 @@ LaunchCore.scheduleNext = function(nextTime){
 
   if(delay > 0 && !isNaN(delay)){
 
-    const safeDelay = Math.max(delay, 5000);
+    const safeDelay = Math.max(delay, 1000);
 
     /*console.log("🧪 scheduleNext debug:", {
       nextTime,
@@ -1051,6 +1069,20 @@ LaunchCore.renderFromCache = async function(rawCached){
 
   return control;
 
+};
+
+
+
+// ======== FUNCIÓN VERIFICAR SI PUEDE FETCH =========
+
+LaunchCore.canFetch = function(){
+
+  if(document.hidden){
+    console.log("🚫 fetch bloqueado (tab hidden)");
+    return false;
+  }
+
+  return true;
 };
 
 
