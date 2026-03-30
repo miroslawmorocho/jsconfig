@@ -156,7 +156,8 @@ async function renderBotones() {
       el.innerHTML = calendarTemplateCache
         .replace("{{texto}}", data.texto)
         .replace("{{google}}", data.google)
-        .replace("{{ics}}", data.ics);
+        .replace("{{ics}}", data.ics)
+        .replace("{{ics_nombre}}", data.icsNombre || "evento.ics");
 
     }
 
@@ -189,7 +190,12 @@ async function renderClases(clases) {
 
     // 🔥 INYECTAR ICS REAL DESDE calendarICS
     if (window.__calendarICS && window.__calendarICS[index]) {
-      c.boton.ics = window.__calendarICS[index].url;
+      const icsData = window.__calendarICS[index];
+
+      if (icsData) {
+        c.boton.ics = icsData.url;
+        c.boton.icsNombre = icsData.nombre;
+      }
     }
 
     const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
