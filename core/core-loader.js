@@ -1036,7 +1036,7 @@ LaunchCore.scheduleNext = function(nextTime){
       "core-main",
       () => LaunchCore.execute("scheduleNext"),
       safeDelay,
-      { allowHidden: false } // 🔥 ESTO
+      { allowHidden: false }
     );
 
   }
@@ -1158,8 +1158,8 @@ LaunchCore.getWorkerVersion = async function(){
 
   return {
     version: normalized?.control?.version,
-    raw: res,                // 🔥 ORO: ya tienes la data
-    normalized              // 🔥 doble oro
+    raw: res,
+    normalized
   };
 
 };
@@ -1563,7 +1563,6 @@ LaunchCore.init = async function(){
     LaunchCore.vc.resume();
 
     // 🚀 FORZAR CHECK REAL
-    // console.log("🚀 visibility → forcing VC check");
     window.__vcCheckNow();
 
     const pendingFetch = LaunchCore.storage.get("lc_fetch_pending", {
