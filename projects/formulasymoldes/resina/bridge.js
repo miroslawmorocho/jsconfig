@@ -29,6 +29,9 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(data){
 
+  // 🔥 guardar ICS globalmente
+  window.__calendarICS = data.calendarICS || [];
+
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
   if (data.eventoCerrado) {        
 
@@ -182,7 +185,12 @@ async function renderClases(clases) {
 
   let html = "";
 
-  clases.forEach(c => {
+  clases.forEach((c, index) => {
+
+    // 🔥 INYECTAR ICS REAL DESDE calendarICS
+    if (window.__calendarICS && window.__calendarICS[index]) {
+      c.boton.ics = window.__calendarICS[index].url;
+    }
 
     const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
 
