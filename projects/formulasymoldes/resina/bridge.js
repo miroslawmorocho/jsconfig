@@ -159,23 +159,24 @@ async function renderBotones() {
         .replace("{{ics}}", "#")
         .replace("{{nombre}}", "evento.ics");
 
-      // 🔥 AGARRAR ICS REAL
-      const icsData = window.__LAUNCH_DATA__?.calendarICS?.[index];
-
-      if (!icsData) {
-        console.warn("No hay ICS para índice", index);
-        continue;
-      }
-
       // 🔥 BOTÓN APPLE/OUTLOOK
       const link = el.querySelector("[data-ics]");
 
       link.addEventListener("click", function(e) {
         e.preventDefault();
 
+        const url = data.ics; // 👈 ESTE ES EL BUENO
+
+        // 📱 MOBILE
+        if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+          window.open(url, "_blank");
+          return;
+        }
+
+        // 💻 DESKTOP
         const a = document.createElement("a");
-        a.href = icsData.url;
-        a.download = icsData.nombre;
+        a.href = url;
+        a.download = "evento.ics";
 
         document.body.appendChild(a);
         a.click();
