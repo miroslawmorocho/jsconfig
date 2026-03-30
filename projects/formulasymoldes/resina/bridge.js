@@ -29,7 +29,7 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(data){
 
-  //window.__LAUNCH_DATA__ = data;
+  window.__LAUNCH_DATA__ = data;
 
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
   if (data.eventoCerrado) {        
@@ -130,7 +130,7 @@ async function renderBotones() {
 
   const botones = document.querySelectorAll(".clase-boton");
 
-  for (const el of botones) {
+  for (const [index, el] of botones.entries()) {
 
     const raw = el.dataset.boton;
     if (!raw) continue;
@@ -152,17 +152,39 @@ async function renderBotones() {
         ).then(r => r.text());
       }
 
+      // 🔥 meter HTML
       el.innerHTML = calendarTemplateCache
         .replace("{{texto}}", data.texto)
         .replace("{{google}}", data.google)
-        .replace("{{ics}}", data.ics)
-        .replace("{{nombre}}", data.nombre || "evento.ics"); // 👈 AQUÍ
+        .replace("{{ics}}", "#")
+        .replace("{{nombre}}", "evento.ics");
 
+      // 🔥 AGARRAR ICS REAL
+      const icsData = window.__LAUNCH_DATA__?.calendarICS?.[index];
+
+      if (!icsData) {
+        console.warn("No hay ICS para índice", index);
+        continue;
+      }
+
+      // 🔥 BOTÓN APPLE/OUTLOOK
+      const link = el.querySelector("[data-ics]");
+
+      link.addEventListener("click", function(e) {
+        e.preventDefault();
+
+        const a = document.createElement("a");
+        a.href = icsData.url;
+        a.download = icsData.nombre;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
     }
 
     // 🔥 LINK NORMAL
     if (data.tipo === "link") {
-
       el.innerHTML = `
         <a href="${data.url}" target="_blank">
           ${data.texto}
@@ -206,27 +228,6 @@ async function renderComponentes() {
   
 
 // botones de calendario
-document.addEventListener("click", function(e) {
-
-  const link = e.target.closest("[data-ics]");
-
-  if (!link) return;
-
-  e.preventDefault(); // 🔥 evita scroll raro
-
-  const url = link.dataset.ics;
-  const nombre = link.dataset.name || "evento.ics";
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = nombre;
-
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-});
-
 document.addEventListener("click", function(e) {
 
   const toggle = e.target.closest(".calendar-toggle");
