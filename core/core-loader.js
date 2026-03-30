@@ -27,7 +27,6 @@ let queue = [];
 let isRunning = false;
 
 LaunchCore.events = {};
-LaunchCore.vc.checkNow = () => window.__vcCheckNow?.();
 
 
 
@@ -1138,8 +1137,8 @@ LaunchCore.smartCheckNow = function(){
 
   console.log("🧠 smart check → ping VC");
 
-  if(LaunchCore.vc.checkNow){
-    LaunchCore.vc.checkNow();
+  if(window.__vcCheckNow){
+    window.__vcCheckNow();
   }
 
 };
@@ -1565,7 +1564,7 @@ LaunchCore.init = async function(){
 
     // 🚀 FORZAR CHECK REAL
     // console.log("🚀 visibility → forcing VC check");
-    LaunchCore.vc.checkNow();
+    window.__vcCheckNow();
 
     const pendingFetch = LaunchCore.storage.get("lc_fetch_pending", {
       source: "visibility.init"
