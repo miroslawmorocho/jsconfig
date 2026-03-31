@@ -970,7 +970,9 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     const ctx = {options };
 
     LaunchCore.phase.input(ctx);
-    await LaunchCore.phase.bootstrap(ctx);
+    if(source !== "broadcast"){
+      await LaunchCore.phase.bootstrap(ctx);
+    }
     LaunchCore.phase.buildEngineState(ctx);
     LaunchCore.phase.decide(ctx, options);
     await LaunchCore.phase.execute(ctx, options);
