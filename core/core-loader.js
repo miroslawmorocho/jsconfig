@@ -846,6 +846,12 @@ LaunchCore.decide = function(state, options){
     return "EXTERNAL";
   }
 
+  // 💣 NUEVO: reprocesar aunque haya cache
+  if(options.forceProcess){
+    console.log("🧠 forceProcess → usar CACHE pero reprocesar");
+    return "CACHE";
+  }
+
   // 🔥 2. evitar doble fetch
   if(
     !options.forceFetch &&
@@ -1238,7 +1244,10 @@ LaunchCore.channel.onmessage = function(event){
   if(msg.type === "DATA_UPDATED"){
     console.log("🔄 otra pestaña actualizó → refrescando");
 
-    LaunchCore.execute("broadcast");
+    LaunchCore.execute("broadcast", {
+      forceProcess: true
+    });
+
   }
 
   if(msg.type === "CODE_UPDATED"){
