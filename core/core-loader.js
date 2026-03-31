@@ -758,7 +758,7 @@ LaunchCore.commitData = function(raw){
 
   const { data, control } = normalized;
 
-  const delay = Number(data?.siguienteActualizacionMs);
+  const delay = Number(raw?.siguienteActualizacionMs);
 
   if(Number.isFinite(delay) && delay > 0){
 
