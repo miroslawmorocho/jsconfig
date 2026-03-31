@@ -789,6 +789,7 @@ LaunchCore.commitData = function(raw){
   if(LaunchCore.channel){
     LaunchCore.channel.postMessage({
       type: "DATA_UPDATED",
+      raw: raw, // 🔥 LA DATA REAL
       ts: Date.now()
     });
   }
@@ -1283,54 +1284,61 @@ LaunchCore.channel.onmessage = function(event){
   console.log("📡 broadcast recibido:", msg);
 
   if(msg.type === "DATA_UPDATED"){
-    console.log("🔄 otra pestaña actualizó → refrescando");
+  console.log("🔄 otra pestaña actualizó → refrescando");
 
     try {
 
-      const cached = LaunchCore.storage.get("lc_data");
+      const raw = msg.raw;
 
-      if(cached){
+      if(!raw){
+        console.warn("💀 broadcast sin raw");
+        return;
+      }
 
-        const raw = JSON.parse(cached);
+      const delay = Number(raw?.siguienteActualizacionMs);
 
-        const delay = Number(raw?.siguienteActualizacionMs);
+      console.log("📦 RAW DESDE BROADCAST:", raw);
 
-        console.log("📦 TYPE:", typeof raw?.siguienteActualizacionMs, raw?.siguienteActualizacionMs);
-        console.log("📦 RAW CACHE:", raw);
+      if(Number.isFinite(delay) && delay > 0){
 
-        if(Number.isFinite(delay) && delay > 0){
+        const nextTime = Date.now() + delay;
 
-          const nextTime = Date.now() + delay;
+        const key = `lc_next_update_${LaunchCore.config.page}`;
 
-          const key = `lc_next_update_${LaunchCore.config.page}`;
+        LaunchCore.storage.set(key, nextTime, {
+          source: "broadcast-recalc"
+        });
 
-          LaunchCore.storage.set(key, nextTime, {
-            source: "broadcast-recalc"
-          });
+        // 🔥 CLAVE
+        LaunchCore.storage.set("lc_data", raw, {
+          stringify: true,
+          source: "broadcast"
+        });
 
-          console.log("🧠 broadcast → recalculando nextUpdate:", {
-            page: LaunchCore.config.page,
-            delay,
-            nextTime,
-            enMs: nextTime - Date.now()
-          });
-
-        } else {
-          console.warn("⚠️ broadcast → delay inválido:", delay);
-        }
+        console.log("🧠 broadcast → recalculando nextUpdate:", {
+          page: LaunchCore.config.page,
+          delay,
+          nextTime,
+          enMs: nextTime - Date.now()
+        });
 
       } else {
-        console.warn("⚠️ broadcast → no hay cache");
+        console.warn("⚠️ broadcast → delay inválido:", delay);
+        return; // 🔥 IMPORTANTE: NO sigas
       }
 
     } catch(e){
       console.error("❌ broadcast recalc error:", e);
+      return; // 🔥 IMPORTANTE
     }
 
-    // 🔥 AHORA sí corre el pipeline
     LaunchCore.execute("broadcast", {
       forceProcess: true
     });
+
+    if(document.hidden){
+      console.log("😴 tab oculta → igual procesamos broadcast correctamente");
+    }
 
   }
 
