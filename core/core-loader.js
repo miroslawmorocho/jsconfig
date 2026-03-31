@@ -895,7 +895,7 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
   switch(decision){
 
-    case "CACHE": {
+    /*case "CACHE": {
 
       const parsed = JSON.parse(state.cached);
 
@@ -905,7 +905,34 @@ LaunchCore.executeFlow = async function(decision, state, options){
         nextUpdate: state.nextUpdate,
         raw: parsed
       };
+    }*/
+
+
+    case "CACHE": {
+
+      const parsed = JSON.parse(state.cached);
+
+      let nextUpdate = state.nextUpdate;
+
+      // 🔥 FIX: recalcular desde raw si existe
+      const delay = Number(parsed?.siguienteActualizacionMs);
+
+      if(Number.isFinite(delay) && delay > 0){
+        nextUpdate = Date.now() + delay;
+
+        console.log("🧠 CACHE → recalculando nextUpdate desde raw:", {
+          delay,
+          nextUpdate,
+          enMs: nextUpdate - Date.now()
+        });
+      }
+
+      return {
+        nextUpdate,
+        raw: parsed
+      };
     }
+
 
     case "FETCH": {
 
