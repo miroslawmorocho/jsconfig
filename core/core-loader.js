@@ -1307,24 +1307,27 @@ LaunchCore.channel.onmessage = function (event) {
           source: "broadcast-recalc"
         });*/
 
-      LaunchCore.storage.set("lc_data", raw, {
+      /*LaunchCore.storage.set("lc_data", raw, {
         stringify: true,
         source: "broadcast"
-      });
+      });*/
 
-      console.log("🧠 broadcast → data guardada correctamente", {
+      LaunchCore.commitData(raw);
+
+      console.log("🧠 broadcast → data commit OK");
+
+      /*console.log("🧠 broadcast → data guardada correctamente", {
         page: LaunchCore.config.page
+      });*/
+
+      LaunchCore.execute("broadcast", {
+        forceProcess: true
       });
 
     } catch (e) {
       console.error("❌ broadcast recalc error:", e);
       return;
     }
-
-    LaunchCore.execute("broadcast", {
-      forceProcess: true
-    });
-
   }
 
   if (msg.type === "CODE_UPDATED") {
