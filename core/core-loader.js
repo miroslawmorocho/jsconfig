@@ -586,6 +586,9 @@ LaunchCore.phase.process = function(ctx){
   // 🔥 nuevo sistema de estado basado en pricing.estado
   const status = LaunchCore.getLaunchStatus();
 
+  // 🔥 sincronizar SIEMPRE el state global
+  LaunchCore.state.launchStatus = status;
+
   if (status === "closed") {
     LaunchCore.setState("CLOSED");
     LaunchCore.scheduler.cancelar("core-main");
@@ -792,6 +795,8 @@ LaunchCore.commitData = function(raw, options = {}){
   if(raw?.pricing?.estado){
     LaunchCore.storage.set("lc_launch_status", raw.pricing.estado, {source:"commitData"});
   }
+
+  //LaunchCore.state.launchStatus = raw.pricing.estado;
 
   // 🔥 avisar a otras pestañas
   if(!silent){
