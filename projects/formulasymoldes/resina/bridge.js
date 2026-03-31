@@ -33,7 +33,9 @@ async function initLaunchEngine(data){
   window.__calendarICS = data.calendarICS || [];
 
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
-  if (data.eventoCerrado) {        
+  const estado = LaunchCore.state.launchStatus;
+
+  if (estado === "closed") {
 
     console.log("💀 Evento cerrado → congelando sistema");
 
