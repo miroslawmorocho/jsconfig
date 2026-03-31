@@ -1258,6 +1258,46 @@ LaunchCore.channel.onmessage = function(event){
   if(msg.type === "DATA_UPDATED"){
     console.log("🔄 otra pestaña actualizó → refrescando");
 
+    try {
+
+      const cached = LaunchCore.storage.get("lc_data");
+
+      if(cached){
+
+        const raw = JSON.parse(cached);
+
+        const delay = Number(raw?.siguienteActualizacionMs);
+
+        if(Number.isFinite(delay) && delay > 0){
+
+          const nextTime = Date.now() + delay;
+
+          const key = `lc_next_update_${LaunchCore.config.page}`;
+
+          LaunchCore.storage.set(key, nextTime, {
+            source: "broadcast-recalc"
+          });
+
+          console.log("🧠 broadcast → recalculando nextUpdate:", {
+            page: LaunchCore.config.page,
+            delay,
+            nextTime,
+            enMs: nextTime - Date.now()
+          });
+
+        } else {
+          console.warn("⚠️ broadcast → delay inválido:", delay);
+        }
+
+      } else {
+        console.warn("⚠️ broadcast → no hay cache");
+      }
+
+    } catch(e){
+      console.error("❌ broadcast recalc error:", e);
+    }
+
+    // 🔥 AHORA sí corre el pipeline
     LaunchCore.execute("broadcast", {
       forceProcess: true
     });
