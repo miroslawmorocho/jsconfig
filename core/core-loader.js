@@ -588,6 +588,7 @@ LaunchCore.phase.process = function(ctx){
 
   if (status === "closed") {
     LaunchCore.setState("CLOSED");
+    LaunchCore.scheduler.cancelar("core-main");
   }
 
   ctx.data = data;
