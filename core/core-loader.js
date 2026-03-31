@@ -1295,6 +1295,9 @@ LaunchCore.channel.onmessage = function(event){
 
         const delay = Number(raw?.siguienteActualizacionMs);
 
+        console.log("📦 TYPE:", typeof raw?.siguienteActualizacionMs, raw?.siguienteActualizacionMs);
+        console.log("📦 RAW CACHE:", raw);
+
         if(Number.isFinite(delay) && delay > 0){
 
           const nextTime = Date.now() + delay;
