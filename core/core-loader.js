@@ -742,7 +742,9 @@ LaunchCore.normalize = function(raw){
 
 // ===============  DATA COMMIT ========================
 
-LaunchCore.commitData = function(raw){
+LaunchCore.commitData = function(raw, options = {}){
+
+  const { silent = false } = options;
 
   if(!raw){
     console.warn("❌ intentando guardar raw null → abort");
@@ -786,12 +788,14 @@ LaunchCore.commitData = function(raw){
   }
 
   // 🔥 avisar a otras pestañas
-  if(LaunchCore.channel){
-    LaunchCore.channel.postMessage({
-      type: "DATA_UPDATED",
-      raw: raw, // 🔥 LA DATA REAL
-      ts: Date.now()
-    });
+  if(!silent){
+    if(LaunchCore.channel){
+      LaunchCore.channel.postMessage({
+        type: "DATA_UPDATED",
+        raw: raw, // 🔥 LA DATA REAL
+        ts: Date.now()
+      });
+    }
   }
 
 };
@@ -1312,7 +1316,7 @@ LaunchCore.channel.onmessage = function (event) {
         source: "broadcast"
       });*/
 
-      LaunchCore.commitData(raw);
+      LaunchCore.commitData(raw, { silent: true });
 
       console.log("🧠 broadcast → data commit OK");
 
