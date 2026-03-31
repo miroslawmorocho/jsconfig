@@ -945,7 +945,15 @@ LaunchCore.executeFlow = async function(decision, state, options){
   
         console.log("⏸️ FETCH pospuesto (hidden)");
 
-        LaunchCore.storage.set("lc_fetch_pending", true, {source: "executeFlow:FETCH"});
+        const key = `lc_fetch_pending_${LaunchCore.config.page}`;
+
+        LaunchCore.storage.set(key, {
+          tabId: LaunchCore.tabId,
+          ts: Date.now()
+        }, {
+          stringify: true,
+          source: "executeFlow:FETCH"
+        });
 
         return {
           raw: null,
@@ -1676,15 +1684,27 @@ LaunchCore.init = async function(){
     // 🚀 FORZAR CHECK REAL
     window.__vcCheckNow();
 
-    const pendingFetch = LaunchCore.storage.get("lc_fetch_pending", {
+    const key = `lc_fetch_pending_${LaunchCore.config.page}`;
+
+    const pendingFetch = LaunchCore.storage.get(key, {
+      parse: true,
       source: "visibility.init"
     });
 
-    if(pendingFetch){
+    const MAX_AGE = 15000; // 15s
 
+    if(
+      pendingFetch &&
+      (
+        pendingFetch.tabId === LaunchCore.tabId ||
+        Date.now() - pendingFetch.ts > MAX_AGE
+      )
+    ){
+
+      console.log("🔥 pendingFetch.ts ", pendingFetch.ts);
       console.log("🔥 reintentando fetch pendiente");
 
-      LaunchCore.storage.remove("lc_fetch_pending", {
+      LaunchCore.storage.remove(key, {
         source: "visibility.init"
       });
 
