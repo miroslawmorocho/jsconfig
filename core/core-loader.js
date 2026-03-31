@@ -1026,7 +1026,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
 // ==============  NEXT UPDATE SCHEDULER ===============
 
-LaunchCore.scheduleNext = function(nextTime){
+LaunchCore.scheduleNext = function(nextUpdate){
 
   const status = LaunchCore.getLaunchStatus();
 
@@ -1038,7 +1038,7 @@ LaunchCore.scheduleNext = function(nextTime){
 
   const now = Date.now();
 
-  let delay = nextTime - now;
+  let delay = nextUpdate - now;
 
   if(isNaN(delay)){
     console.warn("💀 INVALID DELAY → NO SCHEDULE", delay);
