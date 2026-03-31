@@ -795,20 +795,6 @@ LaunchCore.commitData = function(raw){
 
 // =============== CORE STATE READER ===================
 
-/*LaunchCore.readCacheState = function(){
-
-  const cached = LaunchCore.storage.get("lc_data", {source: "readCacheState:cached"});
-
-  return {
-    cached,
-    nextUpdate: Number(LaunchCore.storage.get("lc_next_update", {source: "readCacheState:nextUpdate"}) || 0),
-    cachedVersion: LaunchCore.storage.get("lc_data_version", {source: "readCacheState:cachedVersion"}),
-    now: Date.now()
-  };
-
-};*/
-
-
 LaunchCore.readCacheState = function(){
 
   const page = LaunchCore.config.page;
@@ -826,10 +812,6 @@ LaunchCore.readCacheState = function(){
   };
 
 };
-
-
-
-
 
 
 
@@ -1256,7 +1238,7 @@ LaunchCore.channel.onmessage = function(event){
   if(msg.type === "DATA_UPDATED"){
     console.log("🔄 otra pestaña actualizó → refrescando");
 
-    LaunchCore.execute("broadcast", { forceFetch: true });
+    LaunchCore.execute("broadcast");
   }
 
   if(msg.type === "CODE_UPDATED"){
