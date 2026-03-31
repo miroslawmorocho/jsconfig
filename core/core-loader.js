@@ -584,7 +584,7 @@ LaunchCore.phase.process = function(ctx){
   const { data } = normalized;
 
   // 🔥 nuevo sistema de estado basado en pricing.estado
-  const status = LaunchCore.state.launchStatus;
+  const status = LaunchCore.getLaunchStatus();
 
   if (status === "closed") {
     LaunchCore.setState("CLOSED");
@@ -711,11 +711,6 @@ LaunchCore.normalize = function(raw){
 
   let data = {};
 
-  // 🔥 nuevo estado global del launch (desde pricing)
-  if (raw?.pricing?.estado) {
-    LaunchCore.state.launchStatus = raw.pricing.estado;
-  }
-
   switch(page){
 
     case "bridge":
@@ -791,6 +786,10 @@ LaunchCore.commitData = function(raw, options = {}){
     LaunchCore.storage.set("lc_data_version", String(control.version), {source: "commitData"});
   }
 
+  if(raw?.pricing?.estado){
+    LaunchCore.storage.set("lc_launch_status", raw.pricing.estado, {source:"commitData"});
+  }
+
   // 🔥 avisar a otras pestañas
   if(!silent){
     if(LaunchCore.channel){
@@ -839,7 +838,7 @@ LaunchCore.buildEngineState = function(state){
     hasNextUpdate: !!state.nextUpdate,
     isExpired: now >= state.nextUpdate,
     hasPendingVersion: !!LaunchCore.storage.get("lc_pending_version", {source: "buildEngineState:hasPendingVersion"}),
-    isClosed: LaunchCore.state?.launchStatus === "closed"
+    isClosed: LaunchCore.getLaunchStatus() === "closed"
   };
 
 };
@@ -1028,6 +1027,14 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
 LaunchCore.scheduleNext = function(nextTime){
 
+  const status = LaunchCore.getLaunchStatus();
+
+  // 💀 SI ESTÁ CERRADO → NO HACER NADA
+  if(status === "closed"){
+    console.log("💀 CLOSED → scheduler duerme");
+    return;
+  }
+
   const now = Date.now();
 
   let delay = nextTime - now;
@@ -1040,29 +1047,28 @@ LaunchCore.scheduleNext = function(nextTime){
   if(delay <= 0){
     console.log("⚡ nextUpdate vencido → ejecutar inmediato");
 
+    if(!LaunchCore.canFetch()){
+      console.log("😴 no fetch allowed → esperar visibility");
+      return;
+    }
+
     LaunchCore.execute("scheduleNext");
     return;
   }
 
-  if(delay > 0 && !isNaN(delay)){
-
-    const safeDelay = Math.max(delay, 1000);
-
-    /*console.log("🧪 scheduleNext debug:", {
+  /*console.log("🧪 scheduleNext debug:", {
       nextTime,
       now,
       delay,
       safeDelay
-    });*/
+  });*/
 
-    LaunchCore.scheduler.programar(
-      "core-main",
-      () => LaunchCore.execute("scheduleNext"),
-      safeDelay,
-      { allowHidden: false }
-    );
-
-  }
+  LaunchCore.scheduler.programar(
+    "core-main",
+    () => LaunchCore.execute("scheduleNext"),
+    Math.max(delay, 1000),
+    { allowHidden: false }
+  );
 
 };
 
@@ -1260,6 +1266,14 @@ function formatTime(ms){
   parts.push(`${seconds}s`);
 
   return parts.join(" ");
+}
+
+
+
+// ============== LEER LAUNCH STATUS ==================
+
+LaunchCore.getLaunchStatus = function(){
+  return LaunchCore.storage.get("lc_launch_status", {source:"getLaunchStatus"});
 }
 
 
@@ -1673,9 +1687,6 @@ LaunchCore.init = async function(){
 
     // 🚀 FORZAR CHECK REAL
     window.__vcCheckNow();
-
-    LaunchCore.execute("visibility", { forceProcess: true });
-    return;
 
   });
     
