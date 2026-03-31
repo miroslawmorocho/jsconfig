@@ -781,6 +781,14 @@ LaunchCore.commitData = function(raw){
     LaunchCore.storage.set("lc_data_version", String(control.version), {source: "commitData"});
   }
 
+  // 🔥 avisar a otras pestañas
+  if(LaunchCore.channel){
+    LaunchCore.channel.postMessage({
+      type: "DATA_UPDATED",
+      ts: Date.now()
+    });
+  }
+
 };
 
 
@@ -1230,6 +1238,28 @@ function formatTime(ms){
 
   return parts.join(" ");
 }
+
+
+
+/* =====================================================
+   BROADCAST CHANNEL
+===================================================== */
+
+LaunchCore.channel = new BroadcastChannel("launch-core");
+
+LaunchCore.channel.onmessage = function(event){
+
+  const msg = event.data;
+
+  console.log("📡 broadcast recibido:", msg);
+
+  if(msg.type === "DATA_UPDATED"){
+    console.log("🔄 otra pestaña actualizó → refrescando");
+
+    LaunchCore.execute("broadcast", { forceFetch: true });
+  }
+
+};
 
 
 
