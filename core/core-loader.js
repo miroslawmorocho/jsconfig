@@ -22,7 +22,7 @@ LaunchCore.state = {
 };
 
 let currentJob = null;
-//let lastFetchAt = 0;
+let lastFetchAt = 0;
 let queue = [];
 let isRunning = false;
 
@@ -222,7 +222,7 @@ LaunchCore.storage = {
 
         const data = await res.json();
 
-        //lastFetchAt = Date.now();
+        lastFetchAt = Date.now();
 
         return data;
 
@@ -868,13 +868,13 @@ LaunchCore.decide = function(state, options){
   }
 
   // 🔥 2. evitar doble fetch
-  /*if(
+  if(
     !options.forceFetch &&
     Date.now() - lastFetchAt < JUST_FETCHED_THRESHOLD
   ){
     console.log("🧠 skip fetch (recién actualizado)");
     return "CACHE";
-  }*/
+  }
 
   // 🔥 3. reglas normales
   if(es.isClosed){
