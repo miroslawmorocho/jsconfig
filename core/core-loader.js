@@ -896,20 +896,20 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
   switch(decision){
 
-    /*case "CACHE": {
+    case "CACHE": {
 
       const parsed = JSON.parse(state.cached);
 
-      //await LaunchCore.renderFromCache(parsed);
+      await LaunchCore.renderFromCache(parsed);
 
       return {
         nextUpdate: state.nextUpdate,
         raw: parsed
       };
-    }*/
+    }
 
 
-    case "CACHE": {
+    /*case "CACHE": {
 
       const parsed = JSON.parse(state.cached);
 
@@ -932,7 +932,7 @@ LaunchCore.executeFlow = async function(decision, state, options){
         nextUpdate,
         raw: parsed
       };
-    }
+    }*/
 
 
     case "FETCH": {
@@ -998,9 +998,9 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     const ctx = {options };
 
     LaunchCore.phase.input(ctx);
-    if(source !== "broadcast"){
+    //if(source !== "broadcast"){
       await LaunchCore.phase.bootstrap(ctx);
-    }
+    //}
     LaunchCore.phase.buildEngineState(ctx);
     LaunchCore.phase.decide(ctx, options);
     await LaunchCore.phase.execute(ctx, options);
@@ -1277,25 +1277,23 @@ function formatTime(ms){
 
 LaunchCore.channel = new BroadcastChannel("launch-core");
 
-LaunchCore.channel.onmessage = function(event){
-
+LaunchCore.channel.onmessage = function (event) {
   const msg = event.data;
 
   console.log("📡 broadcast recibido:", msg);
 
-  if(msg.type === "DATA_UPDATED"){
-  console.log("🔄 otra pestaña actualizó → refrescando");
+  if (msg.type === "DATA_UPDATED") {
+    console.log("🔄 otra pestaña actualizó → refrescando");
 
     try {
-
       const raw = msg.raw;
 
-      if(!raw){
+      if (!raw) {
         console.warn("💀 broadcast sin raw");
         return;
       }
 
-      const delay = Number(raw?.siguienteActualizacionMs);
+      /*const delay = Number(raw?.siguienteActualizacionMs);
 
       console.log("📦 RAW DESDE BROADCAST:", raw);
 
@@ -1307,47 +1305,32 @@ LaunchCore.channel.onmessage = function(event){
 
         LaunchCore.storage.set(key, nextTime, {
           source: "broadcast-recalc"
-        });
+        });*/
 
-        // 🔥 CLAVE
-        LaunchCore.storage.set("lc_data", raw, {
-          stringify: true,
-          source: "broadcast"
-        });
+      LaunchCore.storage.set("lc_data", raw, {
+        stringify: true,
+        source: "broadcast"
+      });
 
-        console.log("🧠 broadcast → recalculando nextUpdate:", {
-          page: LaunchCore.config.page,
-          delay,
-          nextTime,
-          enMs: nextTime - Date.now()
-        });
+      console.log("🧠 broadcast → data guardada correctamente", {
+        page: LaunchCore.config.page
+      });
 
-      } else {
-        console.warn("⚠️ broadcast → delay inválido:", delay);
-        return; // 🔥 IMPORTANTE: NO sigas
-      }
-
-    } catch(e){
+    } catch (e) {
       console.error("❌ broadcast recalc error:", e);
-      return; // 🔥 IMPORTANTE
+      return;
     }
 
     LaunchCore.execute("broadcast", {
       forceProcess: true
     });
 
-    if(document.hidden){
-      console.log("😴 tab oculta → igual procesamos broadcast correctamente");
-    }
-
   }
 
-  if(msg.type === "CODE_UPDATED"){
+  if (msg.type === "CODE_UPDATED") {
     console.log("💥 broadcast CODE → recargando");
-
     LaunchCore.reloadWithVersion();
   }
-
 };
 
 
