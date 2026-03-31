@@ -596,7 +596,7 @@ LaunchCore.phase.process = function(ctx){
 LaunchCore.phase.render = async function(ctx){
 
   // 🔥 evitar doble render innecesario
-  if(ctx.bootstrapped && ctx.decision === "CACHE"){
+  if(ctx.bootstrapped && ctx.decision === "CACHE" && !ctx.options?.forceProcess){
     console.log("⏭ skip render (ya bootstrap)");
     return;
   }
@@ -963,7 +963,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
   try {
 
-    const ctx = {};
+    const ctx = { options };
 
     LaunchCore.phase.input(ctx);
     await LaunchCore.phase.bootstrap(ctx);
