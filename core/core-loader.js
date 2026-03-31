@@ -765,21 +765,26 @@ LaunchCore.commitData = function(raw, options = {}){
 
   const { data, control } = normalized;
 
-  const delay = Number(raw?.siguienteActualizacionMs);
+  // 🧠 recolectar TODOS los posibles tiempos
+  const delays = [
+    Number(raw?.siguienteActualizacionMs),                 // global (bridge externo)
+    Number(raw?.evento?.siguienteActualizacionMs),         // bridge interno
+    Number(raw?.pricing?.siguienteActualizacionMs)         // pricing (si existe)
+  ].filter(d => Number.isFinite(d) && d > 0);
+
+  // 🧠 elegir el menor (el próximo evento real del sistema)
+  const delay = delays.length ? Math.min(...delays) : null;
 
   if(Number.isFinite(delay) && delay > 0){
 
     const nextTime = Date.now() + delay;
 
-    // 🔥 clave dinámica por página
-    const key = `lc_next_update_${LaunchCore.config.page}`;
-
-    LaunchCore.storage.set(key, nextTime, {source: "commitData"});
+    LaunchCore.storage.set("lc_next_update_global", nextTime, {source: "commitData"});
 
     const ms = nextTime - Date.now();
 
     console.log(
-      `📦 nextUpdate (${LaunchCore.config.page}) → (${ms}ms) ${formatTime(ms)}`
+      `📦 nextUpdate (${LaunchCore.config.page}) → ${formatTime(ms)} (${ms}ms)`
     );
 
   }else{
@@ -817,17 +822,17 @@ LaunchCore.commitData = function(raw, options = {}){
 
 LaunchCore.readCacheState = function(){
 
-  const page = LaunchCore.config.page;
-  const key = `lc_next_update_${page}`;
-
   const cached = LaunchCore.storage.get("lc_data", {source: "readCacheState:cached"});
 
   return{
     cached,
     nextUpdate:Number(
-      LaunchCore.storage.get(key,{source:"readCacheState:nextUpdate"}) || 0
+      LaunchCore.storage.get("lc_next_update_global",{source:"readCacheState:nextUpdate"}) || 0
     ),
-    cachedVersion: LaunchCore.storage.get("lc_data_version", {source: "readCacheState:cachedVersion"}),
+    cachedVersion: LaunchCore.storage.get(
+      "lc_data_version", {
+        source: "readCacheState:cachedVersion"
+      }),
     now: Date.now()
   };
 
@@ -1308,32 +1313,9 @@ LaunchCore.channel.onmessage = function (event) {
         return;
       }
 
-      /*const delay = Number(raw?.siguienteActualizacionMs);
-
-      console.log("📦 RAW DESDE BROADCAST:", raw);
-
-      if(Number.isFinite(delay) && delay > 0){
-
-        const nextTime = Date.now() + delay;
-
-        const key = `lc_next_update_${LaunchCore.config.page}`;
-
-        LaunchCore.storage.set(key, nextTime, {
-          source: "broadcast-recalc"
-        });*/
-
-      /*LaunchCore.storage.set("lc_data", raw, {
-        stringify: true,
-        source: "broadcast"
-      });*/
-
       LaunchCore.commitData(raw, { silent: true });
 
       console.log("🧠 broadcast → data commit OK");
-
-      /*console.log("🧠 broadcast → data guardada correctamente", {
-        page: LaunchCore.config.page
-      });*/
 
       LaunchCore.execute("broadcast", {
         forceProcess: true
