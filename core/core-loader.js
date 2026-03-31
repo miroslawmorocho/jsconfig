@@ -1456,7 +1456,16 @@ LaunchCore.vc.resume = function(){
 
   if(!nextConfirm) return;
 
-  const delay = Math.max(0, nextConfirm - Date.now());
+  //const delay = Math.max(0, nextConfirm - Date.now());
+
+  let remaining = nextConfirm - Date.now();
+
+  if(remaining <= 0){
+    console.log("⏸️ VC expired → esperar visibility natural");
+    return;
+  }
+
+  let delay = remaining;
 
   console.log("🔁 VC resume → delay:", delay);
 
@@ -1665,7 +1674,7 @@ LaunchCore.init = async function(){
     // 🚀 FORZAR CHECK REAL
     window.__vcCheckNow();
 
-    LaunchCore.execute("visibility", { forceFetch: true });
+    LaunchCore.execute("visibility", { forceProcess: true });
     return;
 
   });
