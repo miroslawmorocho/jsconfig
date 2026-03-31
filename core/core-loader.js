@@ -1269,7 +1269,7 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
 
   LaunchCore.scheduler.programar(
     key,
-    () => LaunchCore.execute("vc-confirm"),
+    LaunchCore.vc.confirm,
     delay,
     { ignoreClosed: true, allowHidden: true }
   );
