@@ -35,7 +35,7 @@ LaunchCore.register("pricing", {
 
   render: async function(data){
 
-    // 🔥 AQUÍ SOLO PINTASd
+    // 🔥 AQUÍ SOLO PINTAS
     await cargarPricing(data);
 
   }
