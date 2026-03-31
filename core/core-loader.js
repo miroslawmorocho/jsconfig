@@ -601,7 +601,11 @@ LaunchCore.phase.process = function(ctx){
 LaunchCore.phase.render = async function(ctx){
 
   // 🔥 evitar doble render innecesario
-  if(ctx.bootstrapped && ctx.decision === "CACHE" && !ctx.options?.forceProcess){
+  if(ctx.bootstrapped &&
+    ctx.decision === "CACHE" &&
+    !ctx.options?.forceProcess &&
+    !ctx.options?.externalData
+  ){
     console.log("⏭ skip render (ya bootstrap)");
     return;
   }
@@ -609,8 +613,6 @@ LaunchCore.phase.render = async function(ctx){
   console.log("🧪 render options:", ctx.options);
 
   await LaunchCore.render(ctx.data);
-
-  console.log("🎨 renderizando:", ctx.options);
 
   if(LaunchCore.machine.state !== "CLOSED"){
     LaunchCore.setState("READY");
@@ -1210,7 +1212,7 @@ LaunchCore.render = async function(data){
 
   await module.render(data);
 
-  console.log("🎨 renderizando ", page);
+  console.log("🎨 renderizando ",page);
 
 };
 
