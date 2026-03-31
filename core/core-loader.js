@@ -200,14 +200,6 @@ LaunchCore.storage = {
           url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
         }
 
-        /*let url = BASE_WORKER_URL.replace(/\/$/, "") +
-                  endpoint +
-                  query;
-
-        if(force){
-          url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
-        }*/
-
         console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
 
         const options = force
@@ -589,9 +581,11 @@ LaunchCore.phase.process = function(ctx){
   // 🔥 sincronizar SIEMPRE el state global
   LaunchCore.state.launchStatus = status;
 
+  const key = `core-main-${LaunchCore.config.page}`;
+
   if (status === "closed") {
     LaunchCore.setState("CLOSED");
-    LaunchCore.scheduler.cancelar("core-main");
+    LaunchCore.scheduler.cancelar(key);
   }
 
   ctx.data = data;
@@ -656,45 +650,11 @@ LaunchCore.phase.resumeTimers = function(){
 
   console.log("⏳ reanudando confirm en", delay);
 
+  const key = `vc-confirm-${LaunchCore.config.page}`;
+
   LaunchCore.scheduler.programar(
-    "vc-confirm",
-    async () => {
-
-      console.log("🧠 CORE: confirmando (resume)...");
-
-      const pending = LaunchCore.storage.get("lc_pending_version", {source: "phase.resumeTimers"});
-      if(!pending) return;
-
-      const result = await LaunchCore.getWorkerVersion();
-      const workerVersion = result?.version;
-
-      if(String(workerVersion) === String(pending)){
-
-        console.log("✅ DATA CONFIRMADA (resume)");
-
-        LaunchCore.storage.remove("lc_pending_version", {source: "phase.resumeTimers"});
-        LaunchCore.storage.remove("vc_last_detected", {source: "phase.resumeTimers"});
-        LaunchCore.storage.remove("vc_next_confirm", {source: "phase.resumeTimers"});
-
-        LaunchCore.commitData(result.raw);
-
-        // 🔥 mini pipeline
-        const ctx = {
-          result: {
-            raw: result.raw,
-            nextUpdate: LaunchCore.readCacheState().nextUpdate
-          }
-        };
-
-        LaunchCore.phase.process(ctx);
-        await LaunchCore.phase.render(ctx);
-        LaunchCore.phase.schedule(ctx);
-
-      } else {
-        console.log("⌛ aún no lista (resume)");
-      }
-
-    },
+    key,
+    () => LaunchCore.execute("vc-confirm"),
     delay,
     { ignoreClosed: true, allowHidden: true }
   );
@@ -920,8 +880,6 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
       const parsed = JSON.parse(state.cached);
 
-      //await LaunchCore.renderFromCache(parsed);
-
       return {
         nextUpdate: state.nextUpdate,
         raw: parsed
@@ -934,10 +892,6 @@ LaunchCore.executeFlow = async function(decision, state, options){
       if(!LaunchCore.canFetch()){
       
         console.log("😴 skip fetch (hidden)");
-
-        // ❗ NO pending
-        // ❗ NO storage
-        // ❗ NO side effects
 
         return {
           raw: null,
@@ -1076,8 +1030,10 @@ LaunchCore.scheduleNext = function(nextUpdate){
       safeDelay
   });*/
 
+  const key = `core-main-${LaunchCore.config.page}`;
+
   LaunchCore.scheduler.programar(
-    "core-main",
+    key,
     () => LaunchCore.execute("scheduleNext"),
     Math.max(delay, 1000),
     { allowHidden: false }
@@ -1228,20 +1184,6 @@ LaunchCore.render = async function(data){
 
 
 
-// ============ CACHE RENDER ENGINE ===============
-
-LaunchCore.renderFromCache = async function(rawCached){
-
-  const { data, control } = LaunchCore.normalize(rawCached);
-
-  await LaunchCore.render(data);
-
-  return control;
-
-};
-
-
-
 // ======== FUNCIÓN VERIFICAR SI PUEDE FETCH =========
 
 LaunchCore.canFetch = function(){
@@ -1355,9 +1297,11 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
 
   console.log("⏳ confirm en", delay);
 
+  const key = `vc-confirm-${LaunchCore.config.page}`;
+
   LaunchCore.scheduler.programar(
-    "vc-confirm",
-    LaunchCore.vc.confirm, // 🔥 reutilización real
+    key,
+    () => LaunchCore.execute("vc-confirm"),
     delay,
     { ignoreClosed: true, allowHidden: true }
   );
@@ -1429,7 +1373,9 @@ LaunchCore.vc.detect = function({ version, confirmDelay }){
 
   LaunchCore.storage.set("lc_pending_version", version, {source: "vc.detect"});
 
-  LaunchCore.scheduler.cancelar("vc-confirm");
+  const key = `vc-confirm-${LaunchCore.config.page}`;
+  
+  LaunchCore.scheduler.cancelar(key);
 
   const detectedAt = Number(
     LaunchCore.storage.get("vc_last_detected", {source: "vc.detect"}) || 0
