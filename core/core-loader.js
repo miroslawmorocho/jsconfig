@@ -448,6 +448,7 @@ LaunchCore.storage = {
 
   };
 
+
 })();
 
 
@@ -629,39 +630,6 @@ LaunchCore.phase.schedule = function(ctx){
 
 
 
-// ========== FASE DE ACTUALIZACIÓN DE DATA ============
-
-LaunchCore.phase.resumeTimers = function(){
-
-  const pending = LaunchCore.storage.get("lc_pending_version", {
-    source: "resumeTimers"
-  });
-
-  if(!pending) return;
-
-  const nextConfirm = Number(
-    LaunchCore.storage.get("vc_next_confirm", {source: "resumeTimers"})
-  );
-
-  if(!nextConfirm) return;
-
-  const now = Date.now();
-  const delay = Math.max(0, nextConfirm - now);
-
-  console.log("⏳ reanudando confirm en", delay);
-
-  const key = `vc-confirm-${LaunchCore.config.page}`;
-
-  LaunchCore.scheduler.programar(
-    key,
-    () => LaunchCore.execute("vc-confirm"),
-    delay,
-    { ignoreClosed: true, allowHidden: true }
-  );
-
-};
-
-
 // =========   DATA NORMALIZER (CORE MANDA) ============
 
 LaunchCore.normalize = function(raw){
@@ -768,7 +736,7 @@ LaunchCore.commitData = function(raw, options = {}){
     if(LaunchCore.channel){
       LaunchCore.channel.postMessage({
         type: "DATA_UPDATED",
-        raw: raw, // 🔥 LA DATA REAL
+        raw: raw,
         ts: Date.now()
       });
     }
@@ -1119,7 +1087,7 @@ function getJobType(source, options){
 
   if(options?.forceFetch) return "FETCH_FORCE";
 
-  if(source === "vc-confirm") return "FETCH_FORCE";
+  if(source.startsWith("vc-confirm")) return "FETCH_FORCE";
 
   if(source === "visibility") return "NORMAL";
 
