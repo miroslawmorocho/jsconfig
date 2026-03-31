@@ -282,7 +282,11 @@ LaunchCore.storage = {
 
         if(document.hidden && !options.allowHidden){
           console.log("😴 paused:", key);
-          return; // 🔥 NO listeners aquí
+
+          // 🔁 reintentar en corto
+          timers[key] = setTimeout(tick, 2000);
+
+          return;
         }
 
         const nextDelay = Math.min(remaining, MAX_DELAY);
@@ -913,47 +917,15 @@ LaunchCore.executeFlow = async function(decision, state, options){
     }
 
 
-    /*case "CACHE": {
-
-      const parsed = JSON.parse(state.cached);
-
-      let nextUpdate = state.nextUpdate;
-
-      // 🔥 FIX: recalcular desde raw si existe
-      const delay = Number(parsed?.siguienteActualizacionMs);
-
-      if(Number.isFinite(delay) && delay > 0){
-        nextUpdate = Date.now() + delay;
-
-        console.log("🧠 CACHE → recalculando nextUpdate desde raw:", {
-          delay,
-          nextUpdate,
-          enMs: nextUpdate - Date.now()
-        });
-      }
-
-      return {
-        nextUpdate,
-        raw: parsed
-      };
-    }*/
-
-
     case "FETCH": {
 
       if(!LaunchCore.canFetch()){
-  
-        console.log("⏸️ FETCH pospuesto (hidden)");
+      
+        console.log("😴 skip fetch (hidden)");
 
-        const key = `lc_fetch_pending_${LaunchCore.config.page}`;
-
-        LaunchCore.storage.set(key, {
-          tabId: LaunchCore.tabId,
-          ts: Date.now()
-        }, {
-          stringify: true,
-          source: "executeFlow:FETCH"
-        });
+        // ❗ NO pending
+        // ❗ NO storage
+        // ❗ NO side effects
 
         return {
           raw: null,
@@ -961,7 +933,7 @@ LaunchCore.executeFlow = async function(decision, state, options){
         };
       }
 
-      LaunchCore.setState?.("UPDATING"); // opcional si ya tienes FSM
+      LaunchCore.setState?.("UPDATING");
 
       raw = await LaunchCore.fetchWorker(
         LaunchCore.config.endpoint,
@@ -982,6 +954,7 @@ LaunchCore.executeFlow = async function(decision, state, options){
         nextUpdate: LaunchCore.readCacheState().nextUpdate
       };
     }
+
 
     case "EXTERNAL": {
 
@@ -1059,8 +1032,16 @@ LaunchCore.scheduleNext = function(nextTime){
 
   let delay = nextTime - now;
 
-  if(delay <= 0 || isNaN(delay)){
+  if(isNaN(delay)){
     console.warn("💀 INVALID DELAY → NO SCHEDULE", delay);
+    return;
+  }
+
+  if(delay <= 0){
+    console.log("⚡ nextUpdate vencido → ejecutar inmediato");
+
+    LaunchCore.execute("scheduleNext");
+    return;
   }
 
   if(delay > 0 && !isNaN(delay)){
@@ -1684,33 +1665,8 @@ LaunchCore.init = async function(){
     // 🚀 FORZAR CHECK REAL
     window.__vcCheckNow();
 
-    const key = `lc_fetch_pending_${LaunchCore.config.page}`;
-
-    const pendingFetch = LaunchCore.storage.get(key, {
-      parse: true,
-      source: "visibility.init"
-    });
-
-    const MAX_AGE = 15000; // 15s
-
-    if(
-      pendingFetch &&
-      (
-        pendingFetch.tabId === LaunchCore.tabId ||
-        Date.now() - pendingFetch.ts > MAX_AGE
-      )
-    ){
-
-      console.log("🔥 pendingFetch.ts ", pendingFetch.ts);
-      console.log("🔥 reintentando fetch pendiente");
-
-      LaunchCore.storage.remove(key, {
-        source: "visibility.init"
-      });
-
-      LaunchCore.execute("visibility", { forceFetch: true });
-      return;
-    }
+    LaunchCore.execute("visibility", { forceFetch: true });
+    return;
 
   });
     
