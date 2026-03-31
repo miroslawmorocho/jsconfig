@@ -601,7 +601,11 @@ LaunchCore.phase.render = async function(ctx){
     return;
   }
 
+  console.log("🧪 render options:", ctx.options);
+
   await LaunchCore.render(ctx.data);
+
+  console.log("🎨 renderizando:", ctx.options);
 
   if(LaunchCore.machine.state !== "CLOSED"){
     LaunchCore.setState("READY");
@@ -895,7 +899,7 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
       const parsed = JSON.parse(state.cached);
 
-      await LaunchCore.renderFromCache(parsed);
+      //await LaunchCore.renderFromCache(parsed);
 
       return {
         nextUpdate: state.nextUpdate,
@@ -963,7 +967,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
   try {
 
-    const ctx = { options };
+    const ctx = {options };
 
     LaunchCore.phase.input(ctx);
     await LaunchCore.phase.bootstrap(ctx);
@@ -979,6 +983,12 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     LaunchCore.phase.process(ctx);
     await LaunchCore.phase.render(ctx);
     LaunchCore.phase.schedule(ctx);
+
+    console.log("🔥 RENDER EJECUTADO", {
+      decision: ctx.decision,
+      force: ctx.options?.forceProcess,
+      bootstrapped: ctx.bootstrapped
+    });
 
   } catch(e){
 
@@ -1169,6 +1179,8 @@ LaunchCore.render = async function(data){
   }
 
   await module.render(data);
+
+  console.log("🎨 renderizando ", page);
 
 };
 
