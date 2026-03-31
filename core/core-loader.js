@@ -1259,6 +1259,12 @@ LaunchCore.channel.onmessage = function(event){
     LaunchCore.execute("broadcast", { forceFetch: true });
   }
 
+  if(msg.type === "CODE_UPDATED"){
+    console.log("💥 broadcast CODE → recargando");
+
+    LaunchCore.reloadWithVersion();
+  }
+
 };
 
 
@@ -1486,6 +1492,13 @@ LaunchCore.on("data:detected", LaunchCore.vc.detect);
 LaunchCore.on("code:update", async () => {
 
   console.log("💥 CORE: CODE UPDATE DETECTADO");
+
+  // 🔥 avisar a otras pestañas que recarguen
+  if(LaunchCore.channel){
+    LaunchCore.channel.postMessage({
+      type: "CODE_UPDATED"
+    });
+  }
 
   try {
 
