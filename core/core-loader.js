@@ -301,11 +301,11 @@ LaunchCore.storage = {
     function cancelar(key){
 
       if(timers[key]){
+        console.trace("🧨 CANCEL LLAMADO:", key);
         clearTimeout(timers[key]);
         delete timers[key];
       }
 
-      console.log("🧨 Scheduler cancelado:", key);
     }
 
     return {
@@ -904,7 +904,7 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
       const parsed = JSON.parse(state.cached);
 
-      await LaunchCore.renderFromCache(parsed);
+      //await LaunchCore.renderFromCache(parsed);
 
       return {
         nextUpdate: state.nextUpdate,
