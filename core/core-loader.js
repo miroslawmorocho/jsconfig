@@ -716,7 +716,14 @@ LaunchCore.commitData = function(raw, options = {}){
     );
 
   }else{
-    console.warn("⚠️ delay inválido → no se guarda nextUpdate", delay);
+    console.warn("⚠️ sin próximos eventos → sistema dormido");
+
+    LaunchCore.storage.set(
+      "lc_next_update_global",
+      Infinity,               // ponemos Infinity porque al llegar el último data desde
+      {source: "commitData"}  // el worker, con este valor evitamos el spam innecesario
+    );                        // en visibility
+          
   }
 
   LaunchCore.storage.set("lc_data", raw, {stringify: true, source: "commitData"});
@@ -728,8 +735,6 @@ LaunchCore.commitData = function(raw, options = {}){
   if(raw?.pricing?.estado){
     LaunchCore.storage.set("lc_launch_status", raw.pricing.estado, {source:"commitData"});
   }
-
-  //LaunchCore.state.launchStatus = raw.pricing.estado;
 
   // 🔥 avisar a otras pestañas
   if(!silent){
@@ -1600,84 +1605,58 @@ LaunchCore.init = async function(){
       await module.init();
     }
 
-    // VISIBILITY
-    /*LaunchCore.visibility.init(() => {
-
-      console.log("👁️ visibility → resume scheduler");
-
-      const pending = LaunchCore.storage.get("lc_pending_version", {source: "visibility.init"});
-
-      if(pending){
-        console.log("🔥 pending version → confirm inmediato");
-        LaunchCore.vc.confirm();
-        return;
-      }
-
-      // 🔁 reanuda timers
-      LaunchCore.vc.resume();
-
-      // 🚀 FORZAR CHECK REAL
-      window.__vcCheckNow();
-
-    });*/
 
     LaunchCore.visibility.init(() => {
 
       const now = Date.now();
 
-      LaunchCore.smartCheckNow();
-      console.log("👁️ visibility → smart check");
-
       const nextUpdate = Number(
         LaunchCore.storage.get(
           "lc_next_update_global", {
-            source: "visibility.initi"
+            source: "visibility.init"
           }
         )
       );
 
       const pending = LaunchCore.storage.get(
         "lc_pending_version", {
-          source: "visibility.initi"
+          source: "visibility.init"
         }
       );
-      
+
       const status = LaunchCore.getLaunchStatus();
 
-      if(
-        nextUpdate && 
-        now < nextUpdate && 
-        !pending && 
-        status !== "closed"
-      ){
-        return;
-      }
-       
-      // 🥇 PRIORIDAD 1: pending version
+
+      // 🥇 1. SIEMPRE: versión pendiente manda
       if(pending){
         LaunchCore.vc.confirm();
+        LaunchCore.smartCheckNow();
         return;
       }
 
-      // 🥈 PRIORIDAD 2: CLOSED + sin nextUpdate → fetch UNA sola vez
-      if(status === "closed" && (!nextUpdate || now >= nextUpdate)){
-        console.log("💀 closed sin nextUpdate → fetch inicial");
-        LaunchCore.execute("visibility-init-fetch", {
-          forceFetch: true
-        });
+
+      // 🥈 2. CLOSED + sistema dormido (Infinity) → NO HACER NADA
+      if(status === "closed" && nextUpdate === Infinity){
+        console.log("💀 closed + dormido → skip total");
         return;
       }
 
-      // 🥉 PRIORIDAD 3: expirado
-      if(!nextUpdate || now >= nextUpdate){
-        console.log("⚡ expired → fetch");
-        LaunchCore.execute("visibility-fetch", {
-          forceFetch: true
-        });
+
+      // 🥉 3. CACHE VÁLIDO → NO HACER NADA
+      if(nextUpdate && now < nextUpdate){
+        console.log("🧊 cache válido → skip");
         return;
       }
 
-      console.log("🧊 cache still valid → skip total");
+
+      // 🏁 4. TODO LO DEMÁS → FETCH
+      console.log("⚡ visibility → fetch");
+
+      LaunchCore.execute("visibility-fetch", {
+        forceFetch: true
+      });
+
+      LaunchCore.smartCheckNow();
 
     });
 
