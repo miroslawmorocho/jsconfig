@@ -288,7 +288,25 @@ LaunchCore.storage = {
           console.log("😴 paused:", key);
 
           // 🔁 reintentar en corto
-          const delay = 30000; // 🔥 aquí
+          
+          // ⏱ cuánto falta realmente
+          const remaining = targetTime - Date.now();
+
+          // 🧠 lógica dinámica
+          let delay;
+
+          if(remaining > 5 * 60 * 1000){
+            // falta mucho → dormir largo
+            delay = 60000; // 1 min
+          }
+          else if(remaining > 60000){
+            // medio cerca
+            delay = 15000; // 15s
+          }
+          else{
+            // 🔥 momento crítico
+            delay = 3000; // 3s
+          }
 
           timers[key] = setTimeout(tick, delay);
 
@@ -320,7 +338,7 @@ LaunchCore.storage = {
 
     return {
       programar,
-      cancelar // 👈 CLAVE
+      cancelar
     };
 
   })();
@@ -332,8 +350,8 @@ LaunchCore.storage = {
   LaunchCore.visibility = (function(){
 
     let initialized = false;
-    let callbacks = [];     // 🔥 FALTABA
-    let lastCheck = 0;      // 🔥 FALTABA
+    let callbacks = [];
+    let lastCheck = 0;
     let minInterval = 2000; // 🔥 default (30s)
 
 
@@ -1372,6 +1390,22 @@ LaunchCore.vc.confirm = async function(){
   
   if(!pending) return;
 
+  const currentVersion = LaunchCore.storage.get(
+    "lc_data_version", {
+      source: "vc.confirm"
+    }
+  );
+
+  if(String(currentVersion) === String(pending)){
+    console.log("🧠 VC: ya tengo esta versión → skip fetch");
+
+    LaunchCore.storage.remove("lc_pending_version", {source: "vc.confirm"});
+    LaunchCore.storage.remove("vc_last_detected", {source: "vc.confirm"});
+    LaunchCore.storage.remove("vc_next_confirm", {source: "vc.confirm"});
+
+    return;
+  }
+
   const result = await LaunchCore.getWorkerVersion();
   const workerVersion = result?.version;
 
@@ -1384,6 +1418,13 @@ LaunchCore.vc.confirm = async function(){
     LaunchCore.storage.remove("lc_pending_version", {source: "vc.confirm"});
     LaunchCore.storage.remove("vc_last_detected", {source: "vc.confirm"});
     LaunchCore.storage.remove("vc_next_confirm", {source: "vc.confirm"});
+
+    if (LaunchCore.__lastConfirmedVersion === workerVersion) {
+      console.log("🧊 confirm duplicado → ignorado");
+      return;
+    }
+
+    LaunchCore.__lastConfirmedVersion = workerVersion;
 
     LaunchCore.commitData(result.raw);
 
@@ -1488,8 +1529,6 @@ LaunchCore.vc.resume = function(){
   );
 
   if(!nextConfirm) return;
-
-  //const delay = Math.max(0, nextConfirm - Date.now());
 
   let remaining = nextConfirm - Date.now();
 
