@@ -1732,6 +1732,7 @@ LaunchCore.init = async function(){
       // 🥈 2. CLOSED + sistema dormido (Infinity) → NO HACER NADA
       if(status === "closed" && nextUpdate === Infinity){
         console.log("💀 closed + dormido → skip total");
+        LaunchCore.smartCheckNow();
         return;
       }
 
