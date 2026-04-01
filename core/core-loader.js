@@ -1671,6 +1671,7 @@ LaunchCore.init = async function(){
         );
 
         if(!nextConfirm || Date.now() >= nextConfirm){
+          console.log("⚡ visibility → confirm inmediato");
           LaunchCore.vc.confirm();
         }
 
