@@ -980,9 +980,9 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     const ctx = {options };
 
     LaunchCore.phase.input(ctx);
-    if(source !== "broadcast" && !options?.skipBootstrap){
+    //if(source !== "broadcast" && !options?.skipBootstrap){
       await LaunchCore.phase.bootstrap(ctx);
-    }
+    //}
     LaunchCore.phase.buildEngineState(ctx);
     LaunchCore.phase.decide(ctx, options);
     await LaunchCore.phase.execute(ctx, options);
@@ -1295,7 +1295,11 @@ LaunchCore.channel.onmessage = function (event) {
         return;
       }
 
-      LaunchCore.commitData(raw, { silent: true });
+      LaunchCore.execute("broadcast-update", {
+        externalData: raw
+      });
+
+      /*LaunchCore.commitData(raw, { silent: true });
       console.log("🧠 broadcast → data commit OK");
 
       const status = LaunchCore.getLaunchStatus();
@@ -1319,7 +1323,7 @@ LaunchCore.channel.onmessage = function (event) {
       // 🔥 render directo
       LaunchCore.phase.render(ctx).then(() => {
         LaunchCore.phase.schedule(ctx);
-      });
+      });*/
 
     } catch (e) {
       console.error("❌ broadcast recalc error:", e);
@@ -1426,7 +1430,11 @@ LaunchCore.vc.confirm = async function(){
 
     LaunchCore.__lastConfirmedVersion = workerVersion;
 
-    LaunchCore.commitData(result.raw);
+    return LaunchCore.execute("vc-confirm", {
+      externalData: result.raw
+    });
+
+    /*LaunchCore.commitData(result.raw);
 
     // 🔥 SINCRONIZAR ENGINE STATE
     const state = LaunchCore.readCacheState();
@@ -1450,7 +1458,7 @@ LaunchCore.vc.confirm = async function(){
 
     LaunchCore.phase.process(ctx);
     return LaunchCore.phase.render(ctx)
-      .then(() => LaunchCore.phase.schedule(ctx));
+      .then(() => LaunchCore.phase.schedule(ctx));*/
 
   } else {
     console.log("⌛ aún no lista");
