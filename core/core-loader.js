@@ -925,7 +925,24 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     await LaunchCore.phase.execute(ctx, options);
 
     if(!ctx.result || ctx.skipSchedule){
+
       console.warn("🛑 run abortado (sin resultado o skip)");
+
+      // 🧠 SOLO si el problema fue hidden + fetch fallido
+      if(ctx.decision === "FETCH" && document.hidden){
+
+        console.log("🔁 fetch pendiente → reintentar al volver");
+
+        const key = `core-main-${LaunchCore.config.page}`;
+
+        LaunchCore.scheduler.programar(
+          key,
+          () => LaunchCore.execute("scheduleNext"),
+          2000,
+          { allowHidden: false }
+        );
+      }
+
       return;
     }
 
