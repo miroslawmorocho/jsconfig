@@ -1396,7 +1396,8 @@ LaunchCore.vc.resume = function(){
   let remaining = nextConfirm - Date.now();
 
   if(remaining <= 0){
-    console.log("⏸️ VC expired → esperar visibility natural");
+    console.log("⚡ VC expired → ejecutar confirm inmediato");
+    LaunchCore.vc.confirm();
     return;
   }
 
@@ -1602,6 +1603,14 @@ LaunchCore.init = async function(){
     LaunchCore.visibility.init(() => {
 
     console.log("👁️ visibility → resume scheduler");
+
+    const pending = LaunchCore.storage.get("lc_pending_version", {source: "visibility.init"});
+
+    if(pending){
+      console.log("🔥 pending version → confirm inmediato");
+      LaunchCore.vc.confirm();
+      return;
+    }
 
     // 🔁 reanuda timers
     LaunchCore.vc.resume();
