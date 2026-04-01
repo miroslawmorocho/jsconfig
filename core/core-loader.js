@@ -935,21 +935,6 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
       console.warn("🛑 run abortado (sin resultado o skip)");
 
-      // 🧠 SOLO si el problema fue hidden + fetch fallido
-      /*if(ctx.decision === "FETCH" && document.hidden){
-
-        console.log("🔁 fetch pendiente → reintentar al volver");
-
-        const key = `core-main-${LaunchCore.config.page}`;
-
-        LaunchCore.scheduler.programar(
-          key,
-          () => LaunchCore.execute("scheduleNext"),
-          2000,
-          { allowHidden: false }
-        );
-      }*/
-
       if(ctx.decision === "FETCH" && document.hidden){
 
         console.log("🧊 fetch pendiente → delegando a visibility");
@@ -1196,6 +1181,7 @@ LaunchCore.canFetch = function(){
 
 function formatTime(ms){
 
+  if(ms === Infinity) return "∞";
   if(ms <= 0) return "AHORA";
 
   const s = Math.floor(ms / 1000);
@@ -1377,7 +1363,18 @@ LaunchCore.vc.detect = function({ version, confirmDelay }){
   const currentPending = LaunchCore.storage.get("lc_pending_version", {source: "vc.detect"});
 
   if(String(currentPending) === String(version)){
-    console.log("♻️ misma versión pendiente → NO reprogramar");
+
+    const nextConfirm = Number(
+      LaunchCore.storage.get("vc_next_confirm", {source:"vc.detect"})
+    );
+
+    if(!nextConfirm){
+      console.log("♻️ pending sin timer → reprogramando");
+      LaunchCore.vc.scheduleConfirm({ delay: confirmDelay || 60000 });
+    }else{
+      console.log("♻️ misma versión pendiente → OK");
+    }
+
     return;
   }
 
@@ -1650,7 +1647,19 @@ LaunchCore.init = async function(){
 
       // 🥇 1. SIEMPRE: versión pendiente manda
       if(pending){
-        LaunchCore.vc.confirm();
+
+        const nextConfirm = Number(
+          LaunchCore.storage.get(
+            "vc_next_confirm", {
+              source: "visibility.init"
+            }
+          )
+        );
+
+        if(!nextConfirm || Date.now() >= nextConfirm){
+          LaunchCore.vc.confirm();
+        }
+
         LaunchCore.smartCheckNow();
         return;
       }
