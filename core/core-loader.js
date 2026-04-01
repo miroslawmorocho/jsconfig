@@ -181,23 +181,24 @@ LaunchCore.storage = {
 
       try{
 
-        let query = window.location.search;
+        let queryParams = new URLSearchParams(window.location.search);
+
+          // 🔥 si force → agregar version
+        if (force && LaunchCore.vc?.version) {
+          queryParams.set("v", LaunchCore.vc.version);
+        }
+
+        // 🔥 cache buster
+        if (force) {
+          queryParams.set("_", Date.now());
+        }
 
         let url = BASE_WORKER_URL.replace(/\/$/, "") + endpoint;
 
-        // 🔥 SOLO VC usa versión
-        if(force && LaunchCore.vc?.version){
-          url += `?v=${LaunchCore.vc.version}`;
-        }
-
-        // 🔥 si NO es force, respeta query original
-        if(!force && query){
-          url += query;
-        }
-
-        // 🔥 cache buster solo si force
-        if(force){
-          url += (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+        // 🔥 construir URL final
+        const queryString = queryParams.toString();
+        if (queryString) {
+          url += "?" + queryString;
         }
 
         console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
@@ -609,8 +610,6 @@ LaunchCore.phase.render = async function(ctx){
     console.log("⏭ skip render (ya bootstrap)");
     return;
   }
-
-  console.log("🧪 render options:", ctx.options);
 
   await LaunchCore.render(ctx.data);
 
