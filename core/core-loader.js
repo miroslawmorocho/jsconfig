@@ -1625,6 +1625,7 @@ LaunchCore.init = async function(){
 
       const now = Date.now();
 
+      LaunchCore.smartCheckNow();
       console.log("👁️ visibility → smart check");
 
       const nextUpdate = Number(
