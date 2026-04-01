@@ -276,7 +276,9 @@ LaunchCore.storage = {
           console.log("😴 paused:", key);
 
           // 🔁 reintentar en corto
-          timers[key] = setTimeout(tick, 2000);
+          const delay = 30000; // 🔥 aquí
+
+          timers[key] = setTimeout(tick, delay);
 
           return;
         }
@@ -934,7 +936,7 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
       console.warn("🛑 run abortado (sin resultado o skip)");
 
       // 🧠 SOLO si el problema fue hidden + fetch fallido
-      if(ctx.decision === "FETCH" && document.hidden){
+      /*if(ctx.decision === "FETCH" && document.hidden){
 
         console.log("🔁 fetch pendiente → reintentar al volver");
 
@@ -946,6 +948,13 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
           2000,
           { allowHidden: false }
         );
+      }*/
+
+      if(ctx.decision === "FETCH" && document.hidden){
+
+        console.log("🧊 fetch pendiente → delegando a visibility");
+
+        return; // 🔥 CORTAS EL LOOP
       }
 
       return;
@@ -987,8 +996,8 @@ LaunchCore.scheduleNext = function(nextUpdate){
   const status = LaunchCore.getLaunchStatus();
 
   // 💀 SI ESTÁ CERRADO → NO HACER NADA
-  if(status === "closed"){
-    console.log("💀 CLOSED → scheduler duerme");
+  if(nextUpdate === Infinity){
+    console.log("💀 sistema dormido → no schedule");
     return;
   }
 
@@ -1002,15 +1011,10 @@ LaunchCore.scheduleNext = function(nextUpdate){
   }
 
   if(delay <= 0){
-    console.log("⚡ nextUpdate vencido → ejecutar inmediato");
 
-    if(!LaunchCore.canFetch()){
-      console.log("😴 no fetch allowed → esperar visibility");
-      return;
-    }
+    console.log("⚡ vencido → delegando a visibility");
 
-    LaunchCore.execute("scheduleNext");
-    return;
+    return; // 🔥 NO ejecutar aquí
   }
 
   /*console.log("🧪 scheduleNext debug:", {
@@ -1249,9 +1253,19 @@ LaunchCore.channel.onmessage = function (event) {
 
       console.log("🧠 broadcast → data commit OK");
 
-      LaunchCore.execute("broadcast", {
-        forceProcess: true,
-        skipBootstrap: true
+      const ctx = {
+        result: {
+          raw: raw,
+          nextUpdate: LaunchCore.readCacheState().nextUpdate
+        }
+      };
+
+      // 🔥 procesar directo
+      LaunchCore.phase.process(ctx);
+
+      // 🔥 render directo
+      LaunchCore.phase.render(ctx).then(() => {
+        LaunchCore.phase.schedule(ctx);
       });
 
     } catch (e) {
