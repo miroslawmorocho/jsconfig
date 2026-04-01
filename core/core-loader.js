@@ -1250,8 +1250,15 @@ LaunchCore.channel.onmessage = function (event) {
       }
 
       LaunchCore.commitData(raw, { silent: true });
-
       console.log("🧠 broadcast → data commit OK");
+
+      const status = LaunchCore.getLaunchStatus();
+
+      if(status === "closed"){
+        LaunchCore.setState("CLOSED");
+      } else {
+        LaunchCore.setState("READY");
+      }
 
       const ctx = {
         result: {
