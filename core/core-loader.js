@@ -917,9 +917,9 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     const ctx = {options };
 
     LaunchCore.phase.input(ctx);
-    //if(source !== "broadcast"){
+    if(source !== "broadcast" && !options?.skipBootstrap){
       await LaunchCore.phase.bootstrap(ctx);
-    //}
+    }
     LaunchCore.phase.buildEngineState(ctx);
     LaunchCore.phase.decide(ctx, options);
     await LaunchCore.phase.execute(ctx, options);
@@ -1245,7 +1245,8 @@ LaunchCore.channel.onmessage = function (event) {
       console.log("🧠 broadcast → data commit OK");
 
       LaunchCore.execute("broadcast", {
-        forceProcess: true
+        forceProcess: true,
+        skipBootstrap: true
       });
 
     } catch (e) {
@@ -1600,26 +1601,72 @@ LaunchCore.init = async function(){
     }
 
     // VISIBILITY
+    /*LaunchCore.visibility.init(() => {
+
+      console.log("👁️ visibility → resume scheduler");
+
+      const pending = LaunchCore.storage.get("lc_pending_version", {source: "visibility.init"});
+
+      if(pending){
+        console.log("🔥 pending version → confirm inmediato");
+        LaunchCore.vc.confirm();
+        return;
+      }
+
+      // 🔁 reanuda timers
+      LaunchCore.vc.resume();
+
+      // 🚀 FORZAR CHECK REAL
+      window.__vcCheckNow();
+
+    });*/
+
     LaunchCore.visibility.init(() => {
 
-    console.log("👁️ visibility → resume scheduler");
+      console.log("👁️ visibility → smart check");
 
-    const pending = LaunchCore.storage.get("lc_pending_version", {source: "visibility.init"});
+      const nextUpdate = Number(
+        LaunchCore.storage.get(
+          "lc_next_update_global", {
+            source: "visibility.init"
+          }
+        )
+      );
 
-    if(pending){
-      console.log("🔥 pending version → confirm inmediato");
-      LaunchCore.vc.confirm();
-      return;
-    }
+      const now = Date.now();
 
-    // 🔁 reanuda timers
-    LaunchCore.vc.resume();
+      const pending = LaunchCore.storage.get(
+        "lc_pending_version", {
+          source: "visibility.init"
+        }
+      );
 
-    // 🚀 FORZAR CHECK REAL
-    window.__vcCheckNow();
+      // 🧠 PRIORIDAD 1: versión pendiente
+      if(pending){
+        console.log("🔥 pending version → confirm");
+        LaunchCore.vc.confirm();
+        return;
+      }
 
-  });
-    
+      // 🧠 PRIORIDAD 2: expirado → fetch inmediato
+      if(!nextUpdate || now >= nextUpdate){
+        console.log("⚡ expired → force fetch");
+        LaunchCore.execute("visibility-fetch", {
+          forceFetch: true
+        });
+        return;
+      }
+
+      // 🧠 PRIORIDAD 3: aún válido → solo render cache
+      console.log("🧊 cache still valid → no fetch");
+
+      LaunchCore.execute("visibility-cache", {
+        forceProcess: true
+      });
+
+    });
+
+        
     // VERSION CHECKER
     await LaunchCore.use("versionChecker");
 
