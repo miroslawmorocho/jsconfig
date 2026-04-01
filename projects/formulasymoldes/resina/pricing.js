@@ -22,11 +22,6 @@ async function cargarPricing(data){
   }
 
   // =====================================================
-  // 🎨 RENDER (SIEMPRE)
-  // =====================================================
-  contenedor.innerHTML = data.pricingHtml;
-
-  // =====================================================
   // ⏱ CONTADOR
   // =====================================================
   const wrapper = document.getElementById("contador-wrapper");

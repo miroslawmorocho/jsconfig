@@ -708,7 +708,11 @@ LaunchCore.commitData = function(raw, options = {}){
 
     const nextTime = Date.now() + delay;
 
-    LaunchCore.storage.set("lc_next_update_global", nextTime, {source: "commitData"});
+    LaunchCore.storage.set(
+      "lc_next_update_global", nextTime, {
+        source: "commitData"
+      }
+    );
 
     const ms = nextTime - Date.now();
 
@@ -727,14 +731,26 @@ LaunchCore.commitData = function(raw, options = {}){
           
   }
 
-  LaunchCore.storage.set("lc_data", raw, {stringify: true, source: "commitData"});
+  LaunchCore.storage.set(
+    "lc_data", raw, {
+      stringify: true, source: "commitData"
+    }
+  );
 
   if(control?.version){
-    LaunchCore.storage.set("lc_data_version", String(control.version), {source: "commitData"});
+    LaunchCore.storage.set(
+      "lc_data_version", String(control.version), {
+        source: "commitData"
+      }
+    );
   }
 
   if(raw?.pricing?.estado){
-    LaunchCore.storage.set("lc_launch_status", raw.pricing.estado, {source:"commitData"});
+    LaunchCore.storage.set(
+      "lc_launch_status", raw.pricing.estado, {
+        source:"commitData"
+      }
+    );
   }
 
   // 🔥 avisar a otras pestañas
@@ -756,12 +772,20 @@ LaunchCore.commitData = function(raw, options = {}){
 
 LaunchCore.readCacheState = function(){
 
-  const cached = LaunchCore.storage.get("lc_data", {source: "readCacheState:cached"});
+  const cached = LaunchCore.storage.get(
+    "lc_data", {
+      source: "readCacheState:cached"
+    }
+  );
 
   return{
     cached,
     nextUpdate:Number(
-      LaunchCore.storage.get("lc_next_update_global",{source:"readCacheState:nextUpdate"}) || 0
+      LaunchCore.storage.get(
+        "lc_next_update_global",{
+          source:"readCacheState:nextUpdate"
+        }
+      ) || 0
     ),
     cachedVersion: LaunchCore.storage.get(
       "lc_data_version", {
@@ -784,7 +808,11 @@ LaunchCore.buildEngineState = function(state){
     hasCache: !!state.cached,
     hasNextUpdate: !!state.nextUpdate,
     isExpired: now >= state.nextUpdate,
-    hasPendingVersion: !!LaunchCore.storage.get("lc_pending_version", {source: "buildEngineState:hasPendingVersion"}),
+    hasPendingVersion: !!LaunchCore.storage.get(
+      "lc_pending_version", {
+        source: "buildEngineState:hasPendingVersion"
+      }
+    ),
     isClosed: LaunchCore.getLaunchStatus() === "closed"
   };
 
@@ -1207,7 +1235,11 @@ function formatTime(ms){
 // ============== LEER LAUNCH STATUS ==================
 
 LaunchCore.getLaunchStatus = function(){
-  return LaunchCore.storage.get("lc_launch_status", {source:"getLaunchStatus"});
+  return LaunchCore.storage.get(
+    "lc_launch_status", {
+      source:"getLaunchStatus"
+    }
+  );
 }
 
 
@@ -1290,7 +1322,11 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
 
   const nextConfirm = Date.now() + delay;
 
-  LaunchCore.storage.set("vc_next_confirm", nextConfirm, {source: "scheduleConfirm"});
+  LaunchCore.storage.set(
+    "vc_next_confirm", nextConfirm, {
+      source: "scheduleConfirm"
+    }
+  );
 
   console.log("⏳ confirm en", delay);
 
@@ -1317,7 +1353,12 @@ LaunchCore.vc.confirm = async function(){
     return;
   }
 
-  const pending = LaunchCore.storage.get("lc_pending_version", {source: "vc.confirm"});
+  const pending = LaunchCore.storage.get(
+    "lc_pending_version", {
+      source: "vc.confirm"
+    }
+  );
+  
   if(!pending) return;
 
   const result = await LaunchCore.getWorkerVersion();
@@ -1359,7 +1400,11 @@ LaunchCore.vc.confirm = async function(){
 
 LaunchCore.vc.detect = function({ version, confirmDelay }){
 
-  const currentPending = LaunchCore.storage.get("lc_pending_version", {source: "vc.detect"});
+  const currentPending = LaunchCore.storage.get(
+    "lc_pending_version", {
+      source: "vc.detect"
+    }
+  );
 
   if(String(currentPending) === String(version)){
 
@@ -1419,7 +1464,12 @@ LaunchCore.vc.detect = function({ version, confirmDelay }){
 
 LaunchCore.vc.resume = function(){
 
-  const pending = LaunchCore.storage.get("lc_pending_version", {source: "vc.resume"});
+  const pending = LaunchCore.storage.get(
+    "lc_pending_version", {
+      source: "vc.resume"
+    }
+  );
+  
   if(!pending) return;
 
   const nextConfirm = Number(
