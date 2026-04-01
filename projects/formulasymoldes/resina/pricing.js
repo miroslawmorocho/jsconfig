@@ -1,4 +1,5 @@
 let scrollYaEjecutado = false;
+let lastPricingHTML = null;
 
 async function cargarPricing(data){
 
@@ -12,6 +13,12 @@ async function cargarPricing(data){
   if (!contenedor) {
     console.warn("⚠️ No existe #pricing");
     return;
+  }
+
+  // 🧠 SOLO render si cambió
+  if (lastPricingHTML !== data.pricingHtml) {
+    contenedor.innerHTML = data.pricingHtml;
+    lastPricingHTML = data.pricingHtml;
   }
 
   // =====================================================
