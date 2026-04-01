@@ -1368,11 +1368,25 @@ LaunchCore.vc.detect = function({ version, confirmDelay }){
       LaunchCore.storage.get("vc_next_confirm", {source:"vc.detect"})
     );
 
+    const now = Date.now();
+
     if(!nextConfirm){
       console.log("♻️ pending sin timer → reprogramando");
-      LaunchCore.vc.scheduleConfirm({ delay: confirmDelay || 60000 });
+
+      LaunchCore.vc.scheduleConfirm({
+        delay: confirmDelay || 60000
+      });
+
+    }else if(now >= nextConfirm){
+
+      console.log("⚡ confirm vencido → ejecutar YA");
+
+      LaunchCore.vc.confirm();
+
     }else{
-      console.log("♻️ misma versión pendiente → OK");
+
+      console.log("♻️ pending activo → esperando");
+
     }
 
     return;
