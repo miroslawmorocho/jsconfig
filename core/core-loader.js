@@ -169,72 +169,83 @@ LaunchCore.storage = {
 
   
   // ============  FETCH WORKER (UNIFICADO) ===============
-  
+
+  let ongoingFetch = null;
+
   LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY = 1000;
-
-    let attempt = 0;
-
-    while(attempt < MAX_RETRIES){
-
-      try{
-
-        let queryParams = new URLSearchParams(window.location.search);
-
-          // 🔥 si force → agregar version
-        if (force && LaunchCore.vc?.version) {
-          queryParams.set("v", LaunchCore.vc.version);
-        }
-
-        // 🔥 cache buster
-        if (force) {
-          queryParams.set("_", Date.now());
-        }
-
-        let url = BASE_WORKER_URL.replace(/\/$/, "") + endpoint;
-
-        // 🔥 construir URL final
-        const queryString = queryParams.toString();
-        if (queryString) {
-          url += "?" + queryString;
-        }
-
-        console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
-
-        const options = force
-          ? { cache: "no-store" }
-          : {};
-
-        const res = await fetch(url, options);
-
-        if(!res.ok){
-          throw new Error("HTTP " + res.status);
-        }
-
-        const data = await res.json();
-
-        lastFetchAt = Date.now();
-
-        return data;
-
-      }catch(e){
-
-        console.warn(`⚠️ fetch intento ${attempt + 1} falló`, e);
-
-        attempt++;
-
-        if(attempt >= MAX_RETRIES){
-          console.error("💀 fetch falló definitivamente");
-          return null;
-        }
-
-        await new Promise(r => setTimeout(r, RETRY_DELAY));
-      }
-
+    if (ongoingFetch) {
+      console.log("🧠 reutilizando fetch en curso");
+      return ongoingFetch;
     }
 
+    ongoingFetch = (async () => {
+
+      const MAX_RETRIES = 3;
+      const RETRY_DELAY = 1000;
+
+      let attempt = 0;
+
+      while (attempt < MAX_RETRIES) {
+        try {
+
+          let queryParams = new URLSearchParams(window.location.search);
+
+          if (force && LaunchCore.vc?.version) {
+            queryParams.set("v", LaunchCore.vc.version);
+          }
+
+          if (force) {
+            queryParams.set("_", Date.now());
+          }
+
+          let url = BASE_WORKER_URL.replace(/\/$/, "") + endpoint;
+
+          const queryString = queryParams.toString();
+          if (queryString) {
+            url += "?" + queryString;
+          }
+
+          console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
+
+          const options = force 
+          ? { cache: "no-store" } 
+          : {};
+
+          const res = await fetch(url, options);
+
+          if (!res.ok) {
+            throw new Error("HTTP " + res.status);
+          }
+
+          const data = await res.json();
+
+          lastFetchAt = Date.now();
+
+          return data;
+
+        } catch (e) {
+
+          console.warn(`⚠️ fetch intento ${attempt + 1} falló`, e);
+
+          attempt++;
+
+          if (attempt >= MAX_RETRIES) {
+            console.error("💀 fetch falló definitivamente");
+            return null;
+          }
+
+          await new Promise(r => setTimeout(r, RETRY_DELAY));
+        }
+      }
+
+    })();
+
+    try {
+      return await ongoingFetch;
+    } finally {
+      ongoingFetch = null;
+    }
   };
 
   
