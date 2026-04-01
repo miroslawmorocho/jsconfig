@@ -288,7 +288,7 @@ LaunchCore.storage = {
           console.log("😴 paused:", key);
 
           // 🔁 reintentar en corto
-          
+
           // ⏱ cuánto falta realmente
           const remaining = targetTime - Date.now();
 
@@ -1427,6 +1427,18 @@ LaunchCore.vc.confirm = async function(){
     LaunchCore.__lastConfirmedVersion = workerVersion;
 
     LaunchCore.commitData(result.raw);
+
+    // 🔥 SINCRONIZAR ENGINE STATE
+    const state = LaunchCore.readCacheState();
+    LaunchCore.buildEngineState(state);
+
+    const status = LaunchCore.getLaunchStatus();
+
+    if(status === "closed"){
+      LaunchCore.setState("CLOSED");
+    } else {
+      LaunchCore.setState("READY");
+    }
 
     // 🔥 reutilizas pipeline
     const ctx = {
