@@ -1061,9 +1061,9 @@ LaunchCore.execute = function(source = "unknown", options = {}){
   queue.push({ source, options, type });
 
   console.log("📦 queue:", queue.map(q => q.type));
-  console.log("🎯 currentJob:", currentJob?.type);
-
+  
   processQueue();
+  
 };
 
 
@@ -1623,46 +1623,60 @@ LaunchCore.init = async function(){
 
     LaunchCore.visibility.init(() => {
 
+      const now = Date.now();
+
       console.log("👁️ visibility → smart check");
 
       const nextUpdate = Number(
         LaunchCore.storage.get(
           "lc_next_update_global", {
-            source: "visibility.init"
+            source: "visibility.initi"
           }
         )
       );
 
-      const now = Date.now();
-
       const pending = LaunchCore.storage.get(
         "lc_pending_version", {
-          source: "visibility.init"
+          source: "visibility.initi"
         }
       );
+      
+      const status = LaunchCore.getLaunchStatus();
 
-      // 🧠 PRIORIDAD 1: versión pendiente
+      if(
+        nextUpdate && 
+        now < nextUpdate && 
+        !pending && 
+        status !== "closed"
+      ){
+        return;
+      }
+       
+      // 🥇 PRIORIDAD 1: pending version
       if(pending){
-        console.log("🔥 pending version → confirm");
         LaunchCore.vc.confirm();
         return;
       }
 
-      // 🧠 PRIORIDAD 2: expirado → fetch inmediato
+      // 🥈 PRIORIDAD 2: CLOSED + sin nextUpdate → fetch UNA sola vez
+      if(status === "closed" && (!nextUpdate || now >= nextUpdate)){
+        console.log("💀 closed sin nextUpdate → fetch inicial");
+        LaunchCore.execute("visibility-init-fetch", {
+          forceFetch: true
+        });
+        return;
+      }
+
+      // 🥉 PRIORIDAD 3: expirado
       if(!nextUpdate || now >= nextUpdate){
-        console.log("⚡ expired → force fetch");
+        console.log("⚡ expired → fetch");
         LaunchCore.execute("visibility-fetch", {
           forceFetch: true
         });
         return;
       }
 
-      // 🧠 PRIORIDAD 3: aún válido → solo render cache
-      console.log("🧊 cache still valid → no fetch");
-
-      LaunchCore.execute("visibility-cache", {
-        forceProcess: true
-      });
+      console.log("🧊 cache still valid → skip total");
 
     });
 
