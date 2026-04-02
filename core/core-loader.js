@@ -714,7 +714,8 @@ LaunchCore.normalize = function(raw){
 
 // ======= FUNCIÓN CENTRAL DE VALIDACIÓN ===============
 
-LaunchCore.shouldAcceptData = function(newVersionRaw){
+LaunchCore.shouldAcceptData = function(newVersionRaw, options = {}){
+
   const newVersion = Number(newVersionRaw);
 
   if (!Number.isFinite(newVersion)) {
@@ -722,6 +723,13 @@ LaunchCore.shouldAcceptData = function(newVersionRaw){
     return false;
   }
 
+  // 🔥 SI ES DATA DEL WORKER (timeline) → SIEMPRE ACEPTAR
+  if (options.allowSameVersion) {
+    console.log("⏱️ misma versión pero timeline → permitido");
+    return true;
+  }
+
+  // 🧠 lógica normal (VC)
   if (newVersion <= LaunchCore.currentDataVersion) {
     console.log("🧊 data vieja ignorada", {
       incoming: newVersion,
@@ -990,7 +998,10 @@ LaunchCore.executeFlow = async function(decision, state, options){
         throw new Error("FETCH_FAILED");
       }
 
-      const accepted = LaunchCore.shouldAcceptData(raw?.status?.version);
+      const accepted = LaunchCore.shouldAcceptData(
+        raw?.status?.version,
+        { allowSameVersion: true } // 🔥 CLAVE
+      );
 
       if (!accepted) {
         console.log("🚫 FETCH descartado (data vieja)");
