@@ -592,17 +592,15 @@ LaunchCore.phase.process = function(ctx){
     return;
   }
 
-  const normalized = LaunchCore.normalize(ctx.result.raw);
+  const data = LaunchCore.normalize(ctx.result.raw, ctx.options);
 
-  if(!normalized){
+  if(!data){
     console.warn("⚠️ normalize devolvió null");
     return;
   }
 
-  const { data } = normalized;
-
   // ✅ usar SOLO engineState
-  if (LaunchCore.engineState.isClosed) {
+  if (data.status.launch === "closed") {
 
     if (LaunchCore.machine.state !== "CLOSED") {
       console.log("💀 CLOSE → activando estado CLOSED");
@@ -613,11 +611,12 @@ LaunchCore.phase.process = function(ctx){
     LaunchCore.scheduler.cancelar(key);
 
   } else {
-    
-     if (LaunchCore.machine.state === "CLOSED") {
+
+    if (LaunchCore.machine.state === "CLOSED") {
       console.log("🌅 REOPEN: CLOSED → READY");
       LaunchCore.setState("READY");
     }
+
   }
 
   ctx.data = data;
