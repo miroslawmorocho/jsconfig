@@ -19,6 +19,8 @@ LaunchCore.config = {
 
 LaunchCore.events = {};
 LaunchCore.currentDataVersion = 0;
+LaunchCore.currentRunId = 0;
+LaunchCore.currentScheduleOwner = 0;
 
 let currentJob = null;
 let queue = [];
@@ -253,6 +255,8 @@ LaunchCore.storage = {
 
     function programar(key, fn, delay, options = {}){
 
+      const ownerRunId = LaunchCore.currentRunId;
+
       const { ignoreClosed = false } = options;
 
       cancelar(key); // 🔥 SIEMPRE limpiar antes
@@ -272,8 +276,16 @@ LaunchCore.storage = {
         const remaining = targetTime - now;
 
         if(remaining <= 0){
-          
+
           delete timers[key];
+
+          if (ownerRunId !== LaunchCore.currentScheduleOwner) {
+            console.log("⏱️ timer ignorado (schedule viejo)", {
+              owner: ownerRunId,
+              current: LaunchCore.currentScheduleOwner
+            });
+            return;
+          }
 
           fn();
           return;
@@ -485,11 +497,9 @@ LaunchCore.phase.input = function(ctx){
 LaunchCore.phase.bootstrap = async function(ctx){
 
   const state = ctx.state;
-
   if(!state.cached) return;
 
   try{
-
     const raw = JSON.parse(state.cached);
     const { data } = LaunchCore.normalize(raw);
 
@@ -499,20 +509,7 @@ LaunchCore.phase.bootstrap = async function(ctx){
 
     console.log("⚡ bootstrap → render desde cache");
 
-    // 🔥 LOG PRO
-    if(state.nextUpdate){
-
-      const ms = state.nextUpdate - Date.now();
-
-      const human = formatTime(ms);
-
-      console.log(
-        `📦 nextUpdate → ${human} (${ms}ms)`
-      );
-
-    }
-
-  }catch(e){
+  } catch(e){
     console.warn("❌ bootstrap error");
   }
 
@@ -526,11 +523,13 @@ LaunchCore.phase.sync = function(ctx, options){
 
   if(options.externalData){
 
-    LaunchCore.commitData(options.externalData, {
+    /*LaunchCore.commitData(options.externalData, {
       __fromBroadcast: options.__fromBroadcast === true
     });
 
-    console.log("🧠 sync → externalData aplicada");
+    console.log("🧠 sync → externalData aplicada");*/
+
+    console.log("🧠 sync → externalData detectada");
 
   }
 
@@ -589,6 +588,11 @@ LaunchCore.phase.execute = async function(ctx, options){
 
 LaunchCore.phase.process = function(ctx){
 
+  if (ctx.bootstrapped && ctx.decision === "CACHE") {
+    console.log("🧊 process ignorado (bootstrap)");
+    return;
+  }
+
   const normalized = LaunchCore.normalize(ctx.result.raw);
 
   if(!normalized){
@@ -627,6 +631,11 @@ LaunchCore.phase.process = function(ctx){
 
 LaunchCore.phase.render = async function(ctx){
 
+  if (ctx.isBootstrap && ctx.decision === "CACHE") {
+    console.log("⏭ skip render (bootstrap ya pintó)");
+    return;
+  }
+
   // 🔥 evitar doble render innecesario
   if(ctx.bootstrapped &&
     ctx.decision === "CACHE" &&
@@ -650,6 +659,9 @@ LaunchCore.phase.render = async function(ctx){
 // ========= FASE DE PROGRAMACIÓN (SCHEDULE) ===========
 
 LaunchCore.phase.schedule = function(ctx){
+
+  const ownerRunId = LaunchCore.currentRunId;
+  LaunchCore.currentScheduleOwner = ownerRunId;
 
   LaunchCore.scheduleNext(ctx.result.nextUpdate);
 
@@ -1024,18 +1036,41 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
 // ============  GLOBAL EXECUTION ENGINE ================
 
-LaunchCore.run = async function(options = {}, source = "unknown") {
+LaunchCore.run = async function(options = {}, source = "unknown", runId) {
+
+  if (runId !== LaunchCore.currentRunId) {
+    console.log("☠️ run abortado (obsoleto)", {
+       runId, current: LaunchCore.currentRunId
+      }
+    );
+
+    return;
+  }
 
   try {
 
-    const ctx = {options };
+    const ctx = { options, isBootstrap: false };
 
     LaunchCore.phase.input(ctx);
+    if (runId !== LaunchCore.currentRunId) return;
+
     await LaunchCore.phase.bootstrap(ctx);
+    if (ctx.bootstrapped) {
+      ctx.isBootstrap = true;
+    }
+    if (runId !== LaunchCore.currentRunId) return;
+
     LaunchCore.phase.sync(ctx, options);
+    if (runId !== LaunchCore.currentRunId) return;
+
     LaunchCore.phase.buildEngineState(ctx);
+    if (runId !== LaunchCore.currentRunId) return;
+    
     LaunchCore.phase.decide(ctx, options);
+    if (runId !== LaunchCore.currentRunId) return;
+
     await LaunchCore.phase.execute(ctx, options);
+    if (runId !== LaunchCore.currentRunId) return;
 
     if(!ctx.result || ctx.skipSchedule){
 
@@ -1052,9 +1087,20 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     }
 
     LaunchCore.phase.process(ctx);
-    await LaunchCore.phase.render(ctx);
-    LaunchCore.phase.schedule(ctx);
+    
+    if (runId !== LaunchCore.currentRunId) {
+      console.log("🎨 render cancelado (run viejo)");
+      return;
+    }
 
+    await LaunchCore.phase.render(ctx);    
+    
+    if (runId === LaunchCore.currentRunId) {
+      LaunchCore.phase.schedule(ctx);
+    } else {
+      console.log("⏱️ schedule cancelado (run viejo)");
+    }
+    
     console.log("🔥 RENDER EJECUTADO", {
       decision: ctx.decision,
       force: ctx.options?.forceProcess,
@@ -1159,7 +1205,9 @@ LaunchCore.execute = function(source = "unknown", options = {}){
     return;
   }
 
-  queue.push({ source, options, type });
+  const runId = ++LaunchCore.currentRunId;
+  LaunchCore.currentScheduleOwner = runId;
+  queue.push({ source, options, type, runId });
 
   console.log("📦 queue:", queue.map(q => q.type));
   
@@ -1185,7 +1233,7 @@ async function processQueue(){
 
   try{
 
-    await LaunchCore.run(job.options, job.source);
+    await LaunchCore.run(job.options, job.source, job.runId);
 
   }catch(e){
     console.error("❌ error en job:", job.source, e);
