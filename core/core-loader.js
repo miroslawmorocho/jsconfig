@@ -619,7 +619,7 @@ LaunchCore.phase.process = function(ctx){
 
   }
 
-  ctx.data = data;
+  ctx.data = data.payload;
 
   console.log("🧠 process → system state actual:", LaunchCore.machine.state);
 
