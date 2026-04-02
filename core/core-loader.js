@@ -523,12 +523,6 @@ LaunchCore.phase.sync = function(ctx, options){
 
   if(options.externalData){
 
-    /*LaunchCore.commitData(options.externalData, {
-      __fromBroadcast: options.__fromBroadcast === true
-    });
-
-    console.log("🧠 sync → externalData aplicada");*/
-
     console.log("🧠 sync → externalData detectada");
 
   }
@@ -799,6 +793,8 @@ LaunchCore.commitData = function(raw, options = {}){
 
     console.log("🧠 commitData → launch_status:", raw?.pricing?.estado);
 
+    console.log("🧠 commitData source:", options.__source);
+
   }else{
     console.warn("⚠️ sin próximos eventos → sistema dormido");
 
@@ -1016,8 +1012,11 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
       raw = options.externalData;
 
+      const source = options.__source || (options.__fromBroadcast ? "BROADCAST" : "UNKNOWN");
+
       LaunchCore.commitData(raw, {
-        __fromBroadcast: options.__fromBroadcast === true
+        __fromBroadcast: options.__fromBroadcast === true,
+        __source: source
       });
 
       // 🔥 CLAVE: reconstruir estado con data NUEVA
@@ -1523,12 +1522,9 @@ LaunchCore.vc.confirm = async function(){
     if (!accepted) return;
 
     LaunchCore.execute("vc-confirm", {
-      externalData: result.raw
+      externalData: result.raw,
+      __source: "VC"
     });
-
-    /*return LaunchCore.execute("vc-confirm", {
-      externalData: result.raw
-    });*/
 
   } else {
     console.log("⌛ aún no lista");
