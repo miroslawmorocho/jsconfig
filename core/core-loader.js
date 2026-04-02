@@ -604,6 +604,7 @@ LaunchCore.phase.process = function(ctx){
 
   // ✅ usar SOLO engineState
   if (LaunchCore.engineState.isClosed) {
+
     if (LaunchCore.machine.state !== "CLOSED") {
       console.log("💀 CLOSE → activando estado CLOSED");
       LaunchCore.setState("CLOSED");
@@ -615,7 +616,7 @@ LaunchCore.phase.process = function(ctx){
   } else {
     
      if (LaunchCore.machine.state === "CLOSED") {
-      console.log("🌅 REOPEN → CLOSED → READY");
+      console.log("🌅 REOPEN: CLOSED → READY");
       LaunchCore.setState("READY");
     }
   }
@@ -1132,8 +1133,8 @@ LaunchCore.run = async function(options = {}, source = "unknown", runId) {
 LaunchCore.scheduleNext = function(nextUpdate){
 
   // 💀 SI ESTÁ CERRADO → NO HACER NADA
-  if(nextUpdate === Infinity){
-    console.log("💀 sistema dormido → no schedule");
+  if (LaunchCore.machine.state === "CLOSED") {
+    console.log("💀 CLOSED → no schedule");
     return;
   }
 
@@ -1172,6 +1173,11 @@ LaunchCore.scheduleNext = function(nextUpdate){
 // ================   EXECUTION SOURCE ==================
 
 LaunchCore.execute = function(source = "unknown", options = {}){
+
+  if (LaunchCore.machine.state === "CLOSED" && !options.externalData) {
+    console.log("💀 execute bloqueado (CLOSED)");
+    return;
+  }
 
   const type = getJobType(source, options);
 
@@ -1323,8 +1329,13 @@ LaunchCore.render = async function(data){
 
 LaunchCore.canFetch = function(){
 
-  if(document.hidden){
-    console.log("🚫 fetch bloqueado (tab hidden)");
+  if (LaunchCore.machine.state === "CLOSED") {
+    console.log("💀 fetch bloqueado (CLOSED)");
+    return false;
+  }
+
+  if (document.hidden) {
+    console.log("🚫 fetch bloqueado (hidden)");
     return false;
   }
 
