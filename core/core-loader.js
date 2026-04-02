@@ -506,6 +506,7 @@ LaunchCore.phase.bootstrap = async function(ctx){
     await LaunchCore.render(data);
 
     ctx.bootstrapped = true;
+    ctx.forceProcessAfterBootstrap = true;
 
     console.log("⚡ bootstrap → render desde cache");
 
@@ -582,7 +583,11 @@ LaunchCore.phase.execute = async function(ctx, options){
 
 LaunchCore.phase.process = function(ctx){
 
-  if (ctx.bootstrapped && ctx.decision === "CACHE") {
+  if (
+    ctx.bootstrapped &&
+    ctx.decision === "CACHE" &&
+    !ctx.forceProcessAfterBootstrap
+  ) {
     console.log("🧊 process ignorado (bootstrap)");
     return;
   }
@@ -663,7 +668,100 @@ LaunchCore.phase.schedule = function(ctx){
 
 // =========   DATA NORMALIZER (CORE MANDA) ============
 
-LaunchCore.normalize = function(raw){
+LaunchCore.normalize = function(input, options = {}){
+
+  const now = Date.now();
+
+  // 🔥 1. DETECTAR SOURCE
+  let source = options.source || "UNKNOWN";
+
+  if(options.externalData && options.__fromBroadcast){
+    source = "BROADCAST";
+  } else if(options.externalData && options.__source === "VC"){
+    source = "VC";
+  } else if(options.externalData){
+    source = "EXTERNAL";
+  } else if(options.fromFetch){
+    source = "FETCH";
+  } else if(options.fromCache){
+    source = "CACHE";
+  }
+
+  // 🔥 2. VALIDACIÓN BÁSICA (ANTI-CORRUPCIÓN)
+  if(!input || typeof input !== "object"){
+    console.warn("💀 normalize: input inválido");
+    return null;
+  }
+
+  // 🔥 3. VERSION
+  const version = Number(input?.status?.version) || 0;
+
+  // 🔥 4. STATUS (launch)
+  let launch = input?.pricing?.estado;
+
+  if(launch !== "open" && launch !== "closed"){
+    console.warn("⚠️ launch inválido → fallback open");
+    launch = "open";
+  }
+
+  // 🔥 5. TIMING (nextUpdate)
+  const delays = [
+    Number(input?.siguienteActualizacionMs),
+    Number(input?.evento?.siguienteActualizacionMs),
+    Number(input?.pricing?.siguienteActualizacionMs)
+  ].filter(d => Number.isFinite(d) && d > 0);
+
+  let nextUpdate = Infinity;
+
+  if(delays.length){
+    const delay = Math.min(...delays);
+    nextUpdate = now + delay;
+  }
+
+  const isExpired = nextUpdate !== Infinity && now >= nextUpdate;
+
+  // 🔥 6. PAYLOAD (PURO, SIN TOCAR)
+  const payload = {
+    pricing: input?.pricing || {},
+    evento: input?.evento || {},
+    captura: input?.captura || {}
+  };
+
+  // 🔥 7. FRESHNESS
+  const isFresh = (
+    source === "FETCH" ||
+    source === "VC" ||
+    source === "BROADCAST"
+  );
+
+  // 🔥 8. CONSTRUIR DATA UNIVERSAL
+  const data = {
+    meta: {
+      source,
+      version,
+      receivedAt: now,
+      isFresh
+    },
+
+    status: {
+      launch
+    },
+
+    timing: {
+      nextUpdate,
+      isExpired
+    },
+
+    payload
+  };
+
+  return data;
+};
+
+
+
+
+/*LaunchCore.normalize = function(raw){
 
   const page = LaunchCore.config.page;
 
@@ -700,7 +798,7 @@ LaunchCore.normalize = function(raw){
     control
   };
 
-};
+};*/
 
 
 
@@ -994,13 +1092,11 @@ LaunchCore.executeFlow = async function(decision, state, options){
         console.log("🚫 FETCH descartado (data vieja)");
         return {
           raw: null,
-          //nextUpdate: LaunchCore.readCacheState().nextUpdate
         };
       }
 
       LaunchCore.commitData(raw);
-      LaunchCore.setState?.("READY");
-
+      
       return {
         raw,
         nextUpdate: LaunchCore.readCacheState().nextUpdate
@@ -1050,15 +1146,9 @@ LaunchCore.run = async function(options = {}, source = "unknown", runId) {
 
   try {
 
-    const ctx = { options, isBootstrap: false };
+    const ctx = { options };
 
     LaunchCore.phase.input(ctx);
-    if (runId !== LaunchCore.currentRunId) return;
-
-    await LaunchCore.phase.bootstrap(ctx);
-    if (ctx.bootstrapped) {
-      ctx.isBootstrap = true;
-    }
     if (runId !== LaunchCore.currentRunId) return;
 
     LaunchCore.phase.sync(ctx, options);
@@ -1900,6 +1990,21 @@ LaunchCore.init = async function(){
 
     // REANUDANDO DATA CONFIRM SI LO HAY
     LaunchCore.vc.resume();
+
+    const cached = LaunchCore.storage.get("lc_data", {source: "LaunchCore.init"});
+
+    if (cached) {
+      try {
+        const raw = JSON.parse(cached);
+        const { data } = LaunchCore.normalize(raw);
+
+        LaunchCore.render(data);
+
+        console.log("⚡ bootstrap render (fuera del pipeline)");
+      } catch(e){
+        console.warn("❌ no hay data para bootstrap");
+      }
+    }
 
     // 🚀 PRIMER RUN
     LaunchCore.execute("init", {
