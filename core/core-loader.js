@@ -544,6 +544,24 @@ LaunchCore.phase.bootstrap = async function(ctx){
 
 
 
+// ======= FASE DE SINCRONIZACIÓN CON WORKER ===========
+
+LaunchCore.phase.sync = function(ctx, options){
+
+  if(options.externalData){
+
+    LaunchCore.commitData(options.externalData, {
+      __fromBroadcast: options.__fromBroadcast === true
+    });
+
+    console.log("🧠 sync → externalData aplicada");
+
+  }
+
+};
+
+
+
 // ========= FASE DE CONSTRUCCIÓN DEL ESTADO ===========
 
 LaunchCore.phase.buildEngineState = function(ctx){
@@ -615,6 +633,9 @@ LaunchCore.phase.process = function(ctx){
   }
 
   ctx.data = data;
+
+  console.log("🧠 process → system state actual:", LaunchCore.machine.state);
+
 };
 
 
@@ -851,7 +872,7 @@ LaunchCore.buildEngineState = function(state){
     isClosed: LaunchCore.getLaunchStatus(),
     nextUpdate: state.nextUpdate
   });
-
+  
 };
 
 
@@ -993,9 +1014,8 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
     const ctx = {options };
 
     LaunchCore.phase.input(ctx);
-    //if(source !== "broadcast" && !options?.skipBootstrap){
-      await LaunchCore.phase.bootstrap(ctx);
-    //}
+    await LaunchCore.phase.bootstrap(ctx);
+    LaunchCore.phase.sync(ctx, options);
     LaunchCore.phase.buildEngineState(ctx);
     LaunchCore.phase.decide(ctx, options);
     await LaunchCore.phase.execute(ctx, options);
