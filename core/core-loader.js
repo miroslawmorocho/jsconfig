@@ -17,10 +17,6 @@ LaunchCore.config = {
   endpoint: ""
 };
 
-LaunchCore.state = {
-  launchStatus: "pre"
-};
-
 let currentJob = null;
 let lastFetchAt = 0;
 let queue = [];
@@ -608,17 +604,14 @@ LaunchCore.phase.process = function(ctx){
 
   const { data } = normalized;
 
-  // 🔥 nuevo sistema de estado basado en pricing.estado
-  const status = LaunchCore.getLaunchStatus();
-
-  // 🔥 sincronizar SIEMPRE el state global
-  LaunchCore.state.launchStatus = status;
-
-  const key = `core-main-${LaunchCore.config.page}`;
-
-  if (status === "closed") {
+  // ✅ usar SOLO engineState
+  if (LaunchCore.engineState.isClosed) {
     LaunchCore.setState("CLOSED");
+
+    const key = `core-main-${LaunchCore.config.page}`;
     LaunchCore.scheduler.cancelar(key);
+
+    console.log("💀 process → CLOSED (desde engineState)");
   }
 
   ctx.data = data;
@@ -705,6 +698,10 @@ LaunchCore.normalize = function(raw){
 
 // ===============  DATA COMMIT ========================
 
+// 🔥 ÚNICO MOMENTO DONDE ENTRA launchStatus:
+// 1. commitData 👉 escribir 2. buildEngineState 👉 leer UNA vez
+// luego solo usamos engineState
+
 LaunchCore.commitData = function(raw, options = {}){
 
   const { silent = false, __fromBroadcast = false } = options;
@@ -749,6 +746,8 @@ LaunchCore.commitData = function(raw, options = {}){
       `📦 nextUpdate (${LaunchCore.config.page}) → ${formatTime(ms)} (${ms}ms)`
     );
 
+    console.log("🧠 commitData → launch_status:", raw?.pricing?.estado);
+
   }else{
     console.warn("⚠️ sin próximos eventos → sistema dormido");
 
@@ -780,6 +779,9 @@ LaunchCore.commitData = function(raw, options = {}){
         source:"commitData"
       }
     );
+
+    console.log("🧠 (if) commitData → launch_status:", raw?.pricing?.estado);
+
   }
 
   // 🔥 avisar a otras pestañas
@@ -844,6 +846,11 @@ LaunchCore.buildEngineState = function(state){
     ),
     isClosed: LaunchCore.getLaunchStatus() === "closed"
   };
+
+  console.log("🧠 engineState rebuilt:", {
+    isClosed: LaunchCore.getLaunchStatus(),
+    nextUpdate: state.nextUpdate
+  });
 
 };
 
@@ -1040,8 +1047,6 @@ LaunchCore.run = async function(options = {}, source = "unknown") {
 
 LaunchCore.scheduleNext = function(nextUpdate){
 
-  const status = LaunchCore.getLaunchStatus();
-
   // 💀 SI ESTÁ CERRADO → NO HACER NADA
   if(nextUpdate === Infinity){
     console.log("💀 sistema dormido → no schedule");
@@ -1058,18 +1063,9 @@ LaunchCore.scheduleNext = function(nextUpdate){
   }
 
   if(delay <= 0){
-
     console.log("⚡ vencido → delegando a visibility");
-
-    return; // 🔥 NO ejecutar aquí
+    return;
   }
-
-  /*console.log("🧪 scheduleNext debug:", {
-      nextTime,
-      now,
-      delay,
-      safeDelay
-  });*/
 
   const key = `core-main-${LaunchCore.config.page}`;
 
@@ -1306,32 +1302,6 @@ LaunchCore.channel.onmessage = function (event) {
         __fromBroadcast: true
       });
 
-      /*LaunchCore.commitData(raw, { silent: true });
-      console.log("🧠 broadcast → data commit OK");
-
-      const status = LaunchCore.getLaunchStatus();
-
-      if(status === "closed"){
-        LaunchCore.setState("CLOSED");
-      } else {
-        LaunchCore.setState("READY");
-      }
-
-      const ctx = {
-        result: {
-          raw: raw,
-          nextUpdate: LaunchCore.readCacheState().nextUpdate
-        }
-      };
-
-      // 🔥 procesar directo
-      LaunchCore.phase.process(ctx);
-
-      // 🔥 render directo
-      LaunchCore.phase.render(ctx).then(() => {
-        LaunchCore.phase.schedule(ctx);
-      });*/
-
     } catch (e) {
       console.error("❌ broadcast recalc error:", e);
       return;
@@ -1440,32 +1410,6 @@ LaunchCore.vc.confirm = async function(){
     return LaunchCore.execute("vc-confirm", {
       externalData: result.raw
     });
-
-    /*LaunchCore.commitData(result.raw);
-
-    // 🔥 SINCRONIZAR ENGINE STATE
-    const state = LaunchCore.readCacheState();
-    LaunchCore.buildEngineState(state);
-
-    const status = LaunchCore.getLaunchStatus();
-
-    if(status === "closed"){
-      LaunchCore.setState("CLOSED");
-    } else {
-      LaunchCore.setState("READY");
-    }
-
-    // 🔥 reutilizas pipeline
-    const ctx = {
-      result: {
-        raw: result.raw,
-        nextUpdate: LaunchCore.readCacheState().nextUpdate
-      }
-    };
-
-    LaunchCore.phase.process(ctx);
-    return LaunchCore.phase.render(ctx)
-      .then(() => LaunchCore.phase.schedule(ctx));*/
 
   } else {
     console.log("⌛ aún no lista");
@@ -1782,9 +1726,6 @@ LaunchCore.init = async function(){
         }
       );
 
-      const status = LaunchCore.getLaunchStatus();
-
-
       // 🥇 1. SIEMPRE: versión pendiente manda
       if(pending){
 
@@ -1807,7 +1748,7 @@ LaunchCore.init = async function(){
 
 
       // 🥈 2. CLOSED + sistema dormido (Infinity) → NO HACER NADA
-      if(status === "closed" && nextUpdate === Infinity){
+      if (LaunchCore.engineState.isClosed && nextUpdate === Infinity) {
         console.log("💀 closed + dormido → skip total");
         LaunchCore.smartCheckNow();
         return;
