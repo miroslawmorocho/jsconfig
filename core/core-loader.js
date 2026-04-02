@@ -609,7 +609,7 @@ LaunchCore.phase.execute = async function(ctx, options){
 
 
 
-// ============ FASE NORMALIZACIÓN =====================
+// ============ FASE DE PROCESAMIENTO =====================
 
 LaunchCore.phase.process = function(ctx){
 
@@ -630,6 +630,13 @@ LaunchCore.phase.process = function(ctx){
     LaunchCore.scheduler.cancelar(key);
 
     console.log("💀 process → CLOSED (desde engineState)");
+
+  } else {
+    
+    if (LaunchCore.machine.state === "CLOSED") {
+      console.log("🌅 REOPEN → CLOSED → READY");
+      LaunchCore.setState("READY");
+    }
   }
 
   ctx.data = data;
