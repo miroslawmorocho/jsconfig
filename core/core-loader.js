@@ -619,6 +619,9 @@ LaunchCore.phase.process = function(ctx){
   }
 
   ctx.data = data.payload;
+  ctx.meta = data.meta;
+  ctx.timing = data.timing;
+  ctx.status = data.status;
 
   console.log("🧠 process → system state actual:", LaunchCore.machine.state);
 
@@ -658,7 +661,7 @@ LaunchCore.phase.schedule = function(ctx){
   const ownerRunId = LaunchCore.currentRunId;
   LaunchCore.currentScheduleOwner = ownerRunId;
 
-  LaunchCore.scheduleNext(ctx.result.nextUpdate);
+  LaunchCore.scheduleNext(ctx.timing?.nextUpdate);
 
 };
 
@@ -839,103 +842,34 @@ LaunchCore.shouldAcceptData = function(newVersionRaw, options = {}){
 
 // ===============  DATA COMMIT ========================
 
-// 🔥 ÚNICO MOMENTO DONDE ENTRA launchStatus:
-// 1. commitData 👉 escribir 2. buildEngineState 👉 leer UNA vez
-// luego solo usamos engineState
-
 LaunchCore.commitData = function(raw, options = {}){
 
-  const { silent = false, __fromBroadcast = false } = options;
-
   if(!raw){
-    console.warn("❌ intentando guardar raw null → abort");
+    console.warn("❌ commitData sin raw");
     return;
   }
 
-  const normalized = LaunchCore.normalize(raw);
+  try{
 
-  if(!normalized){
-    console.warn("⚠️ normalize devolvió null en commit");
-    return;
-  }
-
-  const { data, control } = normalized;
-
-  // 🧠 recolectar TODOS los posibles tiempos
-  const delays = [
-    Number(raw?.siguienteActualizacionMs),                 // global (bridge externo)
-    Number(raw?.evento?.siguienteActualizacionMs),         // bridge interno
-    Number(raw?.pricing?.siguienteActualizacionMs)         // pricing (si existe)
-  ].filter(d => Number.isFinite(d) && d > 0);
-
-  // 🧠 elegir el menor (el próximo evento real del sistema)
-  const delay = delays.length ? Math.min(...delays) : null;
-
-  if(Number.isFinite(delay) && delay > 0){
-
-    const nextTime = Date.now() + delay;
-
+    // 🔥 SOLO persistimos raw
     LaunchCore.storage.set(
-      "lc_next_update_global", nextTime, {
-        source: "commitData"
-      }
+      "lc_data",
+      raw,
+      { stringify: true, source: "commitData" }
     );
 
-    const ms = nextTime - Date.now();
-
-    console.log(
-      `📦 nextUpdate (${LaunchCore.config.page}) → ${formatTime(ms)} (${ms}ms)`
-    );
-
-    console.log("🧠 commitData → launch_status:", raw?.pricing?.estado);
-
-    console.log("🧠 commitData source:", options.__source);
-
-  }else{
-    console.warn("⚠️ sin próximos eventos → sistema dormido");
-
-    LaunchCore.storage.set(
-      "lc_next_update_global",
-      Infinity,               // ponemos Infinity porque al llegar el último data desde
-      {source: "commitData"}  // el worker, con este valor evitamos el spam innecesario
-    );                        // en visibility
-          
-  }
-
-  LaunchCore.storage.set(
-    "lc_data", raw, {
-      stringify: true, source: "commitData"
+    // 🔥 versión (opcional pero útil)
+    const version = raw?.status?.version;
+    if(version){
+      LaunchCore.storage.set(
+        "lc_data_version",
+        String(version),
+        { source: "commitData" }
+      );
     }
-  );
 
-  if(control?.version){
-    LaunchCore.storage.set(
-      "lc_data_version", String(control.version), {
-        source: "commitData"
-      }
-    );
-  }
-
-  if(raw?.pricing?.estado){
-    LaunchCore.storage.set(
-      "lc_launch_status", raw.pricing.estado, {
-        source:"commitData"
-      }
-    );
-
-    console.log("🧠 (if) commitData → launch_status:", raw?.pricing?.estado);
-
-  }
-
-  // 🔥 avisar a otras pestañas
-  if(!silent && !__fromBroadcast){
-    if(LaunchCore.channel){
-      LaunchCore.channel.postMessage({
-        type: "DATA_UPDATED",
-        raw: raw,
-        ts: Date.now()
-      });
-    }
+  }catch(e){
+    console.warn("❌ commitData error", e);
   }
 
 };
