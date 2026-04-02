@@ -1111,14 +1111,14 @@ LaunchCore.scheduleNext = function(nextUpdate){
 
 LaunchCore.execute = function(source = "unknown", options = {}){
 
+  const type = getJobType(source, options);
+
   // evitamos que se disparen lógicas cruzadas que hacen fetch en hidden
   // visibility, schedulers, funciones llamando a esta, etc.
   if(type === "FETCH_FORCE" && document.hidden){
     console.log("🚫 execute: FETCH_FORCE bloqueado (hidden)");
     return;
   }
-
-  const type = getJobType(source, options);
 
   console.log("🧠 ENQUEUE:", source, "| type:", type);
 
