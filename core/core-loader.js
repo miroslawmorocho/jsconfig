@@ -757,13 +757,6 @@ LaunchCore.shouldAcceptData = function(newVersionRaw, options = {}){
 
 LaunchCore.commitData = function(raw, options = {}){
 
-  const incomingVersion = raw?.status?.version;
-
-  if (!LaunchCore.shouldAcceptData(incomingVersion)) {
-    console.log("🚫 commitData cancelado (data vieja)");
-    return;
-  }
-
   const { silent = false, __fromBroadcast = false } = options;
 
   if(!raw){
@@ -1007,7 +1000,7 @@ LaunchCore.executeFlow = async function(decision, state, options){
         console.log("🚫 FETCH descartado (data vieja)");
         return {
           raw: null,
-          nextUpdate: LaunchCore.readCacheState().nextUpdate
+          //nextUpdate: LaunchCore.readCacheState().nextUpdate
         };
       }
 
@@ -1515,9 +1508,19 @@ LaunchCore.vc.confirm = async function(){
 
     LaunchCore.__lastConfirmedVersion = workerVersion;
 
-    return LaunchCore.execute("vc-confirm", {
+    const accepted = LaunchCore.shouldAcceptData(
+      workerVersion
+    );
+
+    if (!accepted) return;
+
+    LaunchCore.execute("vc-confirm", {
       externalData: result.raw
     });
+
+    /*return LaunchCore.execute("vc-confirm", {
+      externalData: result.raw
+    });*/
 
   } else {
     console.log("⌛ aún no lista");
