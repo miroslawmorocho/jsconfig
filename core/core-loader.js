@@ -18,7 +18,6 @@ LaunchCore.config = {
 };
 
 let currentJob = null;
-let lastFetchAt = 0;
 let queue = [];
 let isRunning = false;
 
@@ -216,8 +215,6 @@ LaunchCore.storage = {
 
           const data = await res.json();
 
-          lastFetchAt = Date.now();
-
           return data;
 
         } catch (e) {
@@ -284,26 +281,7 @@ LaunchCore.storage = {
           console.log("😴 paused:", key);
 
           // 🔁 reintentar en corto
-
-          // ⏱ cuánto falta realmente
-          const remaining = targetTime - Date.now();
-
-          // 🧠 lógica dinámica
-          let delay;
-
-          if(remaining > 5 * 60 * 1000){
-            // falta mucho → dormir largo
-            delay = 60000; // 1 min
-          }
-          else if(remaining > 60000){
-            // medio cerca
-            delay = 15000; // 15s
-          }
-          else{
-            // 🔥 momento crítico
-            delay = 3000; // 3s
-          }
-
+          let delay = 30000;
           timers[key] = setTimeout(tick, delay);
 
           return;
@@ -529,10 +507,6 @@ LaunchCore.phase.bootstrap = async function(ctx){
       console.log(
         `📦 nextUpdate → ${human} (${ms}ms)`
       );
-
-      if(ms <= 0){
-        console.log("⚠️ YA DEBIÓ ACTUALIZAR (fetch inmediato)");
-      }
 
     }
 
@@ -890,8 +864,6 @@ LaunchCore.decide = function(state, options){
 
   const es = LaunchCore.engineState;
 
-  const JUST_FETCHED_THRESHOLD = 3000;
-
   // 🔥 1. prioridad absoluta
   if(options.externalData){
     return "EXTERNAL";
@@ -903,16 +875,7 @@ LaunchCore.decide = function(state, options){
     return "CACHE";
   }
 
-  // 🔥 2. evitar doble fetch
-  if(
-    !options.forceFetch &&
-    Date.now() - lastFetchAt < JUST_FETCHED_THRESHOLD
-  ){
-    console.log("🧠 skip fetch (recién actualizado)");
-    return "CACHE";
-  }
-
-  // 🔥 3. reglas normales
+  // 🔥 2. reglas normales
   if(es.isClosed){
     return "CACHE";
   }
@@ -1090,7 +1053,12 @@ LaunchCore.scheduleNext = function(nextUpdate){
   }
 
   if(delay <= 0){
-    console.log("⚡ vencido → delegando a visibility");
+    console.log("⚡ vencido → ejecutar inmediato");
+
+    LaunchCore.execute("scheduleNext", {
+      forceFetch: true
+    });
+
     return;
   }
 
