@@ -707,7 +707,7 @@ LaunchCore.normalize = function(raw){
 
 LaunchCore.commitData = function(raw, options = {}){
 
-  const { silent = false } = options;
+  const { silent = false, __fromBroadcast = false } = options;
 
   if(!raw){
     console.warn("❌ intentando guardar raw null → abort");
@@ -783,7 +783,7 @@ LaunchCore.commitData = function(raw, options = {}){
   }
 
   // 🔥 avisar a otras pestañas
-  if(!silent){
+  if(!silent && !__fromBroadcast){
     if(LaunchCore.channel){
       LaunchCore.channel.postMessage({
         type: "DATA_UPDATED",
@@ -957,7 +957,9 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
       raw = options.externalData;
 
-      LaunchCore.commitData(raw);
+      LaunchCore.commitData(raw, {
+        __fromBroadcast: options.__fromBroadcast === true
+      });
 
       return {
         raw,
@@ -1296,7 +1298,8 @@ LaunchCore.channel.onmessage = function (event) {
       }
 
       LaunchCore.execute("broadcast-update", {
-        externalData: raw
+        externalData: raw,
+        __fromBroadcast: true
       });
 
       /*LaunchCore.commitData(raw, { silent: true });
