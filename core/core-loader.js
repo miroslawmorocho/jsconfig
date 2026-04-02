@@ -17,11 +17,13 @@ LaunchCore.config = {
   endpoint: ""
 };
 
+LaunchCore.events = {};
+LaunchCore.currentDataVersion = 0;
+
 let currentJob = null;
 let queue = [];
 let isRunning = false;
 
-LaunchCore.events = {};
 
 
 
@@ -698,6 +700,35 @@ LaunchCore.normalize = function(raw){
 
 
 
+// ======= FUNCIÓN CENTRAL DE VALIDACIÓN ===============
+
+LaunchCore.shouldAcceptData = function(newVersionRaw){
+  const newVersion = Number(newVersionRaw);
+
+  if (!Number.isFinite(newVersion)) {
+    console.warn("⚠️ versión inválida → ignorando", newVersionRaw);
+    return false;
+  }
+
+  if (newVersion <= LaunchCore.currentDataVersion) {
+    console.log("🧊 data vieja ignorada", {
+      incoming: newVersion,
+      current: LaunchCore.currentDataVersion
+    });
+    return false;
+  }
+
+  console.log("🆕 data nueva aceptada", {
+    incoming: newVersion,
+    previous: LaunchCore.currentDataVersion
+  });
+
+  LaunchCore.currentDataVersion = newVersion;
+  return true;
+};
+
+
+
 // ===============  DATA COMMIT ========================
 
 // 🔥 ÚNICO MOMENTO DONDE ENTRA launchStatus:
@@ -705,6 +736,13 @@ LaunchCore.normalize = function(raw){
 // luego solo usamos engineState
 
 LaunchCore.commitData = function(raw, options = {}){
+
+  const incomingVersion = raw?.status?.version;
+
+  if (!LaunchCore.shouldAcceptData(incomingVersion)) {
+    console.log("🚫 commitData cancelado (data vieja)");
+    return;
+  }
 
   const { silent = false, __fromBroadcast = false } = options;
 
@@ -940,8 +978,17 @@ LaunchCore.executeFlow = async function(decision, state, options){
         throw new Error("FETCH_FAILED");
       }
 
-      LaunchCore.commitData(raw);
+      const accepted = LaunchCore.shouldAcceptData(raw?.status?.version);
 
+      if (!accepted) {
+        console.log("🚫 FETCH descartado (data vieja)");
+        return {
+          raw: null,
+          nextUpdate: LaunchCore.readCacheState().nextUpdate
+        };
+      }
+
+      LaunchCore.commitData(raw);
       LaunchCore.setState?.("READY");
 
       return {
@@ -1664,6 +1711,10 @@ LaunchCore.init = async function(){
 
   LaunchCore.setState("BOOT");
   console.log("🚀 BOOT: LaunchCore iniciado");
+
+  const cachedVersion = LaunchCore.storage.get("lc_data_version",{source:"init"});
+  LaunchCore.currentDataVersion = Number(cachedVersion) || 0;
+  console.log("🧠 currentDataVersion (init):", LaunchCore.currentDataVersion);
 
   const root = document.getElementById("launch-engine-root");
   LaunchCore.root = root;
