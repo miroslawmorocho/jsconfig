@@ -604,16 +604,17 @@ LaunchCore.phase.process = function(ctx){
 
   // ✅ usar SOLO engineState
   if (LaunchCore.engineState.isClosed) {
-    LaunchCore.setState("CLOSED");
+    if (LaunchCore.machine.state !== "CLOSED") {
+      console.log("💀 CLOSE → activando estado CLOSED");
+      LaunchCore.setState("CLOSED");
+    }
 
     const key = `core-main-${LaunchCore.config.page}`;
     LaunchCore.scheduler.cancelar(key);
 
-    console.log("💀 process → CLOSED (desde engineState)");
-
   } else {
     
-    if (LaunchCore.machine.state === "CLOSED") {
+     if (LaunchCore.machine.state === "CLOSED") {
       console.log("🌅 REOPEN → CLOSED → READY");
       LaunchCore.setState("READY");
     }
@@ -647,10 +648,6 @@ LaunchCore.phase.render = async function(ctx){
   }
 
   await LaunchCore.render(ctx.data);
-
-  if(LaunchCore.machine.state !== "CLOSED"){
-    LaunchCore.setState("READY");
-  }
 
 };
 
