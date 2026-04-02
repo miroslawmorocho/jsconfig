@@ -535,9 +535,8 @@ LaunchCore.phase.sync = function(ctx, options){
 // ========= FASE DE CONSTRUCCIÓN DEL ESTADO ===========
 
 LaunchCore.phase.buildEngineState = function(ctx){
-  LaunchCore.buildEngineState(ctx.state);
+  // 💀 eliminado — ahora manda normalize
 };
-
 
 
 // ================ FASE DE DECISIÓN ======================
@@ -1004,39 +1003,32 @@ LaunchCore.buildEngineState = function(state){
 
 LaunchCore.decide = function(state, options){
 
-  const es = LaunchCore.engineState;
-
-  // 🔥 1. prioridad absoluta
+  // 🥇 prioridad absoluta
   if(options.externalData){
     return "EXTERNAL";
   }
 
-  // 💣 NUEVO: reprocesar aunque haya cache
   if(options.forceProcess){
-    console.log("🧠 forceProcess → usar CACHE pero reprocesar");
     return "CACHE";
   }
 
-  // 🔥 2. reglas normales
-  if(es.isClosed){
-    return "CACHE";
-  }
-
-  if(!es.hasCache){
+  // 🧊 sin cache → fetch
+  if(!state.cached){
     return "FETCH";
   }
 
-  if(!es.hasNextUpdate){
+  // ⏱️ sin nextUpdate → fetch
+  if(!state.nextUpdate){
     return "FETCH";
   }
 
-  if(es.isExpired){
+  // ⏰ expirado → fetch
+  if(Date.now() >= state.nextUpdate){
     return "FETCH";
   }
 
   return "CACHE";
 };
-
 
 
 // ================  EXECUTION FLOW ====================
