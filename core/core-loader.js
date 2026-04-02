@@ -961,9 +961,13 @@ LaunchCore.executeFlow = async function(decision, state, options){
         __fromBroadcast: options.__fromBroadcast === true
       });
 
+      // 🔥 CLAVE: reconstruir estado con data NUEVA
+      const newState = LaunchCore.readCacheState();
+      LaunchCore.buildEngineState(newState);
+
       return {
         raw,
-        nextUpdate: LaunchCore.readCacheState().nextUpdate
+        nextUpdate: newState.nextUpdate
       };
     }
 
