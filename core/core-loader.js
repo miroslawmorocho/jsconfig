@@ -4,17 +4,20 @@
 
 window.LaunchCore = window.LaunchCore || {};
 
+//LaunchCore.config.workerUrl = "https://launch-engine.miroslaw-mm.workers.dev";
+
 LaunchCore.paths = {
   base: "https://miroslawmorocho.github.io/jsconfig/",
   components: "https://miroslawmorocho.github.io/jsconfig/components/",
-  projects: "https://miroslawmorocho.github.io/jsconfig/projects/"
+  projects: "https://miroslawmorocho.github.io/jsconfig/projects/",
+  workerUrl: "https://launch-engine.miroslaw-mm.workers.dev"
 };
 
 LaunchCore.config = {
   project: null,
   product: null,
   page: null,
-  endpoint: ""
+  endpoint: ""  
 };
 
 LaunchCore.events = {};
@@ -871,7 +874,7 @@ LaunchCore.fetchWorker = async function(endpoint = "", force = false){
           queryParams.set("_", Date.now());
         }
 
-        let url = BASE_WORKER_URL.replace(/\/$/, "") + endpoint;
+        let url = LaunchCore.paths.workerUrl.replace(/\/$/, "") + endpoint;
 
         const queryString = queryParams.toString();
         if (queryString) {
@@ -1104,33 +1107,64 @@ LaunchCore.init = async function(){
     };
 
     // 👁 7. VISIBILITY (SIMPLIFICADO PERO INTELIGENTE)
-    document.addEventListener("visibilitychange", () => {
+    LaunchCore.visibility.init(() => {
 
-      if (document.visibilityState !== "visible") return;
-
-      console.log("👁 tab activa");
+      const now = Date.now();
 
       const current = LaunchCore.state.current;
 
-      if (!current) {
-        console.log("⚡ sin estado → fetch inmediato");
-        fetchAndHandle(true);
+      const nextUpdate = current?.timing?.nextUpdate ?? null;
+
+      const pending = localStorage.getItem("lc_pending_version");
+
+      // 🥇 1. SIEMPRE: versión pendiente manda
+      if (pending) {
+
+        const nextConfirm = Number(
+          localStorage.getItem("vc_next_confirm")
+        );
+
+        if (!nextConfirm || now >= nextConfirm) {
+          console.log("⚡ visibility → confirm inmediato");
+          LaunchCore.vc.confirm();
+        }
+
+        if (window.__vcCheckNow) {
+          window.__vcCheckNow();
+        }
+
         return;
       }
 
-      if (!current.timing.isAlive) {
-        console.log("💀 estado muerto → fetch");
-        fetchAndHandle(true);
+      // 🥈 2. CLOSED + sistema dormido → NO HACER NADA
+      if (!nextUpdate) {
+        console.log("💀 closed/dormido → skip total");
+
+        if (window.__vcCheckNow) {
+          window.__vcCheckNow();
+        }
+
         return;
       }
 
-      if (current.timing.msRemaining < 0) {
-        console.log("⏰ expirado → fetch");
-        fetchAndHandle(true);
+      // 🥉 3. CACHE VÁLIDO → NO HACER NADA
+      if (now < nextUpdate) {
+        console.log("🧊 cache válido → skip");
         return;
       }
 
-      console.log("🧊 aún válido → no fetch");
+      // 🏁 4. TODO LO DEMÁS → FETCH
+      console.log("⚡ visibility → fetch");
+
+      LaunchCore.fetchWorker("", true).then(raw => {
+        if (raw) {
+          LaunchCore.handleEvent(raw, { source: "VISIBILITY" });
+        }
+      });
+
+      if (window.__vcCheckNow) {
+        window.__vcCheckNow();
+      }
 
     });
 
