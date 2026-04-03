@@ -835,7 +835,10 @@ LaunchCore.handleEvent = function(raw, context = {}) {
 
   // 🎨 5. RENDER
   if (LaunchCore.config?.page && LaunchCore.modules?.[LaunchCore.config.page]) {
-    LaunchCore.render(normalized.payload);
+    LaunchCore.render({
+      ...normalized.payload,
+      __status: normalized.status
+    });
   }
 
   // ⏱ 6. SCHEDULE

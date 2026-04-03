@@ -41,7 +41,7 @@ async function initLaunchEngine(data){
   window.__calendarICS = data.calendarICS || [];
 
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
-  const estado = LaunchCore.getLaunchStatus();
+  const estado = data?.__status?.launch;
 
   if (estado === "closed") {
 
