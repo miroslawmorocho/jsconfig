@@ -643,6 +643,9 @@ LaunchCore.phase.schedule = function(ctx){
 
 
 
+
+
+
 // =========   DATA NORMALIZER (CORE MANDA) ============
 
 LaunchCore.normalize = function(input, options = {}) {
@@ -795,6 +798,20 @@ LaunchCore.handleEvent = function(raw, context = {}) {
     source: context.source || "UNKNOWN",
     previous
   });
+
+  console.group("🧠 NORMALIZE DEBUG");
+
+  console.log("📦 RAW (del worker):", raw);
+
+  console.log("🧬 NORMALIZED COMPLETO:", normalized);
+
+  console.log("📤 PAYLOAD QUE SE MANDA AL FRONT:", normalized.payload);
+
+  console.log("📁 evento:", normalized.payload?.evento);
+  console.log("💰 pricing:", normalized.payload?.pricing);
+  console.log("📸 captura:", normalized.payload?.captura);
+
+  console.groupEnd();
 
   // 🛑 2. VALIDITY CHECK
   if (!normalized.validity.isValid) {
@@ -1481,6 +1498,51 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
 
 
 
+// ==========  RENDER MACHINE ==================
+
+LaunchCore.render = async function(data){
+
+  const page = LaunchCore.config.page;
+  const module = LaunchCore.modules[page];
+
+  if(!module){
+    console.warn("No hay módulo para render:", page);
+    return;
+  }
+
+  console.group("🎨 RENDER DEBUG");
+
+  console.log("📦 DATA FINAL QUE RECIBE EL FRONT:", data);
+  console.log("📁 evento:", data?.evento);
+  console.log("💰 pricing:", data?.pricing);
+
+  console.groupEnd();
+
+  await module.render(data);
+
+  console.log("🎨 renderizando ",page);
+
+};
+
+
+
+// ============  SMART VERSION CHECK ===================
+
+LaunchCore.smartCheckNow = function(){
+
+  console.log("🧠 smart check → ping VC");
+
+  if(window.__vcCheckNow){
+    window.__vcCheckNow();
+  }
+
+};
+
+
+
+
+
+
 
 
 
@@ -1966,17 +2028,6 @@ LaunchCore.run = async function(options = {}, source = "unknown", runId) {
 }*/
 
 
-// ============  SMART VERSION CHECK ===================
-
-LaunchCore.smartCheckNow = function(){
-
-  console.log("🧠 smart check → ping VC");
-
-  if(window.__vcCheckNow){
-    window.__vcCheckNow();
-  }
-
-};
 
 
 
@@ -2001,23 +2052,6 @@ LaunchCore.getWorkerVersion = async function(){
 
 
 
-// ==========  RENDER MACHINE ==================
-
-LaunchCore.render = async function(data){
-
-  const page = LaunchCore.config.page;
-  const module = LaunchCore.modules[page];
-
-  if(!module){
-    console.warn("No hay módulo para render:", page);
-    return;
-  }
-
-  await module.render(data);
-
-  console.log("🎨 renderizando ",page);
-
-};
 
 
 
