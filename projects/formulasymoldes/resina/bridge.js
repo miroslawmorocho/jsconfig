@@ -41,7 +41,8 @@ async function initLaunchEngine(data){
   window.__calendarICS = data.calendarICS || [];
 
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
-  const estado = data?.__status?.launch;
+  // LEEMOS LAUNCH STATUS DESDE EL ORIGINAL EN PRICING
+  const estado = data?.pricing?.estado;
 
   if (estado === "closed") {
 
