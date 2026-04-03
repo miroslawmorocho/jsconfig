@@ -48,7 +48,7 @@ async function initLaunchEngine(data){
     console.log("💀 Evento cerrado → congelando sistema");
 
     if (DOM.estadoCerrado) {
-      DOM.estadoCerrado.innerHTML = data.htmlEventoCerrado;
+      DOM.estadoCerrado.innerHTML = data.evento.htmlEventoCerrado;
       DOM.estadoCerrado.style.display = "block";
     }
 
