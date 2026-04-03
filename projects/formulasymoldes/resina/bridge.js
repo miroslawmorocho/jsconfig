@@ -27,7 +27,7 @@ const DOM = {
 /* =====================================================
    ENGINE INICIALIZADOR
 ===================================================== */
-async function initLaunchEngine(data.payload){
+async function initLaunchEngine(data){
 
   // 🔥 guardar ICS globalmente
   window.__calendarICS = data.calendarICS || [];
