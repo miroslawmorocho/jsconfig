@@ -40,9 +40,8 @@ async function initLaunchEngine(data){
   // 🔥 guardar ICS globalmente
   window.__calendarICS = data.calendarICS || [];
 
-  // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)
-  // LEEMOS LAUNCH STATUS DESDE EL ORIGINAL EN PRICING
-  const estado = data?.pricing?.estado;
+  // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)  
+  const estado = LaunchCore.state.current?.status?.launch;
 
   if (estado === "closed") {
 
