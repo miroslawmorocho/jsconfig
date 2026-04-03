@@ -26,8 +26,7 @@ LaunchCore.register("pricing", {
     await LaunchCore.use("darkmode");
     await LaunchCore.use("carousel");
     await LaunchCore.use("scroll");
-    await LaunchCore.use("versionChecker");
-
+    
     // lógica (TU archivo pricing.js)
     await LaunchCore.loadScript(url + ".js");
 
