@@ -26,6 +26,11 @@ let currentJob = null;
 let queue = [];
 let isRunning = false;
 
+LaunchCore.state = {
+  current: null,
+  machine: "BOOT"
+};
+
 
 
 
@@ -169,7 +174,7 @@ LaunchCore.storage = {
   
   // ============  FETCH WORKER (UNIFICADO) ===============
 
-  let ongoingFetch = null;
+  /*let ongoingFetch = null;
 
   LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
@@ -243,7 +248,7 @@ LaunchCore.storage = {
     } finally {
       ongoingFetch = null;
     }
-  };
+  };*/
 
   
 
@@ -492,32 +497,6 @@ LaunchCore.phase.input = function(ctx){
 
 
 
-// =========== FASE DE RENDER INMEDIATO DESDE CACHÉ ===========
-
-LaunchCore.phase.bootstrap = async function(ctx){
-
-  const state = ctx.state;
-  if(!state.cached) return;
-
-  try{
-    const raw = JSON.parse(state.cached);
-    const { data } = LaunchCore.normalize(raw);
-
-    await LaunchCore.render(data);
-
-    ctx.bootstrapped = true;
-    ctx.forceProcessAfterBootstrap = true;
-
-    console.log("⚡ bootstrap → render desde cache");
-
-  } catch(e){
-    console.warn("❌ bootstrap error");
-  }
-
-};
-
-
-
 // ======= FASE DE SINCRONIZACIÓN CON WORKER ===========
 
 LaunchCore.phase.sync = function(ctx, options){
@@ -582,15 +561,6 @@ LaunchCore.phase.execute = async function(ctx, options){
 
 LaunchCore.phase.process = function(ctx){
 
-  if (
-    ctx.bootstrapped &&
-    ctx.decision === "CACHE" &&
-    !ctx.forceProcessAfterBootstrap
-  ) {
-    console.log("🧊 process ignorado (bootstrap)");
-    return;
-  }
-
   const data = LaunchCore.normalize(ctx.result.raw, ctx.options);
 
   if(!data){
@@ -639,14 +609,13 @@ LaunchCore.phase.process = function(ctx){
 
 LaunchCore.phase.render = async function(ctx){
 
-  if (ctx.isBootstrap && ctx.decision === "CACHE") {
+  if (ctx.decision === "CACHE") {
     console.log("⏭ skip render (bootstrap ya pintó)");
     return;
   }
 
   // 🔥 evitar doble render innecesario
-  if(ctx.bootstrapped &&
-    ctx.decision === "CACHE" &&
+  if(ctx.decision === "CACHE" &&
     !ctx.options?.forceProcess &&
     !ctx.options?.externalData
   ){
@@ -675,43 +644,56 @@ LaunchCore.phase.schedule = function(ctx){
 
 // =========   DATA NORMALIZER (CORE MANDA) ============
 
-LaunchCore.normalize = function(input, options = {}){
+LaunchCore.normalize = function(input, options = {}) {
 
-  const now = Date.now();
+  // 🧠 CONTEXTO INYECTADO (PUREZA)
+  const now = options.now || Date.now();
+  const prev = options.previous || null;
 
-  // 🔥 1. DETECTAR SOURCE
-  let source = options.source || "UNKNOWN";
+  // 🧾 1. SOURCE (EXPLÍCITO)
+  const source = options.source || "UNKNOWN";
 
-  if(options.externalData && options.__fromBroadcast){
-    source = "BROADCAST";
-  } else if(options.externalData && options.__source === "VC"){
-    source = "VC";
-  } else if(options.externalData){
-    source = "EXTERNAL";
-  } else if(options.fromFetch){
-    source = "FETCH";
-  } else if(options.fromCache){
-    source = "CACHE";
+  // 🛡 2. VALIDACIÓN BÁSICA
+  if (!input || typeof input !== "object") {
+    return {
+      meta: { source, receivedAt: now, version: 0, isFresh: false },
+      status: { launch: "open" },
+      timing: {
+        now,
+        nextUpdate: Infinity,
+        msRemaining: null,
+        isExpired: false,
+        isAlive: false
+      },
+      change: {
+        isNewVersion: false,
+        isNewTimeline: false,
+        shouldUpdate: false
+      },
+      validity: {
+        isValid: false,
+        hasTiming: false,
+        reason: "INVALID_INPUT"
+      },
+      payload: {
+        pricing: {},
+        evento: {},
+        captura: {}
+      }
+    };
   }
 
-  // 🔥 2. VALIDACIÓN BÁSICA (ANTI-CORRUPCIÓN)
-  if(!input || typeof input !== "object"){
-    console.warn("💀 normalize: input inválido");
-    return null;
-  }
-
-  // 🔥 3. VERSION
+  // 🔢 3. VERSION
   const version = Number(input?.status?.version) || 0;
 
-  // 🔥 4. STATUS (launch)
+  // 🚦 4. STATUS
   let launch = input?.pricing?.estado;
 
-  if(launch !== "open" && launch !== "closed"){
-    console.warn("⚠️ launch inválido → fallback open");
+  if (launch !== "open" && launch !== "closed" && launch !== "pre") {
     launch = "open";
   }
 
-  // 🔥 5. TIMING (nextUpdate)
+  // ⏱ 5. TIMING (🔥 CORE)
   const delays = [
     Number(input?.siguienteActualizacionMs),
     Number(input?.evento?.siguienteActualizacionMs),
@@ -720,33 +702,55 @@ LaunchCore.normalize = function(input, options = {}){
 
   let nextUpdate = Infinity;
 
-  if(delays.length){
+  if (delays.length) {
     const delay = Math.min(...delays);
     nextUpdate = now + delay;
   }
 
   const isExpired = nextUpdate !== Infinity && now >= nextUpdate;
 
-  // 🔥 6. PAYLOAD (PURO, SIN TOCAR)
+  const msRemaining = nextUpdate === Infinity
+    ? null
+    : nextUpdate - now;
+
+  const isAlive = !isExpired && nextUpdate !== Infinity;
+
+  const hasTiming = nextUpdate !== Infinity;
+
+  // 📦 6. PAYLOAD
   const payload = {
     pricing: input?.pricing || {},
     evento: input?.evento || {},
     captura: input?.captura || {}
   };
 
-  // 🔥 7. FRESHNESS
+  // 🌐 7. FRESHNESS
   const isFresh = (
     source === "FETCH" ||
     source === "VC" ||
     source === "BROADCAST"
   );
 
-  // 🔥 8. CONSTRUIR DATA UNIVERSAL
-  const data = {
+  // 🔄 8. CHANGE DETECTION
+  let isNewVersion = true;
+  let isNewTimeline = true;
+
+  if (prev) {
+    isNewVersion = version !== prev.meta?.version;
+    isNewTimeline = nextUpdate !== prev.timing?.nextUpdate;
+  }
+
+  const shouldUpdate = isNewVersion || isNewTimeline;
+
+  // 📡 9. VALIDITY
+  const isValid = true; // estructura ya validada arriba
+
+  // 🧱 10. OUTPUT FINAL
+  return {
     meta: {
       source,
-      version,
       receivedAt: now,
+      version,
       isFresh
     },
 
@@ -755,57 +759,404 @@ LaunchCore.normalize = function(input, options = {}){
     },
 
     timing: {
+      now,
       nextUpdate,
-      isExpired
+      msRemaining,
+      isExpired,
+      isAlive
+    },
+
+    change: {
+      isNewVersion,
+      isNewTimeline,
+      shouldUpdate
+    },
+
+    validity: {
+      isValid,
+      hasTiming,
+      reason: null
     },
 
     payload
   };
+};
 
-  return data;
+
+
+LaunchCore.handleEvent = function(raw, context = {}) {
+
+  const previous = LaunchCore.state.current;
+
+  // 🧠 1. NORMALIZE
+  const normalized = LaunchCore.normalize(raw, {
+    now: Date.now(),
+    source: context.source || "UNKNOWN",
+    previous
+  });
+
+  // 🛑 2. VALIDITY CHECK
+  if (!normalized.validity.isValid) {
+    console.warn("🚫 data inválida → ignorada", normalized.validity.reason);
+    return;
+  }
+
+  // 🔄 3. CHANGE CHECK
+  if (!normalized.change.shouldUpdate) {
+    console.log("⏭ data sin cambios → ignorada");
+    return;
+  }
+
+  // 💾 4. UPDATE STATE
+  LaunchCore.state.current = normalized;
+
+  console.log("🧠 state actualizado", {
+    version: normalized.meta.version,
+    nextUpdate: normalized.timing.nextUpdate
+  });
+
+  // 🎨 5. RENDER
+  if (LaunchCore.config?.page && LaunchCore.modules?.[LaunchCore.config.page]) {
+    LaunchCore.render(normalized.payload);
+  }
+
+  // ⏱ 6. SCHEDULE
+  if (normalized.timing.nextUpdate !== Infinity) {
+    LaunchCore.scheduleNext(normalized.timing.nextUpdate);
+  }
+
+  // 💾 7. PERSIST (CACHE)
+  try {
+    localStorage.setItem("lc_data", JSON.stringify(raw));
+    localStorage.setItem("lc_data_version", String(normalized.meta.version));
+    localStorage.setItem("lc_next_update_global", String(normalized.timing.nextUpdate));
+  } catch (e) {
+    console.warn("❌ error guardando cache", e);
+  }
+
+};
+
+
+// ================== FUENTES DE DATA ========================
+
+let ongoingFetch = null;
+
+LaunchCore.fetchWorker = async function(endpoint = "", force = false){
+
+  if (ongoingFetch) {
+    console.log("🧠 reutilizando fetch en curso");
+    return ongoingFetch;
+  }
+
+  ongoingFetch = (async () => {
+
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000;
+
+    let attempt = 0;
+
+    while (attempt < MAX_RETRIES) {
+      try {
+
+        let queryParams = new URLSearchParams(window.location.search);
+
+        // 🔥 version hint (si existe en state)
+        const currentVersion = LaunchCore.state.current?.meta?.version;
+
+        if (force && currentVersion) {
+          queryParams.set("v", currentVersion);
+        }
+
+        if (force) {
+          queryParams.set("_", Date.now());
+        }
+
+        let url = BASE_WORKER_URL.replace(/\/$/, "") + endpoint;
+
+        const queryString = queryParams.toString();
+        if (queryString) {
+          url += "?" + queryString;
+        }
+
+        console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
+
+        const options = force 
+          ? { cache: "no-store" } 
+          : {};
+
+        const res = await fetch(url, options);
+
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        const raw = await res.json();
+
+        console.log("✅ fetch OK");
+
+        return raw;
+
+      } catch (e) {
+
+        console.warn(`⚠️ fetch intento ${attempt + 1} falló`, e);
+
+        attempt++;
+
+        if (attempt >= MAX_RETRIES) {
+          console.error("💀 fetch falló definitivamente");
+          return null;
+        }
+
+        await new Promise(r => setTimeout(r, RETRY_DELAY));
+      }
+    }
+
+  })();
+
+  try {
+    return await ongoingFetch;
+  } finally {
+    ongoingFetch = null;
+  }
+};
+
+
+
+async function fetchAndHandle(force = false) {
+  const raw = await LaunchCore.fetchWorker("", force);
+
+  if (!raw) return;
+
+  LaunchCore.handleEvent(raw, { source: "FETCH" });
+}
+
+
+
+function loadCache() {
+  try {
+    const raw = JSON.parse(localStorage.getItem("lc_data"));
+
+    if (raw) {
+      LaunchCore.handleEvent(raw, { source: "CACHE" });
+    }
+
+  } catch (e) {
+    console.warn("❌ cache corrupto", e);
+  }
+}
+
+
+
+
+LaunchCore.channel = new BroadcastChannel("launch-core");
+
+LaunchCore.channel.onmessage = function (event) {
+
+  const msg = event.data;
+
+  console.log("📡 broadcast recibido:", msg);
+
+  if (!msg || typeof msg !== "object") {
+    console.warn("💀 mensaje inválido");
+    return;
+  }
+
+  // 🔄 DATA UPDATE
+  if (msg.type === "DATA_UPDATED") {
+
+    const raw = msg.raw;
+
+    if (!raw) {
+      console.warn("💀 broadcast sin raw");
+      return;
+    }
+
+    console.log("🔄 otra pestaña actualizó → procesando");
+
+    LaunchCore.handleEvent(raw, { source: "BROADCAST" });
+
+    return;
+  }
+
+  // 💥 CODE UPDATE
+  if (msg.type === "CODE_UPDATED") {
+
+    console.log("💥 broadcast CODE → recargando");
+
+    if (typeof LaunchCore.reloadWithVersion === "function") {
+      LaunchCore.reloadWithVersion();
+    }
+
+    return;
+  }
+
 };
 
 
 
 
-/*LaunchCore.normalize = function(raw){
+function onVersionCheck(raw) {
+  LaunchCore.handleEvent(raw, { source: "VC" });
+}
 
-  const page = LaunchCore.config.page;
 
-  if(!raw) return null;
 
-  const control = {
-    siguienteActualizacionMs: raw.siguienteActualizacionMs,
-    version: raw?.status?.version
-  };
+// ====================== NUEVO INIT =======================
 
-  let data = {};
+LaunchCore.init = async function(){
 
-  switch(page){
+  console.log("🚀 LaunchCore init");
 
-    case "bridge":
-      data = raw.evento || {};
-      break;
+  try {
 
-    case "captura":
-      data = raw.captura || {};
-      break;
+    // 🧱 1. ROOT
+    const root = document.getElementById("launch-engine-root");
+    LaunchCore.root = root;
 
-    case "pricing":
-      data = raw.pricing || {};
-      break;
+    if (!root) {
+      console.error("💀 Falta #launch-engine-root");
+      return;
+    }
 
-    default:
-      console.warn("⚠️ Página no reconocida en normalizer:", page);
-      data = {};
+    // ⚙️ 2. CONFIG
+    LaunchCore.config.project = root.dataset.project;
+    LaunchCore.config.product = root.dataset.product;
+    LaunchCore.config.page = root.dataset.page;
+
+    if (!LaunchCore.config.project || !LaunchCore.config.product || !LaunchCore.config.page) {
+      console.error("💀 Faltan atributos data-*");
+      return;
+    }
+
+    const { project, product, page } = LaunchCore.config;
+
+    LaunchCore.config.endpoint = "/";
+
+    // 📦 3. LOAD MODULE
+    const base = LaunchCore.paths.projects + `${project}/${product}/`;
+    const moduleUrl = base + page + "-module.js";
+
+    await LaunchCore.globals.flag();
+    await LaunchCore.loadScript(moduleUrl);
+
+    const module = LaunchCore.modules[page];
+
+    if (!module) {
+      console.warn("⚠️ módulo no encontrado:", page);
+      return;
+    }
+
+    if (module.init) {
+      await module.init();
+    }
+
+    // 💾 4. CACHE (BOOTSTRAP)
+    function loadCache() {
+      try {
+        const raw = JSON.parse(localStorage.getItem("lc_data"));
+
+        if (raw) {
+          console.log("🧊 cache encontrado → hidratando");
+          LaunchCore.handleEvent(raw, { source: "CACHE" });
+        }
+
+      } catch (e) {
+        console.warn("❌ cache corrupto", e);
+      }
+    }
+
+    loadCache();
+
+    // 🌐 5. FETCH WRAPPER
+    async function fetchAndHandle(force = false) {
+      const raw = await LaunchCore.fetchWorker("", force);
+
+      if (!raw) return;
+
+      LaunchCore.handleEvent(raw, { source: "FETCH" });
+
+      // 📡 sync tabs
+      LaunchCore.channel.postMessage({
+        type: "DATA_UPDATED",
+        raw
+      });
+    }
+
+    // 📡 6. BROADCAST
+    LaunchCore.channel = new BroadcastChannel("launch-core");
+
+    LaunchCore.channel.onmessage = function (event) {
+
+      const msg = event.data;
+
+      console.log("📡 broadcast recibido:", msg);
+
+      if (!msg || typeof msg !== "object") return;
+
+      if (msg.type === "DATA_UPDATED" && msg.raw) {
+        LaunchCore.handleEvent(msg.raw, { source: "BROADCAST" });
+      }
+
+      if (msg.type === "CODE_UPDATED") {
+        console.log("💥 recargando por broadcast");
+        location.reload();
+      }
+    };
+
+    // 👁 7. VISIBILITY (SIMPLIFICADO PERO INTELIGENTE)
+    document.addEventListener("visibilitychange", () => {
+
+      if (document.visibilityState !== "visible") return;
+
+      console.log("👁 tab activa");
+
+      const current = LaunchCore.state.current;
+
+      if (!current) {
+        console.log("⚡ sin estado → fetch inmediato");
+        fetchAndHandle(true);
+        return;
+      }
+
+      if (!current.timing.isAlive) {
+        console.log("💀 estado muerto → fetch");
+        fetchAndHandle(true);
+        return;
+      }
+
+      if (current.timing.msRemaining < 0) {
+        console.log("⏰ expirado → fetch");
+        fetchAndHandle(true);
+        return;
+      }
+
+      console.log("🧊 aún válido → no fetch");
+
+    });
+
+    // ⏱ 8. SCHEDULE INICIAL
+    if (LaunchCore.state.current?.timing?.nextUpdate) {
+      LaunchCore.scheduleNext(
+        LaunchCore.state.current.timing.nextUpdate
+      );
+    }
+
+    // 🚀 9. FETCH INICIAL (SI NO HAY CACHE VÁLIDO)
+    if (!LaunchCore.state.current) {
+      console.log("🌐 primer fetch");
+      fetchAndHandle(false);
+    }
+
+    console.log("🔥 LaunchCore READY");
+
+  } catch (e) {
+    console.error("💀 init error:", e);
   }
 
-  return {
-    data,
-    control
-  };
+};
 
-};*/
+
+
 
 
 
@@ -894,13 +1245,7 @@ LaunchCore.readCacheState = function(){
 
   return{
     cached,
-    nextUpdate:Number(
-      LaunchCore.storage.get(
-        "lc_next_update_global",{
-          source:"readCacheState:nextUpdate"
-        }
-      ) || 0
-    ),
+    nextUpdate: 0,
     cachedVersion: LaunchCore.storage.get(
       "lc_data_version", {
         source: "readCacheState:cachedVersion"
@@ -1125,8 +1470,7 @@ LaunchCore.run = async function(options = {}, source = "unknown", runId) {
     
     console.log("🔥 RENDER EJECUTADO", {
       decision: ctx.decision,
-      force: ctx.options?.forceProcess,
-      bootstrapped: ctx.bootstrapped
+      force: ctx.options?.forceProcess,      
     });
 
   } catch(e){
@@ -1192,7 +1536,7 @@ LaunchCore.scheduleNext = function(nextUpdate){
 
 // ================   EXECUTION SOURCE ==================
 
-LaunchCore.execute = function(source = "unknown", options = {}){
+/*LaunchCore.execute = function(source = "unknown", options = {}){
 
   if (LaunchCore.machine.state === "CLOSED" && !options.externalData) {
     console.log("💀 execute bloqueado (CLOSED)");
@@ -1240,13 +1584,13 @@ LaunchCore.execute = function(source = "unknown", options = {}){
   
   processQueue();
   
-};
+};*/
 
 
 
 // =============== PROCESS QUEUE =======================
 
-async function processQueue(){
+/*async function processQueue(){
 
   if(isRunning) return;
   if(queue.length === 0) return;
@@ -1270,13 +1614,13 @@ async function processQueue(){
   isRunning = false;
 
   processQueue();
-}
+}*/
 
 
 
 // ================= JOB TYPE ==========================
 
-function getJobType(source, options){
+/*function getJobType(source, options){
 
   if(options?.forceFetch) return "FETCH_FORCE";
 
@@ -1287,7 +1631,7 @@ function getJobType(source, options){
   if(source === "scheduleNext") return "NORMAL";
 
   return "NORMAL";
-}
+}*/
 
 
 // ============  SMART VERSION CHECK ===================
@@ -1408,7 +1752,7 @@ LaunchCore.getLaunchStatus = function(){
    BROADCAST CHANNEL
 ===================================================== */
 
-LaunchCore.channel = new BroadcastChannel("launch-core");
+/*LaunchCore.channel = new BroadcastChannel("launch-core");
 
 LaunchCore.channel.onmessage = function (event) {
   const msg = event.data;
@@ -1441,7 +1785,7 @@ LaunchCore.channel.onmessage = function (event) {
     console.log("💥 broadcast CODE → recargando");
     LaunchCore.reloadWithVersion();
   }
-};
+};*/
 
 
 
@@ -1794,7 +2138,7 @@ LaunchCore.on("code:update", async () => {
    9. ORCHESTRATOR (init)
 ===================================================== */
 
-LaunchCore.init = async function(){
+/*LaunchCore.init = async function(){
 
   LaunchCore.setState("BOOT");
   console.log("🚀 BOOT: LaunchCore iniciado");
@@ -1950,7 +2294,7 @@ LaunchCore.init = async function(){
 
   LaunchCore.setState("READY");
 
-};
+};*/
 
 
 
