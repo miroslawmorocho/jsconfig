@@ -112,8 +112,6 @@ LaunchCore.storage = {
 
 (function(){
 
-  const BASE_WORKER_URL = "https://launch-engine.miroslaw-mm.workers.dev";
-  
   // ===============  EVENT BUS ==========================
   
   LaunchCore.on = function(event, fn){
@@ -1009,6 +1007,20 @@ function onVersionCheck(raw) {
 LaunchCore.init = async function(){
 
   console.log("🚀 LaunchCore init");
+
+  if (!LaunchCore.__eventsBound) {
+
+    LaunchCore.on("data:detected", (payload) => {
+      LaunchCore.vc.detect(payload);
+    });
+
+    LaunchCore.on("code:update", () => {
+      console.log("💥 recargando por code update");
+      location.reload();
+    });
+
+    LaunchCore.__eventsBound = true;
+  }
 
   try {
 

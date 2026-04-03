@@ -48,7 +48,7 @@ function initVersionChecker(config){
 
       if(lastCodeVersion && lastCodeVersion !== code){
         log("💥 CODE CAMBIÓ");
-        LaunchCore.onCodeUpdate?.();
+        LaunchCore.emit("code:update");
       }
 
       lastCodeVersion = code;
@@ -81,7 +81,7 @@ function initVersionChecker(config){
           });
         }
 
-        LaunchCore.onDataDetected({
+        LaunchCore.emit("data:detected", {
           version: data,
           confirmDelay: config.confirmDelay
         });
