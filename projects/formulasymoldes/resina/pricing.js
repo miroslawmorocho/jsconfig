@@ -3,7 +3,9 @@ let lastPricingHTML = null;
 
 async function cargarPricing(data){
 
-  if (!data || !data.pricingHtml) {
+  const pricing = data.pricing || {};
+
+  if (!pricing || !pricing.pricingHtml) {
     console.warn("⚠️ Data incompleta");
     return;
   }
@@ -16,9 +18,9 @@ async function cargarPricing(data){
   }
 
   // 🧠 SOLO render si cambió
-  if (lastPricingHTML !== data.pricingHtml) {
-    contenedor.innerHTML = data.pricingHtml;
-    lastPricingHTML = data.pricingHtml;
+  if (lastPricingHTML !== pricing.pricingHtml) {
+    contenedor.innerHTML = pricing.pricingHtml;
+    lastPricingHTML = pricing.pricingHtml;
   }
 
   // =====================================================
@@ -27,9 +29,9 @@ async function cargarPricing(data){
   const wrapper = document.getElementById("contador-wrapper");
 
   if (wrapper) {
-    if (data.countdownTarget) {
+    if (pricing.countdownTarget) {
       wrapper.style.display = "flex";
-      LaunchCore.countdown.start(data.countdownTarget);
+      LaunchCore.countdown.start(pricing.countdownTarget);
     } else {
       wrapper.style.display = "none";
     }
@@ -41,8 +43,8 @@ async function cargarPricing(data){
   const el = document.getElementById("texto-cierre");
 
   if (el) {
-    if (data.textoCierre) {
-      el.innerHTML = data.textoCierre;
+    if (pricing.textoCierre) {
+      el.innerHTML = pricing.textoCierre;
       el.style.display = "block";
     } else {
       el.innerHTML = "";
