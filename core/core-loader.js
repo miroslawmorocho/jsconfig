@@ -42,7 +42,7 @@ LaunchCore.state = {
 ===================================================== */
 
 // ===== STORAGE LAYER PRO (WITH SOURCE TRACKING) =====
-LaunchCore.storage = {
+/*LaunchCore.storage = {
 
   get(key, options = {}){
 
@@ -54,7 +54,7 @@ LaunchCore.storage = {
       key,
       value,
       source
-    });*/
+    });
 
     if(parse && value){
       try{
@@ -89,7 +89,7 @@ LaunchCore.storage = {
       key,
       value: finalValue,
       source
-    });*/
+    });
 
   },
 
@@ -102,380 +102,373 @@ LaunchCore.storage = {
     /*console.log("🗑️ STORAGE REMOVE:", {
       key,
       source
-    });*/
+    });
 
   }
 
+};*/
+
+// ===============  EVENT BUS ==========================
+
+LaunchCore.on = function(event, fn){
+  if(!this.events[event]) this.events[event] = [];
+  this.events[event].push(fn);
+};
+
+
+LaunchCore.emit = function(event, data){
+  (this.events[event] || []).forEach(fn => fn(data));
 };
 
 
 
-(function(){
+// ===========  CORE GLOBAL ============================
 
-  // ===============  EVENT BUS ==========================
-  
-  LaunchCore.on = function(event, fn){
-    if(!this.events[event]) this.events[event] = [];
-    this.events[event].push(fn);
-  };
-
-
-  LaunchCore.emit = function(event, data){
-    (this.events[event] || []).forEach(fn => fn(data));
-  };
-
-
-  
-  // ===========  CORE GLOBAL ============================
-  
-  LaunchCore.globals = LaunchCore.globals || {};
+LaunchCore.globals = LaunchCore.globals || {};
 
 
 
-  // ============  CARGAR JS ===============
+// ============  CARGAR JS ===============
 
-  LaunchCore.loadScript = function(src){
-    return new Promise((resolve)=>{
+LaunchCore.loadScript = function(src){
+  return new Promise((resolve)=>{
 
-      if(document.querySelector(`script[src="${src}"]`)){
-        resolve();
-        return;
-      }
-
-      const s = document.createElement("script");
-      s.src = src;
-      s.onload = resolve;
-
-      document.body.appendChild(s);
-    });
-  };
-
-
-
-  // ============  CARGAR CSS ===============
-
-  LaunchCore.loadCSS = function(href){
-    return new Promise((resolve)=>{
-
-      if(document.querySelector(`link[href="${href}"]`)){
-        resolve();
-        return;
-      }
-
-      const l = document.createElement("link");
-      l.rel = "stylesheet";
-      l.href = href;
-      l.onload = resolve;
-
-      document.head.appendChild(l);
-    });
-  };
-
-
-  
-  // ============  FETCH WORKER (UNIFICADO) ===============
-
-  /*let ongoingFetch = null;
-
-  LaunchCore.fetchWorker = async function(endpoint = "", force = false){
-
-    if (ongoingFetch) {
-      console.log("🧠 reutilizando fetch en curso");
-      return ongoingFetch;
+    if(document.querySelector(`script[src="${src}"]`)){
+      resolve();
+      return;
     }
 
-    ongoingFetch = (async () => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
 
-      const MAX_RETRIES = 3;
-      const RETRY_DELAY = 1000;
+    document.body.appendChild(s);
+  });
+};
 
-      let attempt = 0;
 
-      while (attempt < MAX_RETRIES) {
-        try {
 
-          let queryParams = new URLSearchParams(window.location.search);
+// ============  CARGAR CSS ===============
 
-          if (force && LaunchCore.vc?.version) {
-            queryParams.set("v", LaunchCore.vc.version);
-          }
+LaunchCore.loadCSS = function(href){
+  return new Promise((resolve)=>{
 
-          if (force) {
-            queryParams.set("_", Date.now());
-          }
-
-          let url = BASE_WORKER_URL.replace(/\/$/, "") + endpoint;
-
-          const queryString = queryParams.toString();
-          if (queryString) {
-            url += "?" + queryString;
-          }
-
-          console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
-
-          const options = force 
-          ? { cache: "no-store" } 
-          : {};
-
-          const res = await fetch(url, options);
-
-          if (!res.ok) {
-            throw new Error("HTTP " + res.status);
-          }
-
-          const data = await res.json();
-
-          return data;
-
-        } catch (e) {
-
-          console.warn(`⚠️ fetch intento ${attempt + 1} falló`, e);
-
-          attempt++;
-
-          if (attempt >= MAX_RETRIES) {
-            console.error("💀 fetch falló definitivamente");
-            return null;
-          }
-
-          await new Promise(r => setTimeout(r, RETRY_DELAY));
-        }
-      }
-
-    })();
-
-    try {
-      return await ongoingFetch;
-    } finally {
-      ongoingFetch = null;
-    }
-  };*/
-
-  
-
-  // ===========  SCHEDULER (REPROGRAMACIÓN) =============
-  
-  /*LaunchCore.scheduler = (function(){
-
-    let timers = {};
-
-    function programar(key, fn, delay, options = {}){
-
-      const ownerRunId = LaunchCore.currentRunId;
-
-      const { ignoreClosed = false } = options;
-
-      cancelar(key); // 🔥 SIEMPRE limpiar antes
-
-      if(!key){
-        console.warn("Scheduler requiere key");
-        return;
-      }
-
-      const MAX_DELAY = 2147483647;
-
-      const targetTime = Date.now() + delay;
-
-      function tick(){
-
-        const now = Date.now();
-        const remaining = targetTime - now;
-
-        if(remaining <= 0){
-
-          delete timers[key];
-
-          if (ownerRunId !== LaunchCore.currentScheduleOwner) {
-            console.log("⏱️ timer ignorado (schedule viejo)", {
-              owner: ownerRunId,
-              current: LaunchCore.currentScheduleOwner
-            });
-            return;
-          }
-
-          fn();
-          return;
-        }
-
-        if(document.hidden && !options.allowHidden){
-          console.log("😴 paused:", key);
-
-          // 🔁 reintentar en corto
-          let delay = 30000;
-          timers[key] = setTimeout(tick, delay);
-
-          return;
-        }
-
-        const nextDelay = Math.min(remaining, MAX_DELAY);
-        timers[key] = setTimeout(tick, nextDelay);
-      }
-
-      // 🔥 limpiar timer previo
-      if(timers[key]){
-        clearTimeout(timers[key]);
-      }
-
-      tick();
+    if(document.querySelector(`link[href="${href}"]`)){
+      resolve();
+      return;
     }
 
-    // 🔥 NUEVO: cancelar timer
-    function cancelar(key){
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = href;
+    l.onload = resolve;
 
-      if(timers[key]){
-        console.trace("🧨 CANCEL LLAMADO:", key);
-        clearTimeout(timers[key]);
+    document.head.appendChild(l);
+  });
+};
+
+
+
+// ============  FETCH WORKER (UNIFICADO) ===============
+
+/*let ongoingFetch = null;
+
+LaunchCore.fetchWorker = async function(endpoint = "", force = false){
+
+  if (ongoingFetch) {
+    console.log("🧠 reutilizando fetch en curso");
+    return ongoingFetch;
+  }
+
+  ongoingFetch = (async () => {
+
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000;
+
+    let attempt = 0;
+
+    while (attempt < MAX_RETRIES) {
+      try {
+
+        let queryParams = new URLSearchParams(window.location.search);
+
+        if (force && LaunchCore.vc?.version) {
+          queryParams.set("v", LaunchCore.vc.version);
+        }
+
+        if (force) {
+          queryParams.set("_", Date.now());
+        }
+
+        let url = BASE_WORKER_URL.replace(/\/$/, "") + endpoint;
+
+        const queryString = queryParams.toString();
+        if (queryString) {
+          url += "?" + queryString;
+        }
+
+        console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
+
+        const options = force 
+        ? { cache: "no-store" } 
+        : {};
+
+        const res = await fetch(url, options);
+
+        if (!res.ok) {
+          throw new Error("HTTP " + res.status);
+        }
+
+        const data = await res.json();
+
+        return data;
+
+      } catch (e) {
+
+        console.warn(`⚠️ fetch intento ${attempt + 1} falló`, e);
+
+        attempt++;
+
+        if (attempt >= MAX_RETRIES) {
+          console.error("💀 fetch falló definitivamente");
+          return null;
+        }
+
+        await new Promise(r => setTimeout(r, RETRY_DELAY));
+      }
+    }
+
+  })();
+
+  try {
+    return await ongoingFetch;
+  } finally {
+    ongoingFetch = null;
+  }
+};*/
+
+
+
+// ===========  SCHEDULER (REPROGRAMACIÓN) =============
+
+/*LaunchCore.scheduler = (function(){
+
+  let timers = {};
+
+  function programar(key, fn, delay, options = {}){
+
+    const ownerRunId = LaunchCore.currentRunId;
+
+    const { ignoreClosed = false } = options;
+
+    cancelar(key); // 🔥 SIEMPRE limpiar antes
+
+    if(!key){
+      console.warn("Scheduler requiere key");
+      return;
+    }
+
+    const MAX_DELAY = 2147483647;
+
+    const targetTime = Date.now() + delay;
+
+    function tick(){
+
+      const now = Date.now();
+      const remaining = targetTime - now;
+
+      if(remaining <= 0){
+
         delete timers[key];
-      }
 
-    }
-
-    return {
-      programar,
-      cancelar
-    };
-
-  })();*/
-
-
-  
-  // =========  VISIBILITY CONTROL (GLOBAL) ==============
-  
-  LaunchCore.visibility = (function(){
-
-    let initialized = false;
-    let callbacks = [];
-    let lastCheck = 0;
-    let minInterval = 2000; // 🔥 default (30s)
-
-
-    function init(fn, interval){
-
-      if(!initialized){
-
-        document.addEventListener("visibilitychange", () => {
-
-          if(document.hidden) return;
-
-          const now = Date.now();
-
-          if(now - lastCheck < minInterval){
-            return;
-          }
-
-          callbacks.forEach(cb => cb());
-
-          lastCheck = now;
-
-        });
-
-        initialized = true;
-      }
-
-      callbacks.push(fn);
-
-    }
-
-
-    function updateInterval(newInterval){
-      if(newInterval){
-        minInterval = newInterval;
-      }
-    }
-
-    return {
-      init,
-      updateInterval
-    };
-
-  })();
-
-  
-
-  // =============  COUNTDOWN (GLOBAL) ===================
-  
-  LaunchCore.countdown = (function(){
-
-    let interval = null;
-    let targetTime = null;
-
-    const DOM = {
-      days: () => document.getElementById("days"),
-      hours: () => document.getElementById("hours"),
-      minutes: () => document.getElementById("minutes"),
-      seconds: () => document.getElementById("seconds")
-    };
-
-    
-    function start(target){
-
-      stop();
-
-      targetTime = Number(target);
-
-    
-      function update(){
-
-        const now = Date.now();
-        const diff = targetTime - now;
-
-        if(diff <= 0){
-          stop();
+        if (ownerRunId !== LaunchCore.currentScheduleOwner) {
+          console.log("⏱️ timer ignorado (schedule viejo)", {
+            owner: ownerRunId,
+            current: LaunchCore.currentScheduleOwner
+          });
           return;
         }
 
-        const d = Math.floor(diff / 86400000);
-        const h = Math.floor((diff % 86400000) / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-
-        if(DOM.days()) DOM.days().textContent = String(d).padStart(2,"0");
-        if(DOM.hours()) DOM.hours().textContent = String(h).padStart(2,"0");
-        if(DOM.minutes()) DOM.minutes().textContent = String(m).padStart(2,"0");
-        if(DOM.seconds()) DOM.seconds().textContent = String(s).padStart(2,"0");
-
+        fn();
+        return;
       }
 
-      update();
-      interval = setInterval(update, 1000);
+      if(document.hidden && !options.allowHidden){
+        console.log("😴 paused:", key);
 
-    }
+        // 🔁 reintentar en corto
+        let delay = 30000;
+        timers[key] = setTimeout(tick, delay);
 
-    
-    function stop(){
-
-      if(interval){
-        clearInterval(interval);
-        interval = null;
+        return;
       }
 
+      const nextDelay = Math.min(remaining, MAX_DELAY);
+      timers[key] = setTimeout(tick, nextDelay);
     }
 
-
-    return {
-      start,
-      stop
-    };
-
-  })();
-
-
-
-  // ===== READY (espera a que responda el worker y carga el div
-  // donde se inyecta la tabla de precios de pricing) ==========
-  
-  LaunchCore.onReady = function(fn){
-
-    if(document.readyState === "loading"){
-      document.addEventListener("DOMContentLoaded", fn);
-    }else{
-      fn();
+    // 🔥 limpiar timer previo
+    if(timers[key]){
+      clearTimeout(timers[key]);
     }
 
+    tick();
+  }
+
+  // 🔥 NUEVO: cancelar timer
+  function cancelar(key){
+
+    if(timers[key]){
+      console.trace("🧨 CANCEL LLAMADO:", key);
+      clearTimeout(timers[key]);
+      delete timers[key];
+    }
+
+  }
+
+  return {
+    programar,
+    cancelar
   };
 
+})();*/
+
+
+
+// =========  VISIBILITY CONTROL (GLOBAL) ==============
+
+LaunchCore.visibility = (function(){
+
+  let initialized = false;
+  let callbacks = [];
+  let lastCheck = 0;
+  let minInterval = 2000; // 🔥 default (30s)
+
+
+  function init(fn, interval){
+
+    if(!initialized){
+
+      document.addEventListener("visibilitychange", () => {
+
+        if(document.hidden) return;
+
+        const now = Date.now();
+
+        if(now - lastCheck < minInterval){
+          return;
+        }
+
+        callbacks.forEach(cb => cb());
+
+        lastCheck = now;
+
+      });
+
+      initialized = true;
+    }
+
+    callbacks.push(fn);
+
+  }
+
+
+  function updateInterval(newInterval){
+    if(newInterval){
+      minInterval = newInterval;
+    }
+  }
+
+  return {
+    init,
+    updateInterval
+  };
 
 })();
+
+
+
+// =============  COUNTDOWN (GLOBAL) ===================
+
+LaunchCore.countdown = (function(){
+
+  let interval = null;
+  let targetTime = null;
+
+  const DOM = {
+    days: () => document.getElementById("days"),
+    hours: () => document.getElementById("hours"),
+    minutes: () => document.getElementById("minutes"),
+    seconds: () => document.getElementById("seconds")
+  };
+
+  
+  function start(target){
+
+    stop();
+
+    targetTime = Number(target);
+
+  
+    function update(){
+
+      const now = Date.now();
+      const diff = targetTime - now;
+
+      if(diff <= 0){
+        stop();
+        return;
+      }
+
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+
+      if(DOM.days()) DOM.days().textContent = String(d).padStart(2,"0");
+      if(DOM.hours()) DOM.hours().textContent = String(h).padStart(2,"0");
+      if(DOM.minutes()) DOM.minutes().textContent = String(m).padStart(2,"0");
+      if(DOM.seconds()) DOM.seconds().textContent = String(s).padStart(2,"0");
+
+    }
+
+    update();
+    interval = setInterval(update, 1000);
+
+  }
+
+  
+  function stop(){
+
+    if(interval){
+      clearInterval(interval);
+      interval = null;
+    }
+
+  }
+
+
+  return {
+    start,
+    stop
+  };
+
+})();
+
+
+
+// ===== READY (espera a que responda el worker y carga el div
+// donde se inyecta la tabla de precios de pricing) ==========
+
+LaunchCore.onReady = function(fn){
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", fn);
+  }else{
+    fn();
+  }
+
+};
 
 
 
