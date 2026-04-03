@@ -1013,19 +1013,14 @@ LaunchCore.init = async function(){
 
   console.log("🚀 LaunchCore init");
 
-  if (!LaunchCore.__eventsBound) {
+  LaunchCore.on("data:detected", (payload) => {
+    LaunchCore.vc.detect(payload);
+  });
 
-    LaunchCore.on("data:detected", (payload) => {
-      LaunchCore.vc.detect(payload);
-    });
-
-    LaunchCore.on("code:update", () => {
-      console.log("💥 recargando por code update");
-      location.reload();
-    });
-
-    LaunchCore.__eventsBound = true;
-  }
+  LaunchCore.on("code:update", () => {
+    console.log("💥 recargando por code update");
+    location.reload();
+  });
 
   try {
 
@@ -1086,6 +1081,17 @@ LaunchCore.init = async function(){
     }
 
     loadCache();
+
+    // VERSION CHECKER
+    await LaunchCore.use("versionChecker");
+
+    console.log("🔥 LLAMANDO VERSION CHECKER...");
+
+    // REANUDANDO DATA CONFIRM SI LO HAY
+    LaunchCore.vc.resume();
+
+    LaunchCore.smartCheckNow();
+
 
     // 🌐 5. FETCH WRAPPER
     async function fetchAndHandle(force = false) {
