@@ -79,16 +79,16 @@ async function initLaunchEngine(data){
 
   // 🔥 OFFER TEXT
   if (DOM.offerText) {
-    DOM.offerText.innerText = data.offerText;
-    DOM.offerText.style.display = data.offerTextDisplay;
+    DOM.offerText.innerText = data.evento.offerText;
+    DOM.offerText.style.display = data.evento.offerTextDisplay;
   }
 
   // 🔥 STICKY
   if (DOM.offerSticky) {
-    DOM.offerSticky.style.display = data.offerStickyDisplay;
-    DOM.offerSticky.innerHTML = data.offerStickyHtml;
+    DOM.offerSticky.style.display = data.evento.offerStickyDisplay;
+    DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
 
-    if (data.offerStickyDisplay === "block" && DOM.sectionPadding) {
+    if (data.evento.offerStickyDisplay === "block" && DOM.sectionPadding) {
       DOM.sectionPadding.style.paddingTop =
         window.innerWidth < 480 ? "50px" : "70px";
     }
@@ -96,22 +96,22 @@ async function initLaunchEngine(data){
 
   // 🔥 TITULO
   if (DOM.calendarTitle) {
-    DOM.calendarTitle.innerHTML = data.calendarTitleHtml;
+    DOM.calendarTitle.innerHTML = data.evento.calendarTitleHtml;
   }
 
-  if (DOM.info) DOM.info.innerHTML = data.infoPaginaHtml;
-  if (DOM.header) DOM.header.innerHTML = data.headerText;
+  if (DOM.info) DOM.info.innerHTML = data.evento.infoPaginaHtml;
+  if (DOM.header) DOM.header.innerHTML = data.evento.headerText;
 
   // 🔥 CLASES
   if (DOM.clases) {
-    const html = await renderClases(data.clases);
+    const html = await renderClases(data.evento.clases);
     DOM.clases.innerHTML = html;
   }
 
   // 🔥 PROXIMA
   if (DOM.proxima) {
-    if (data.proximaClase) {
-      const html = await renderClases([data.proximaClase]);
+    if (data.evento.proximaClase) {
+      const html = await renderClases([data.evento.proximaClase]);
       DOM.proxima.innerHTML = html;
       DOM.proxima.style.display = "block";
     } else {
@@ -124,11 +124,11 @@ async function initLaunchEngine(data){
 
   // 🔥 COUNTDOWN
   if (DOM.countdown) {
-    DOM.countdown.style.display = data.countdownDisplay;
+    DOM.countdown.style.display = data.evento.countdownDisplay;
   }
 
-  if (data.countdownDisplay !== "none" && data.countdownTarget) {
-    LaunchCore.countdown.start(data.countdownTarget);
+  if (data.evento.countdownDisplay !== "none" && data.evento.countdownTarget) {
+    LaunchCore.countdown.start(data.evento.countdownTarget);
   } else {
     LaunchCore.countdown.stop();
   }
