@@ -24,8 +24,6 @@ const DOM = {
   estadoCerrado: document.getElementById("estado-cerrado")
 };
 
-const evento = data.evento
-
 /* =====================================================
    ENGINE INICIALIZADOR
 ===================================================== */
@@ -42,7 +40,7 @@ async function initLaunchEngine(data){
     console.log("💀 Evento cerrado → congelando sistema");
 
     if (DOM.estadoCerrado) {
-      DOM.estadoCerrado.innerHTML = evento.htmlEventoCerrado;
+      DOM.estadoCerrado.innerHTML = data.htmlEventoCerrado;
       DOM.estadoCerrado.style.display = "block";
     }
 
@@ -73,16 +71,16 @@ async function initLaunchEngine(data){
 
   // 🔥 OFFER TEXT
   if (DOM.offerText) {
-    DOM.offerText.innerText = evento.offerText;
-    DOM.offerText.style.display = evento.offerTextDisplay;
+    DOM.offerText.innerText = data.offerText;
+    DOM.offerText.style.display = data.offerTextDisplay;
   }
 
   // 🔥 STICKY
   if (DOM.offerSticky) {
-    DOM.offerSticky.style.display = evento.offerStickyDisplay;
-    DOM.offerSticky.innerHTML = evento.offerStickyHtml;
+    DOM.offerSticky.style.display = data.offerStickyDisplay;
+    DOM.offerSticky.innerHTML = data.offerStickyHtml;
 
-    if (evento.offerStickyDisplay === "block" && DOM.sectionPadding) {
+    if (data.offerStickyDisplay === "block" && DOM.sectionPadding) {
       DOM.sectionPadding.style.paddingTop =
         window.innerWidth < 480 ? "50px" : "70px";
     }
@@ -90,22 +88,22 @@ async function initLaunchEngine(data){
 
   // 🔥 TITULO
   if (DOM.calendarTitle) {
-    DOM.calendarTitle.innerHTML = evento.calendarTitleHtml;
+    DOM.calendarTitle.innerHTML = data.calendarTitleHtml;
   }
 
-  if (DOM.info) DOM.info.innerHTML = evento.infoPaginaHtml;
-  if (DOM.header) DOM.header.innerHTML = evento.headerText;
+  if (DOM.info) DOM.info.innerHTML = data.infoPaginaHtml;
+  if (DOM.header) DOM.header.innerHTML = data.headerText;
 
   // 🔥 CLASES
   if (DOM.clases) {
-    const html = await renderClases(evento.clases);
+    const html = await renderClases(data.clases);
     DOM.clases.innerHTML = html;
   }
 
   // 🔥 PROXIMA
   if (DOM.proxima) {
-    if (evento.proximaClase) {
-      const html = await renderClases([evento.proximaClase]);
+    if (data.proximaClase) {
+      const html = await renderClases([data.proximaClase]);
       DOM.proxima.innerHTML = html;
       DOM.proxima.style.display = "block";
     } else {
@@ -118,11 +116,11 @@ async function initLaunchEngine(data){
 
   // 🔥 COUNTDOWN
   if (DOM.countdown) {
-    DOM.countdown.style.display = evento.countdownDisplay;
+    DOM.countdown.style.display = data.countdownDisplay;
   }
 
-  if (evento.countdownDisplay !== "none" && evento.countdownTarget) {
-    LaunchCore.countdown.start(evento.countdownTarget);
+  if (data.countdownDisplay !== "none" && data.countdownTarget) {
+    LaunchCore.countdown.start(data.countdownTarget);
   } else {
     LaunchCore.countdown.stop();
   }

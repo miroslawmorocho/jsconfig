@@ -779,7 +779,12 @@ LaunchCore.normalize = function(input, options = {}) {
       reason: null
     },
 
-    payload
+    payload: {
+      ...input,
+      ...input.evento,
+      ...input.pricing,
+      ...input.captura
+    }
   };
 };
 
