@@ -3,7 +3,7 @@ let lastPricingHTML = null;
 
 async function cargarPricing(data){
 
-  if (!data.pricing || !data.pricing.pricingHtml) {
+  if (!data.pricing.pricingHtml) {
     console.warn("⚠️ Data incompleta");
     return;
   }
