@@ -254,7 +254,7 @@ LaunchCore.storage = {
 
   // ===========  SCHEDULER (REPROGRAMACIÓN) =============
   
-  LaunchCore.scheduler = (function(){
+  /*LaunchCore.scheduler = (function(){
 
     let timers = {};
 
@@ -334,7 +334,7 @@ LaunchCore.storage = {
       cancelar
     };
 
-  })();
+  })();*/
 
 
   
@@ -1157,6 +1157,275 @@ LaunchCore.init = async function(){
 
 
 
+LaunchCore.scheduler = (function(){
+
+  const timers = {};
+
+  function schedule(key, fn, delay, options = {}){
+
+    if (!key) {
+      console.warn("💀 scheduler requiere key");
+      return;
+    }
+
+    cancel(key); // 🔥 siempre limpiar
+
+    const MAX_DELAY = 2147483647;
+    const targetTime = Date.now() + delay;
+
+    function tick(){
+
+      const now = Date.now();
+      const remaining = targetTime - now;
+
+      if (remaining <= 0) {
+        delete timers[key];
+        fn();
+        return;
+      }
+
+      // 😴 tab oculta → pausar suavemente
+      if (document.hidden && !options.allowHidden) {
+        console.log("😴 paused:", key);
+
+        timers[key] = setTimeout(tick, 30000);
+        return;
+      }
+
+      const nextDelay = Math.min(remaining, MAX_DELAY);
+      timers[key] = setTimeout(tick, nextDelay);
+    }
+
+    timers[key] = setTimeout(tick, Math.min(delay, MAX_DELAY));
+  }
+
+  function cancel(key){
+    if (timers[key]) {
+      clearTimeout(timers[key]);
+      delete timers[key];
+    }
+  }
+
+  return {
+    schedule,
+    cancel
+  };
+
+})();
+
+
+
+LaunchCore.scheduleNext = function(nextUpdate){
+
+  const current = LaunchCore.state.current;
+
+  if (!current) {
+    console.warn("💀 sin state → no schedule");
+    return;
+  }
+
+  // 💀 sin timing válido → nada que hacer
+  if (!current.timing.isAlive) {
+    console.log("💀 no alive → no schedule");
+    return;
+  }
+
+  const now = Date.now();
+  const delay = nextUpdate - now;
+
+  if (!Number.isFinite(delay)) {
+    console.warn("💀 delay inválido");
+    return;
+  }
+
+  const key = `core-main-${LaunchCore.config.page}`;
+
+  // ⚡ vencido → fetch inmediato
+  if (delay <= 0) {
+    console.log("⚡ vencido → fetch inmediato");
+
+    LaunchCore.fetchWorker("", true).then(raw => {
+      if (raw) {
+        LaunchCore.handleEvent(raw, { source: "FETCH" });
+      }
+    });
+
+    return;
+  }
+
+  console.log("⏱ programando próximo fetch en", delay, "ms");
+
+  LaunchCore.scheduler.schedule(
+    key,
+    () => {
+
+      console.log("🚀 ejecutando fetch programado");
+
+      LaunchCore.fetchWorker("", true).then(raw => {
+        if (raw) {
+          LaunchCore.handleEvent(raw, { source: "FETCH" });
+        }
+      });
+
+    },
+    Math.max(delay, 1000),
+    { allowHidden: false }
+  );
+
+};
+
+// ============== CONTENEDOR ===========================
+
+LaunchCore.vc = {};
+
+LaunchCore.vc.confirm = async function(){
+
+  console.log("🧠 VC: confirmando...");
+
+  const pending = localStorage.getItem("lc_pending_version");
+  if (!pending) return;
+
+  const currentVersion = LaunchCore.state.current?.meta?.version;
+
+  if (String(currentVersion) === String(pending)) {
+    console.log("🧊 ya tengo esta versión → limpiar");
+
+    localStorage.removeItem("lc_pending_version");
+    localStorage.removeItem("vc_last_detected");
+    localStorage.removeItem("vc_next_confirm");
+
+    return;
+  }
+
+  const result = await LaunchCore.fetchWorker("", true);
+  if (!result) return;
+
+  const workerVersion = String(result?.status?.version || 0);
+
+  console.log("🛰️ worker version:", workerVersion);
+
+  if (String(workerVersion) === String(pending)) {
+
+    console.log("✅ DATA CONFIRMADA");
+
+    localStorage.removeItem("lc_pending_version");
+    localStorage.removeItem("vc_last_detected");
+    localStorage.removeItem("vc_next_confirm");
+
+    LaunchCore.handleEvent(result, { source: "VC" });
+
+  } else {
+    console.log("⌛ aún no lista");
+  }
+
+};
+
+
+
+LaunchCore.vc.detect = function({ version, confirmDelay }){
+
+  const currentPending = localStorage.getItem("lc_pending_version");
+
+  if (String(currentPending) === String(version)) {
+
+    const nextConfirm = Number(localStorage.getItem("vc_next_confirm"));
+    const now = Date.now();
+
+    if (!nextConfirm) {
+      console.log("♻️ pending sin timer → reprogramando");
+
+      LaunchCore.vc.scheduleConfirm({
+        delay: confirmDelay || 60000
+      });
+
+    } else if (now >= nextConfirm) {
+
+      console.log("⚡ confirm vencido → ejecutar YA");
+
+      LaunchCore.vc.confirm();
+
+    } else {
+
+      console.log("♻️ pending activo → esperando");
+
+    }
+
+    return;
+  }
+
+  console.log("🧠 VC: cambio detectado", version);
+
+  localStorage.setItem("lc_pending_version", version);
+
+  const key = `vc-confirm-${LaunchCore.config.page}`;
+  LaunchCore.scheduler.cancel(key);
+
+  const detectedAt = Number(localStorage.getItem("vc_last_detected") || 0);
+
+  const now = Date.now();
+  const margin = 5 * 60 * 1000;
+
+  let delay = (now > detectedAt + margin)
+    ? 0
+    : (confirmDelay || 60000);
+
+  LaunchCore.vc.scheduleConfirm({ delay });
+
+};
+
+
+
+LaunchCore.vc.resume = function(){
+
+  const pending = localStorage.getItem("lc_pending_version");
+  if (!pending) return;
+
+  const nextConfirm = Number(localStorage.getItem("vc_next_confirm"));
+  if (!nextConfirm) return;
+
+  let remaining = nextConfirm - Date.now();
+
+  if (remaining <= 0) {
+    console.log("⚡ VC expired → ejecutar confirm inmediato");
+    LaunchCore.vc.confirm();
+    return;
+  }
+
+  console.log("🔁 VC resume → delay:", remaining);
+
+  LaunchCore.vc.scheduleConfirm({ delay: remaining });
+
+};
+
+
+
+LaunchCore.vc.scheduleConfirm = function({ delay }){
+
+  const key = `vc-confirm-${LaunchCore.config.page}`;
+
+  const nextTime = Date.now() + delay;
+
+  localStorage.setItem("vc_next_confirm", String(nextTime));
+
+  LaunchCore.scheduler.schedule(
+    key,
+    () => LaunchCore.vc.confirm(),
+    delay,
+    { allowHidden: true } // 🔥 importante
+  );
+
+};
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1494,7 +1763,7 @@ LaunchCore.run = async function(options = {}, source = "unknown", runId) {
 
 // ==============  NEXT UPDATE SCHEDULER ===============
 
-LaunchCore.scheduleNext = function(nextUpdate){
+/*LaunchCore.scheduleNext = function(nextUpdate){
 
   // 💀 SI ESTÁ CERRADO → NO HACER NADA
   if (LaunchCore.machine.state === "CLOSED") {
@@ -1530,7 +1799,7 @@ LaunchCore.scheduleNext = function(nextUpdate){
     { allowHidden: false }
   );
 
-};
+};*/
 
 
 
@@ -1795,13 +2064,13 @@ LaunchCore.channel.onmessage = function (event) {
 
 // ============== CONTENEDOR ===========================
 
-LaunchCore.vc = {};
+/*LaunchCore.vc = {};*/
 
 
 
 // ======== FUNCIÓN PARA PROGRAMAR CONFIRMACIÓN ========
 
-LaunchCore.vc.scheduleConfirm = function({ delay }){
+/*LaunchCore.vc.scheduleConfirm = function({ delay }){
 
   const nextConfirm = Date.now() + delay;
 
@@ -1821,13 +2090,13 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
     delay,
     { ignoreClosed: true, allowHidden: true }
   );
-};
+};*/
 
 
 
 // ======= FUNCIÓN PARA CONFIRMAR DATA =================
 
-LaunchCore.vc.confirm = async function(){
+/*LaunchCore.vc.confirm = async function(){
 
   console.log("🧠 VC: confirmando...");
 
@@ -1895,13 +2164,13 @@ LaunchCore.vc.confirm = async function(){
     console.log("⌛ aún no lista");
   }
 
-};
+};*/
 
 
 
 // ======== FUNCIÓN PARA DETECTAR CAMBIOS ==============
 
-LaunchCore.vc.detect = function({ version, confirmDelay }){
+/*LaunchCore.vc.detect = function({ version, confirmDelay }){
 
   const currentPending = LaunchCore.storage.get(
     "lc_pending_version", {
@@ -1959,13 +2228,13 @@ LaunchCore.vc.detect = function({ version, confirmDelay }){
     : (confirmDelay || 60000);
 
   LaunchCore.vc.scheduleConfirm({ delay });
-};
+};*/
 
 
 
 // ====== FUNCIÓN PARA REANUDAR CONFIRMACIÓN ===========
 
-LaunchCore.vc.resume = function(){
+/*LaunchCore.vc.resume = function(){
 
   const pending = LaunchCore.storage.get(
     "lc_pending_version", {
@@ -1994,7 +2263,7 @@ LaunchCore.vc.resume = function(){
   console.log("🔁 VC resume → delay:", delay);
 
   LaunchCore.vc.scheduleConfirm({ delay });
-};
+};*/
 
 
 

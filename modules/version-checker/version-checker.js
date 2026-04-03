@@ -48,7 +48,7 @@ function initVersionChecker(config){
 
       if(lastCodeVersion && lastCodeVersion !== code){
         log("💥 CODE CAMBIÓ");
-        LaunchCore.emit("code:update");
+        LaunchCore.onCodeUpdate?.();
       }
 
       lastCodeVersion = code;
@@ -58,9 +58,9 @@ function initVersionChecker(config){
       const data = String((await dataRes.json()).version);
 
       // 🔥 versión actual en cache REAL
-      const currentVersion = LaunchCore.storage.get("lc_data_version", {
-                              source: "vc:currentVersion"
-      });
+      const currentVersion =
+        LaunchCore.state.current?.meta?.version ||
+        localStorage.getItem("lc_data_version");
 
       const lastDetected = LaunchCore.storage.get("vc_last_detected", {
                             source: "vc:lastDetected"
@@ -81,7 +81,7 @@ function initVersionChecker(config){
           });
         }
 
-        LaunchCore.emit("data:detected", {
+        LaunchCore.onDataDetected({
           version: data,
           confirmDelay: config.confirmDelay
         });
