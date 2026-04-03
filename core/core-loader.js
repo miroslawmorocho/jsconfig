@@ -4,8 +4,6 @@
 
 window.LaunchCore = window.LaunchCore || {};
 
-//LaunchCore.config.workerUrl = "https://launch-engine.miroslaw-mm.workers.dev";
-
 LaunchCore.paths = {
   base: "https://miroslawmorocho.github.io/jsconfig/",
   components: "https://miroslawmorocho.github.io/jsconfig/components/",
@@ -33,7 +31,6 @@ LaunchCore.state = {
   current: null,
   machine: "BOOT"
 };
-
 
 
 
@@ -107,6 +104,8 @@ LaunchCore.state = {
   }
 
 };*/
+
+
 
 // ===============  EVENT BUS ==========================
 
@@ -478,7 +477,7 @@ LaunchCore.onReady = function(fn){
 
 // =========== CONTENEDOR DE FASES ===================
 
-LaunchCore.phase = {};
+/*LaunchCore.phase = {};
 
 
 // ============= FASES DEL RUN =========================
@@ -632,7 +631,7 @@ LaunchCore.phase.schedule = function(ctx){
 
   LaunchCore.scheduleNext(ctx.timing?.nextUpdate);
 
-};
+};*/
 
 
 
@@ -792,7 +791,7 @@ LaunchCore.handleEvent = function(raw, context = {}) {
     previous
   });
 
-  console.group("🧠 NORMALIZE DEBUG");
+  /*console.group("🧠 NORMALIZE DEBUG");
 
   console.log("📦 RAW (del worker):", raw);
 
@@ -804,7 +803,7 @@ LaunchCore.handleEvent = function(raw, context = {}) {
   console.log("💰 pricing:", normalized.payload?.pricing);
   console.log("📸 captura:", normalized.payload?.captura);
 
-  console.groupEnd();
+  console.groupEnd();*/
 
   // 🛑 2. VALIDITY CHECK
   if (!normalized.validity.isValid) {
@@ -814,12 +813,27 @@ LaunchCore.handleEvent = function(raw, context = {}) {
 
   // 🔄 3. CHANGE CHECK
   if (!normalized.change.shouldUpdate) {
-    console.log("⏭ data sin cambios → ignorada");
+    console.log("⏭ sin cambios → solo actualizar scheduling");
+
+    LaunchCore.state.current = normalized;
+
+    // 🔥 SOLO schedule (NO render)
+    if (normalized.timing.isAlive) {
+      LaunchCore.scheduleNext(normalized.timing.nextUpdate);
+    }
+
     return;
   }
 
   // 💾 4. UPDATE STATE
   LaunchCore.state.current = normalized;
+
+    try {
+      localStorage.setItem("lc_state", JSON.stringify(normalized));
+    } catch (e) {
+      console.warn("❌ error guardando state", e);
+    }
+
 
   console.log("🧠 state actualizado", {
     version: normalized.meta.version,
@@ -837,15 +851,6 @@ LaunchCore.handleEvent = function(raw, context = {}) {
   // ⏱ 6. SCHEDULE
   if (normalized.timing.nextUpdate !== Infinity) {
     LaunchCore.scheduleNext(normalized.timing.nextUpdate);
-  }
-
-  // 💾 7. PERSIST (CACHE)
-  try {
-    localStorage.setItem("lc_data", JSON.stringify(raw));
-    localStorage.setItem("lc_data_version", String(normalized.meta.version));
-    localStorage.setItem("lc_next_update_global", String(normalized.timing.nextUpdate));
-  } catch (e) {
-    console.warn("❌ error guardando cache", e);
   }
 
 };
@@ -942,6 +947,12 @@ async function fetchAndHandle(force = false) {
   if (!raw) return;
 
   LaunchCore.handleEvent(raw, { source: "FETCH" });
+
+  // 🔥 AHORA ENVÍAS SNAPSHOT, NO RAW
+  LaunchCore.channel.postMessage({
+    type: "STATE_UPDATED",
+    state: LaunchCore.state.current
+  });
 }
 
 
@@ -976,18 +987,28 @@ LaunchCore.channel.onmessage = function (event) {
   }
 
   // 🔄 DATA UPDATE
-  if (msg.type === "DATA_UPDATED") {
+  if (msg.type === "STATE_UPDATED") {
 
-    const raw = msg.raw;
+    const state = msg.state;
 
-    if (!raw) {
-      console.warn("💀 broadcast sin raw");
+    if (!state) {
+      console.warn("💀 broadcast sin state");
       return;
     }
 
-    console.log("🔄 otra pestaña actualizó → procesando");
+    console.log("🔄 otra pestaña actualizó → usando snapshot");
 
-    LaunchCore.handleEvent(raw, { source: "BROADCAST" });
+    // 🔥 usar snapshot directo
+    LaunchCore.state.current = state;
+
+    LaunchCore.render({
+      ...state.payload,
+      __status: state.status
+    });
+
+    if (state.timing?.isAlive) {
+      LaunchCore.scheduleNext(state.timing.nextUpdate);
+    }
 
     return;
   }
@@ -1076,12 +1097,18 @@ LaunchCore.init = async function(){
     // 💾 4. CACHE (BOOTSTRAP)
     function loadCache() {
       try {
-        const raw = JSON.parse(localStorage.getItem("lc_data"));
+        const state = JSON.parse(localStorage.getItem("lc_state"));
 
-        if (raw) {
-          console.log("🧊 cache encontrado → hidratando");
-          LaunchCore.handleEvent(raw, { source: "CACHE" });
-        }
+        if (!state) return;
+
+        console.log("🧊 snapshot encontrado → hidratando");
+
+        LaunchCore.state.current = state;
+
+        LaunchCore.render({
+          ...state.payload,
+          __status: state.status
+        });
 
       } catch (e) {
         console.warn("❌ cache corrupto", e);
@@ -1101,21 +1128,6 @@ LaunchCore.init = async function(){
     LaunchCore.smartCheckNow();
 
 
-    // 🌐 5. FETCH WRAPPER
-    async function fetchAndHandle(force = false) {
-      const raw = await LaunchCore.fetchWorker("", force);
-
-      if (!raw) return;
-
-      LaunchCore.handleEvent(raw, { source: "FETCH" });
-
-      // 📡 sync tabs
-      LaunchCore.channel.postMessage({
-        type: "DATA_UPDATED",
-        raw
-      });
-    }
-
     // 📡 6. BROADCAST
     LaunchCore.channel = new BroadcastChannel("launch-core");
 
@@ -1127,8 +1139,15 @@ LaunchCore.init = async function(){
 
       if (!msg || typeof msg !== "object") return;
 
-      if (msg.type === "DATA_UPDATED" && msg.raw) {
-        LaunchCore.handleEvent(msg.raw, { source: "BROADCAST" });
+      if (msg.type === "STATE_UPDATED" && msg.state) {
+
+        LaunchCore.state.current = msg.state;
+
+        LaunchCore.render({
+          ...msg.state.payload,
+          __status: msg.state.status
+        });
+
       }
 
       if (msg.type === "CODE_UPDATED") {
@@ -1166,11 +1185,7 @@ LaunchCore.init = async function(){
       if (!state) {
         console.log("⚡ sin state → fetch");
 
-        LaunchCore.fetchWorker("", true).then(raw => {
-          if (raw) {
-            LaunchCore.handleEvent(raw, { source: "VISIBILITY" });
-          }
-        });
+        fetchAndHandle(true);
 
         return;
       }
@@ -1552,7 +1567,7 @@ LaunchCore.smartCheckNow = function(){
 
 // ======= FUNCIÓN CENTRAL DE VALIDACIÓN ===============
 
-LaunchCore.shouldAcceptData = function(newVersionRaw, options = {}){
+/*LaunchCore.shouldAcceptData = function(newVersionRaw, options = {}){
 
   const newVersion = Number(newVersionRaw);
 
@@ -1583,13 +1598,13 @@ LaunchCore.shouldAcceptData = function(newVersionRaw, options = {}){
 
   LaunchCore.currentDataVersion = newVersion;
   return true;
-};
+};*/
 
 
 
 // ===============  DATA COMMIT ========================
 
-LaunchCore.commitData = function(raw, options = {}){
+/*LaunchCore.commitData = function(raw, options = {}){
 
   if(!raw){
     console.warn("❌ commitData sin raw");
@@ -1619,13 +1634,13 @@ LaunchCore.commitData = function(raw, options = {}){
     console.warn("❌ commitData error", e);
   }
 
-};
+};*/
 
 
 
 // =============== CORE STATE READER ===================
 
-LaunchCore.readCacheState = function(){
+/*LaunchCore.readCacheState = function(){
 
   const cached = LaunchCore.storage.get(
     "lc_data", {
@@ -1643,13 +1658,13 @@ LaunchCore.readCacheState = function(){
     now: Date.now()
   };
 
-};
+};*/
 
 
 
 // =========  ENGINE STATE (FUENTE DE VERDAD DEL FRONT) ===========
 
-LaunchCore.buildEngineState = function(state){
+/*LaunchCore.buildEngineState = function(state){
 
   const now = Date.now();
 
@@ -1670,13 +1685,13 @@ LaunchCore.buildEngineState = function(state){
     nextUpdate: state.nextUpdate
   });
   
-};
+};*/
 
 
 
 // ==============  DECISION ENGINE =====================
 
-LaunchCore.decide = function(state, options){
+/*LaunchCore.decide = function(state, options){
 
   // 🥇 prioridad absoluta
   if(options.externalData){
@@ -1703,12 +1718,12 @@ LaunchCore.decide = function(state, options){
   }
 
   return "CACHE";
-};
+};*/
 
 
 // ================  EXECUTION FLOW ====================
 
-LaunchCore.executeFlow = async function(decision, state, options){
+/*LaunchCore.executeFlow = async function(decision, state, options){
 
   let raw = null;
 
@@ -1793,13 +1808,13 @@ LaunchCore.executeFlow = async function(decision, state, options){
 
   }
 
-};
+};*/
 
 
 
 // ============  GLOBAL EXECUTION ENGINE ================
 
-LaunchCore.run = async function(options = {}, source = "unknown", runId) {
+/*LaunchCore.run = async function(options = {}, source = "unknown", runId) {
 
   if (runId !== LaunchCore.currentRunId) {
     console.log("☠️ run abortado (obsoleto)", {
@@ -1874,7 +1889,7 @@ LaunchCore.run = async function(options = {}, source = "unknown", runId) {
 
   }
 
-};
+};*/
 
 
 
@@ -2100,13 +2115,13 @@ function formatTime(ms){
 
 // ============== LEER LAUNCH STATUS ==================
 
-LaunchCore.getLaunchStatus = function(){
+/*LaunchCore.getLaunchStatus = function(){
   return LaunchCore.storage.get(
     "lc_launch_status", {
       source:"getLaunchStatus"
     }
   );
-}
+}*/
 
 
 
@@ -2382,7 +2397,7 @@ LaunchCore.machine = {
 
 // ================= FIJAR ESTADOS ====================
 
-LaunchCore.setState = function(newState){
+/*LaunchCore.setState = function(newState){
 
   const prev = LaunchCore.machine.state;
 
@@ -2397,13 +2412,13 @@ LaunchCore.setState = function(newState){
     to: newState
   });
 
-};
+};*/
 
 
 
 // ============HACIENDO FUNCIONAR A LOS ESTADOS ===============
 
-LaunchCore.on("state:change", ({from, to}) => {
+/*LaunchCore.on("state:change", ({from, to}) => {
 
   console.log("🎛 reaccionando a estado:", to);
 
@@ -2430,7 +2445,7 @@ LaunchCore.on("state:change", ({from, to}) => {
       break;
   }
 
-});
+});*/
 
 
 

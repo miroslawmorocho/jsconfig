@@ -29,13 +29,13 @@ const DOM = {
 ===================================================== */
 async function initLaunchEngine(data){
 
-  console.group("🧪 FRONT DEBUG (bridge)");
+  /*console.group("🧪 FRONT DEBUG (bridge)");
 
   console.log("📦 DATA COMPLETA:", data);
   console.log("📁 evento:", data?.evento);
   console.log("💰 pricing:", data?.pricing);
 
-  console.groupEnd();
+  console.groupEnd();*/
 
   // 🔥 guardar ICS globalmente
   window.__calendarICS = data.calendarICS || [];
