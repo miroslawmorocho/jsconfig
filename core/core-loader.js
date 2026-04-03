@@ -1111,13 +1111,11 @@ LaunchCore.init = async function(){
 
       const now = Date.now();
 
-      const current = LaunchCore.state.current;
-
-      const nextUpdate = current?.timing?.nextUpdate ?? null;
+      const state = LaunchCore.state.current;
 
       const pending = localStorage.getItem("lc_pending_version");
 
-      // 🥇 1. SIEMPRE: versión pendiente manda
+      // 🥇 1. VC MANDA (EXCEPCIÓN VÁLIDA)
       if (pending) {
 
         const nextConfirm = Number(
@@ -1129,32 +1127,47 @@ LaunchCore.init = async function(){
           LaunchCore.vc.confirm();
         }
 
-        if (window.__vcCheckNow) {
-          window.__vcCheckNow();
-        }
+        window.__vcCheckNow?.();
+        return;
+      }
+
+      // 🧊 SIN STATE → FETCH
+      if (!state) {
+        console.log("⚡ sin state → fetch");
+
+        LaunchCore.fetchWorker("", true).then(raw => {
+          if (raw) {
+            LaunchCore.handleEvent(raw, { source: "VISIBILITY" });
+          }
+        });
 
         return;
       }
 
-      // 🥈 2. CLOSED + sistema dormido → NO HACER NADA
-      if (!nextUpdate) {
-        console.log("💀 closed/dormido → skip total");
+      const { timing, status } = state;
 
-        if (window.__vcCheckNow) {
-          window.__vcCheckNow();
-        }
+      // 🥈 CLOSED → NO FETCH JAMÁS
+      if (status.launch === "closed") {
+        console.log("💀 closed → skip total");
 
+        window.__vcCheckNow?.();
         return;
       }
 
-      // 🥉 3. CACHE VÁLIDO → NO HACER NADA
-      if (now < nextUpdate) {
+      // 🥉 SIN TIMING → NO HACER NADA
+      if (!timing?.nextUpdate) {
+        console.log("💀 sin nextUpdate → skip");
+        return;
+      }
+
+      // 🧊 AÚN VÁLIDO
+      if (!timing.isExpired) {
         console.log("🧊 cache válido → skip");
         return;
       }
 
-      // 🏁 4. TODO LO DEMÁS → FETCH
-      console.log("⚡ visibility → fetch");
+      // 🏁 EXPIRADO → FETCH
+      console.log("⚡ expirado → fetch");
 
       LaunchCore.fetchWorker("", true).then(raw => {
         if (raw) {
@@ -1162,9 +1175,7 @@ LaunchCore.init = async function(){
         }
       });
 
-      if (window.__vcCheckNow) {
-        window.__vcCheckNow();
-      }
+      window.__vcCheckNow?.();
 
     });
 
