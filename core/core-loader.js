@@ -625,6 +625,12 @@ LaunchCore.phase.process = function(ctx){
 
   console.log("🧠 process → system state actual:", LaunchCore.machine.state);
 
+  LaunchCore.storage.set(
+    "lc_next_update_global",
+    String(ctx.timing.nextUpdate),
+    { source: "process" }
+  );
+
 };
 
 
@@ -1310,7 +1316,7 @@ LaunchCore.getWorkerVersion = async function(){
   const normalized = LaunchCore.normalize(res);
 
   return {
-    version: normalized?.control?.version,
+    version: normalized?.meta?.version,
     raw: res,
     normalized
   };
@@ -1882,7 +1888,7 @@ LaunchCore.init = async function(){
 
 
       // 🥈 2. CLOSED + sistema dormido (Infinity) → NO HACER NADA
-      if (LaunchCore.engineState.isClosed && nextUpdate === Infinity) {
+      if (LaunchCore.machine.state === "CLOSED" && nextUpdate === Infinity) {
         console.log("💀 closed + dormido → skip total");
         LaunchCore.smartCheckNow();
         return;
@@ -1920,10 +1926,10 @@ LaunchCore.init = async function(){
 
     if (cached) {
       try {
-        const raw = JSON.parse(cached);
-        const { data } = LaunchCore.normalize(raw);
+        
+        const normalized = LaunchCore.normalize(raw);
 
-        LaunchCore.render(data);
+        await LaunchCore.render(normalized.payload);
 
         console.log("⚡ bootstrap render (fuera del pipeline)");
       } catch(e){
