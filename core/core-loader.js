@@ -568,6 +568,19 @@ LaunchCore.init = async function(){
 
   try {
 
+    // limpiar caché de code version si lo hay
+    (function cleanVersionFlag(){
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const v = urlParams.get("v");
+
+      if (v) {
+        console.log("🧹 limpiando version compartida usada:", v);
+        localStorage.removeItem("lc_code_update_version");
+      }
+
+    })();
+
     // 🧱 1. ROOT
     const root = document.getElementById("launch-engine-root");
     LaunchCore.root = root;
@@ -699,8 +712,9 @@ LaunchCore.init = async function(){
       }
 
       if (msg.type === "CODE_UPDATED") {
-        console.log("💥 recargando por broadcast");
-        location.reload();
+        console.log("💥 recargando por broadcast (con versión)");
+
+        LaunchCore.reloadWithVersion(msg.version);
       }
 
     };
@@ -1236,13 +1250,6 @@ LaunchCore.on("code:update", async () => {
 
   console.log("💥 CORE: CODE UPDATE DETECTADO");
 
-  // 🔥 avisar a otras pestañas que recarguen
-  if(LaunchCore.channel){
-    LaunchCore.channel.postMessage({
-      type: "CODE_UPDATED"
-    });
-  }
-
   try {
 
     if(!LaunchCore.config.codeVersionUrl){
@@ -1268,11 +1275,29 @@ LaunchCore.on("code:update", async () => {
       return;
     }
 
-    // 🔥 guardar nueva versión
+    // 🔥 guardar nueva versión de código
     localStorage.setItem("lc_code_version", newVersion);
 
-    // 🔥 delegar reload
-    LaunchCore.reloadWithVersion();
+    // 🧠 VERSION COMPARTIDA ENTRE TABS
+    let versionTag = localStorage.getItem("lc_code_update_version");
+
+    if (!versionTag) {
+      versionTag = Date.now().toString();
+      localStorage.setItem("lc_code_update_version", versionTag);
+    }
+
+    console.log("🚀 versionTag compartida:", versionTag);
+
+    // 📡 avisar a otras tabs
+    if (LaunchCore.channel) {
+      LaunchCore.channel.postMessage({
+        type: "CODE_UPDATED",
+        version: versionTag
+      });
+    }
+
+    // 🔥 recargar ESTA tab también
+    LaunchCore.reloadWithVersion(versionTag);
 
   } catch(e){
     console.warn("❌ error en code:update", e);
@@ -1452,7 +1477,7 @@ document.addEventListener("click", function(e){
 
 // =========== URL VERSIONADA HUMANA =================
 
-LaunchCore.reloadWithVersion = function(){
+LaunchCore.reloadWithVersion = function(version){
 
   function fechaHumana(){
     const d = new Date();
@@ -1467,15 +1492,16 @@ LaunchCore.reloadWithVersion = function(){
     );
   }
 
+  const v = version || fechaHumana();
+
   const url =
     location.origin +
     location.pathname +
-    "?v=" + fechaHumana();
+    "?v=" + v;
 
-  console.log("🚀 recargando con nueva versión...");
+  console.log("🚀 recargando con versión:", v);
 
   window.location.replace(url);
-
 };
 
 
