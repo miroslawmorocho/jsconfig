@@ -1051,6 +1051,10 @@ LaunchCore.init = async function(){
 
         if (state.timing?.isAlive) {
           LaunchCore.scheduleNext(state.timing.nextUpdate);
+           console.log(
+            "🧊 bootstrap nextUpdate:",
+            new Date(state.timing.nextUpdate).toLocaleTimeString()
+          );
         }
 
       } catch (e) {
@@ -1302,51 +1306,69 @@ LaunchCore.scheduleNext = function(nextUpdate){
 
 LaunchCore.vc = {};
 
+LaunchCore.vc._confirming = false;
+
 LaunchCore.vc.confirm = async function(){
 
-  console.log("🧠 VC: confirmando...");
-
-  const pending = localStorage.getItem("lc_pending_version");
-  if (!pending) return;
-
-  const currentVersion = LaunchCore.state.current?.meta?.version;
-
-  if (String(currentVersion) === String(pending)) {
-    console.log("🧊 ya tengo esta versión → limpiar");
-
-    localStorage.removeItem("lc_pending_version");
-    localStorage.removeItem("vc_last_detected");
-    localStorage.removeItem("vc_next_confirm");
-
+  if (LaunchCore.vc._confirming) {
+    console.log("🧠 VC ya confirmando → skip");
     return;
   }
 
-  const result = await LaunchCore.fetchWorker("", true);
-  if (!result) return;
-
-  const workerVersion = String(result?.status?.version || 0);
-
-  console.log("🛰️ worker version:", workerVersion);
-
-  if (String(workerVersion) === String(pending)) {
-
-    console.log("✅ DATA CONFIRMADA");
-
-    localStorage.removeItem("lc_pending_version");
-    localStorage.removeItem("vc_last_detected");
-    localStorage.removeItem("vc_next_confirm");
-
-    LaunchCore.handleEvent(result, { source: "VC" });
-
-    LaunchCore.channel.postMessage({
-      type: "STATE_UPDATED",
-      state: LaunchCore.state.current
-    });
-
-  } else {
-    console.log("⌛ aún no lista");
+  if (document.hidden) {
+    console.log("😴 VC confirm pausado (hidden)");
+    return;
   }
 
+  LaunchCore.vc._confirming = true;
+
+  try {
+
+    console.log("🧠 VC: confirmando...");
+
+    const pending = localStorage.getItem("lc_pending_version");
+    if (!pending) return;
+
+    const currentVersion = LaunchCore.state.current?.meta?.version;
+
+    if (String(currentVersion) === String(pending)) {
+      console.log("🧊 ya tengo esta versión → limpiar");
+
+      localStorage.removeItem("lc_pending_version");
+      localStorage.removeItem("vc_last_detected");
+      localStorage.removeItem("vc_next_confirm");
+      return;
+    }
+
+    const result = await LaunchCore.fetchWorker("", true);
+    if (!result) return;
+
+    const workerVersion = String(result?.status?.version || 0);
+
+    console.log("🛰️ worker version:", workerVersion);
+
+    if (String(workerVersion) === String(pending)) {
+
+      console.log("✅ DATA CONFIRMADA");
+
+      localStorage.removeItem("lc_pending_version");
+      localStorage.removeItem("vc_last_detected");
+      localStorage.removeItem("vc_next_confirm");
+
+      LaunchCore.handleEvent(result, { source: "VC" });
+
+      LaunchCore.channel.postMessage({
+        type: "STATE_UPDATED",
+        state: LaunchCore.state.current
+      });
+
+    } else {
+      console.log("⌛ aún no lista");
+    }
+
+  } finally {
+    LaunchCore.vc._confirming = false;
+  }
 };
 
 
