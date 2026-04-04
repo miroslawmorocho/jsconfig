@@ -625,7 +625,15 @@ LaunchCore.init = async function(){
     // 💾 4. CACHE (BOOTSTRAP)
     function loadCache() {
       try {
-        const state = JSON.parse(localStorage.getItem("lc_state"));
+        const raw = localStorage.getItem("lc_state");
+
+        if (!raw) {
+          console.log("🧊 sin cache → fetch inicial");
+          fetchAndHandle(true);
+          return;
+        }
+
+        const state = JSON.parse(raw);
 
         if (!state || typeof state !== "object") {
           throw new Error("invalid snapshot");
@@ -724,26 +732,38 @@ LaunchCore.init = async function(){
 
     LaunchCore.smartCheckNow();
 
-    // 👁 7. VISIBILITY (SIMPLIFICADO PERO INTELIGENTE)
+    // 👁 7. VISIBILITY INTELIGENTE
     LaunchCore.visibility.init(() => {
 
-      const now = Date.now();
-
       const state = LaunchCore.state.current;
-
-      const pending = localStorage.getItem("lc_pending_version");
+      
+      // 🧊 SIN STATE → FETCH
+      if (!state) {
+        console.log("⚡ sin state → fetch");
+        fetchAndHandle(true);
+        return;
+      }
 
       LaunchCore.logTimingState(state, "visibility");
       const timingState = LaunchCore.getTimingState(state);
 
-      // 🥇 1. VC MANDA (EXCEPCIÓN VÁLIDA)
+      // 🏁 1. EXPIRADO → FETCH
+      if (timingState === "EXPIRED") {
+        console.log("⚡ expirado → fetch inmediato");
+        fetchAndHandle(true);
+        window.__vcCheckNow?.();
+      }
+
+      const pending = localStorage.getItem("lc_pending_version");
+
+      // 🥇 2. VC MANDA (EXCEPCIÓN VÁLIDA)
       if (pending) {
 
         const nextConfirm = Number(
           localStorage.getItem("vc_next_confirm")
         );
 
-        if (!nextConfirm || now >= nextConfirm) {
+        if (!nextConfirm || Date.now() >= nextConfirm) {
           console.log("⚡ visibility → confirm inmediato");
           LaunchCore.vc.confirm();
         }
@@ -752,34 +772,19 @@ LaunchCore.init = async function(){
         return;
       }
 
-      // 🧊 SIN STATE → FETCH
-      if (!state) {
-        console.log("⚡ sin state → fetch");
-        fetchAndHandle(true);
-        return;
-      }
-
       const { timing, status } = state;
 
       // 🥈 CLOSED → NO FETCH JAMÁS
       if (status.launch === "closed") {
         console.log("💀 closed → skip total");
-
         window.__vcCheckNow?.();
         return;
       }
 
-      // 🧊 AÚN VÁLIDO
       if (timingState === "IDLE") {
-        console.log("🧊 sin nextUpdate → sistema congelado");
+        console.warn("⚠️ estado inconsistente: no closed pero sin nextUpdate");
+        fetchAndHandle(true); // 🔥 auto-recuperación
         return;
-      }
-
-      // 🏁 EXPIRADO → FETCH
-      if (timingState === "EXPIRED") {
-        console.log("⚡ expirado → fetch inmediato");
-        fetchAndHandle(true);
-        window.__vcCheckNow?.();
       }
 
       window.__vcCheckNow?.();
@@ -788,10 +793,13 @@ LaunchCore.init = async function(){
 
     // ⏱ 8. SCHEDULE INICIAL
     const state = LaunchCore.state.current;
-    const timingState = LaunchCore.getTimingState(state);
 
-    if (timingState !== "IDLE") {
-      LaunchCore.scheduleNext(state.timing.nextUpdate);
+    if (state) {
+      const timingState = LaunchCore.getTimingState(state);
+
+      if (timingState !== "IDLE") {
+        LaunchCore.scheduleNext(state.timing.nextUpdate);
+      }
     }
 
     // 🚀 9. FETCH INICIAL (SI NO HAY CACHE VÁLIDO)
@@ -1117,7 +1125,9 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
 
 LaunchCore.getTimingState = function(state){
 
-  if (!state || !state.timing) return "UNKNOWN";
+  if (!state || !state.timing) {
+    return "IDLE";
+  }
 
   const { nextUpdate } = state.timing;
 
