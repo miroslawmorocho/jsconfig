@@ -656,10 +656,7 @@ LaunchCore.normalize = function(input, options = {}) {
       status: { launch: "open" },
       timing: {
         now,
-        nextUpdate: Infinity,
-        msRemaining: null,
-        isExpired: false,
-        isAlive: false
+        nextUpdate: null,
       },
       change: {
         isNewVersion: false,
@@ -668,7 +665,6 @@ LaunchCore.normalize = function(input, options = {}) {
       },
       validity: {
         isValid: false,
-        hasTiming: false,
         reason: "INVALID_INPUT"
       },
       payload: {
@@ -696,22 +692,12 @@ LaunchCore.normalize = function(input, options = {}) {
     Number(input?.pricing?.siguienteActualizacionMs)
   ].filter(d => Number.isFinite(d) && d > 0);
 
-  let nextUpdate = Infinity;
+  let nextUpdate = null;
 
   if (delays.length) {
     const delay = Math.min(...delays);
     nextUpdate = now + delay;
   }
-
-  const isExpired = nextUpdate !== Infinity && now >= nextUpdate;
-
-  const msRemaining = nextUpdate === Infinity
-    ? null
-    : nextUpdate - now;
-
-  const isAlive = !isExpired && nextUpdate !== Infinity;
-
-  const hasTiming = nextUpdate !== Infinity;
 
   // 📦 6. PAYLOAD
   const payload = {
@@ -754,15 +740,9 @@ LaunchCore.normalize = function(input, options = {}) {
       launch
     },
 
-    // ¡OJO!: Todos estos tiempos son "fotos del pasado" hechas en el
-    // momento del cálculo de normalize, luego debemos controlar
-    // activamente EN EL TIEMPO ACTUAL contra "nextUpdate" solamente.
     timing: {
       now,
       nextUpdate,
-      msRemaining,
-      isExpired,
-      isAlive
     },
 
     change: {
@@ -773,7 +753,6 @@ LaunchCore.normalize = function(input, options = {}) {
 
     validity: {
       isValid,
-      hasTiming,
       reason: null
     },
 
@@ -785,6 +764,7 @@ LaunchCore.normalize = function(input, options = {}) {
 
 LaunchCore.handleEvent = function(raw, context = {}) {
 
+  const now = Date.now();
   const previous = LaunchCore.state.current;
 
   // 🧠 1. NORMALIZE
@@ -821,7 +801,7 @@ LaunchCore.handleEvent = function(raw, context = {}) {
     LaunchCore.state.current = normalized;
 
     // 🔥 SOLO schedule (NO render)
-    if (normalized.timing.isAlive) {
+    if (normalized.timing.nextUpdate) {
       LaunchCore.scheduleNext(normalized.timing.nextUpdate);
     }
 
@@ -852,7 +832,7 @@ LaunchCore.handleEvent = function(raw, context = {}) {
   }
 
   // ⏱ 6. SCHEDULE
-  if (normalized.timing.nextUpdate !== Infinity) {
+  if (normalized.timing.nextUpdate) {
     LaunchCore.scheduleNext(normalized.timing.nextUpdate);
   }
 
@@ -1052,9 +1032,9 @@ LaunchCore.init = async function(){
           __status: state.status
         });
 
-        if (state.timing?.isAlive) {
+        if (state.timing?.nextUpdate) {
           LaunchCore.scheduleNext(state.timing.nextUpdate);
-           console.log(
+          console.log(
             "🧊 bootstrap nextUpdate:",
             new Date(state.timing.nextUpdate).toLocaleTimeString()
           );
@@ -1099,7 +1079,7 @@ LaunchCore.init = async function(){
           __status: msg.state.status
         });
 
-        if (msg.state.timing?.isAlive) {
+        if (msg.state.timing?.nextUpdate) {
           LaunchCore.scheduleNext(msg.state.timing.nextUpdate);
         }
 
@@ -1269,8 +1249,8 @@ LaunchCore.scheduleNext = function(nextUpdate){
   }
 
   // 💀 sin timing válido → nada que hacer
-  if (!current.timing?.nextUpdate || current.timing.nextUpdate === Infinity) {
-    console.log("💀 no alive → no schedule");
+  if (!current.timing?.nextUpdate) {
+    console.log("💀 sin nextUpdate → no schedule");
     return;
   }
 
