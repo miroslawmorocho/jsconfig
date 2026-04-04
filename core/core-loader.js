@@ -781,6 +781,7 @@ LaunchCore.init = async function(){
         return;
       }
 
+      // estado inconsistente cuando "launch status != closed"
       if (timingState === "IDLE") {
         console.warn("⚠️ estado inconsistente: no closed pero sin nextUpdate");
         fetchAndHandle(true); // 🔥 auto-recuperación
