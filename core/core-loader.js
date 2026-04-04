@@ -1251,7 +1251,7 @@ LaunchCore.on("code:update", async () => {
     }
 
     // 🔥 guardar nueva versión
-    localStorage.set("lc_code_version", newVersion);
+    localStorage.setItem("lc_code_version", newVersion);
 
     // 🔥 delegar reload
     LaunchCore.reloadWithVersion();
