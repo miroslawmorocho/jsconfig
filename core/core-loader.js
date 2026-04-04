@@ -912,7 +912,7 @@ LaunchCore.scheduleNext = function(nextUpdate){
 
 };
 
-// ============== CONTENEDOR ============================
+// ============== VERSION CHECKER FUNCTIONS ============================
 
 LaunchCore.vc = {};
 
