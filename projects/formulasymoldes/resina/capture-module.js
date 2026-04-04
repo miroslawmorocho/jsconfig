@@ -1,76 +1,28 @@
-LaunchCore.register("capture", async function(){
+LaunchCore.register("capture", {
 
-  const root = LaunchCore.root;
-  const { project, product, page } = LaunchCore.config;
+  init: async function(){
 
-  const url = LaunchCore.paths.projects + `${project}/${product}/${page}`;
+    const root = LaunchCore.root;
+    const { project, product, page } = LaunchCore.config;
 
-  await LaunchCore.loadCSS(url + ".css");
+    const url = LaunchCore.paths.projects + `${project}/${product}/${page}`;
 
-  /* =====================================================
-     ENGINE (igual filosofía que bridge)
-  ===================================================== */
+    // CSS
+    await LaunchCore.loadCSS(url + ".css");
 
-  let currentExecution = null;
+  },
 
-  window.initLaunchEngine = async function(force = false, externalData = null, forceFetch = false){
+  render: async function(data){
 
-    if (!force && !LaunchCore.timing.shouldRun()) {
-      console.log("😴 Esperando al CORE...");
-      return;
-    }
+    const root = LaunchCore.root;
 
-    if (currentExecution) {
-      console.warn("⛔ Ya hay ejecución en capture");
-      return currentExecution;
-    }
+    // 🔥 SOLO PINTA
+    root.innerHTML = `
+      <div id="evento-info">
+        ${data?.capturaHtml || ""}
+      </div>
+    `;
 
-    currentExecution = (async () => {
-
-      try {
-
-        console.log("🚀 [CAPTURE] Fetching worker...");
-
-        let data;
-
-        if(externalData){
-          console.log("⚡ Usando data externa");
-          data = externalData;
-        } else {
-          const endpoint = LaunchCore.config.endpoint;
-          data = await LaunchCore.fetchWorker(endpoint, forceFetch);
-        }
-
-        if(!data) return;
-
-        root.innerHTML = `
-          <div id="evento-info">
-            ${data.capturaHtml}
-          </div>
-        `;
-
-        // 🔥 si el worker envía timing → lo usamos
-        if (data.siguienteActualizacionMs) {
-          LaunchCore.timing.setNext(data.siguienteActualizacionMs);
-        }
-
-      } catch(e){
-        console.warn("💥 Error capture:", e);
-      } finally {
-        currentExecution = null;
-      }
-
-    })();
-
-    return currentExecution;
-  };
-
-  /* =====================================================
-     INIT
-  ===================================================== */
-
-  LaunchCore.onReady(() => {
-    window.initLaunchEngine(true); // 👈 FORZAR PRIMER RENDER
-  });
+  }
 
 });
