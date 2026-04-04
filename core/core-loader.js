@@ -405,7 +405,7 @@ LaunchCore.handleEvent = function(raw, context = {}) {
     LaunchCore.state.current = normalized;
 
     // 🔥 SOLO schedule (NO render)
-    if (normalized.timing.nextUpdate) {
+    if (normalized.timing.nextUpdate !== null) {
       LaunchCore.scheduleNext(normalized.timing.nextUpdate);
     }
 
@@ -631,7 +631,7 @@ LaunchCore.init = async function(){
           __status: state.status
         });
 
-        if (state.timing?.nextUpdate) {
+        if (state.timing?.nextUpdate !== null) {
 
           const delay = state.timing.nextUpdate - Date.now();
 
@@ -684,7 +684,7 @@ LaunchCore.init = async function(){
           __status: msg.state.status
         });
 
-        if (msg.state.timing?.nextUpdate) {
+        if (msg.state.timing?.nextUpdate !== null) {
           LaunchCore.scheduleNext(msg.state.timing.nextUpdate);
         }
 
@@ -746,14 +746,13 @@ LaunchCore.init = async function(){
       }
 
       // 🧊 AÚN VÁLIDO
-      if (!timing?.nextUpdate) {
-        console.warn("💀 timing inválido → refetch inmediato");
-        fetchAndHandle(true);
+      if (timing.nextUpdate === null) {
+        console.log("🧊 sin nextUpdate → sistema congelado");
         return;
       }
 
       // 🏁 EXPIRADO → FETCH
-      if (timing.nextUpdate && now >= timing.nextUpdate) {
+      if (timing.nextUpdate !== null && now >= timing.nextUpdate) {
         console.log("⚡ expirado → fetch inmediato");
         fetchAndHandle(true);
         window.__vcCheckNow?.();
@@ -854,7 +853,7 @@ LaunchCore.scheduleNext = function(nextUpdate){
   }
 
   // 💀 sin timing válido → nada que hacer
-  if (!current.timing?.nextUpdate) {
+  if (current.timing?.nextUpdate === null) {
     console.log("💀 sin nextUpdate → no schedule");
     return;
   }
