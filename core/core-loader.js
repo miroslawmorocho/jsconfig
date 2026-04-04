@@ -532,6 +532,8 @@ LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
 
 
+// ============== FETCH AND HANDLE ======================
+
 async function fetchAndHandle(force = false) {
 
   if (document.hidden) {
