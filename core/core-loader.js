@@ -942,91 +942,23 @@ LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
 
 async function fetchAndHandle(force = false) {
+
+  if (document.hidden) {
+    console.log("🚫 fetch cancelado (hidden)");
+    return;
+  }
+
   const raw = await LaunchCore.fetchWorker("", force);
 
   if (!raw) return;
 
   LaunchCore.handleEvent(raw, { source: "FETCH" });
 
-  // 🔥 AHORA ENVÍAS SNAPSHOT, NO RAW
   LaunchCore.channel.postMessage({
     type: "STATE_UPDATED",
     state: LaunchCore.state.current
   });
 }
-
-
-
-function loadCache() {
-  try {
-    const raw = JSON.parse(localStorage.getItem("lc_data"));
-
-    if (raw) {
-      LaunchCore.handleEvent(raw, { source: "CACHE" });
-    }
-
-  } catch (e) {
-    console.warn("❌ cache corrupto", e);
-  }
-}
-
-
-
-
-LaunchCore.channel = new BroadcastChannel("launch-core");
-
-LaunchCore.channel.onmessage = function (event) {
-
-  const msg = event.data;
-
-  console.log("📡 broadcast recibido:", msg);
-
-  if (!msg || typeof msg !== "object") {
-    console.warn("💀 mensaje inválido");
-    return;
-  }
-
-  // 🔄 DATA UPDATE
-  if (msg.type === "STATE_UPDATED") {
-
-    const state = msg.state;
-
-    if (!state) {
-      console.warn("💀 broadcast sin state");
-      return;
-    }
-
-    console.log("🔄 otra pestaña actualizó → usando snapshot");
-
-    // 🔥 usar snapshot directo
-    LaunchCore.state.current = state;
-
-    LaunchCore.render({
-      ...state.payload,
-      __status: state.status
-    });
-
-    if (state.timing?.isAlive) {
-      LaunchCore.scheduleNext(state.timing.nextUpdate);
-    }
-
-    return;
-  }
-
-  // 💥 CODE UPDATE
-  if (msg.type === "CODE_UPDATED") {
-
-    console.log("💥 broadcast CODE → recargando");
-
-    if (typeof LaunchCore.reloadWithVersion === "function") {
-      LaunchCore.reloadWithVersion();
-    }
-
-    return;
-  }
-
-};
-
 
 
 
@@ -1099,9 +1031,16 @@ LaunchCore.init = async function(){
       try {
         const state = JSON.parse(localStorage.getItem("lc_state"));
 
-        if (!state) return;
+        if (!state || typeof state !== "object") {
+          throw new Error("invalid snapshot");
+        }
 
-        console.log("🧊 snapshot encontrado → hidratando");
+        // 🛡 validación mínima estructural
+        if (!state.payload || !state.status || !state.timing) {
+          throw new Error("corrupt snapshot structure");
+        }
+
+        console.log("🧊 snapshot válido → hydrate");
 
         LaunchCore.state.current = state;
 
@@ -1110,8 +1049,17 @@ LaunchCore.init = async function(){
           __status: state.status
         });
 
+        if (state.timing?.isAlive) {
+          LaunchCore.scheduleNext(state.timing.nextUpdate);
+        }
+
       } catch (e) {
-        console.warn("❌ cache corrupto", e);
+        console.warn("💀 cache corrupto → limpiando y refetch", e);
+
+        localStorage.removeItem("lc_state");
+
+        // 🔥 fallback REAL
+        fetchAndHandle(true);
       }
     }
 
@@ -1122,13 +1070,7 @@ LaunchCore.init = async function(){
 
     console.log("🔥 LLAMANDO VERSION CHECKER...");
 
-    // REANUDANDO DATA CONFIRM SI LO HAY
-    LaunchCore.vc.resume();
-
-    LaunchCore.smartCheckNow();
-
-
-    // 📡 6. BROADCAST
+    // 📡 BROADCAST (una sola vez, centralizado)
     LaunchCore.channel = new BroadcastChannel("launch-core");
 
     LaunchCore.channel.onmessage = function (event) {
@@ -1141,6 +1083,8 @@ LaunchCore.init = async function(){
 
       if (msg.type === "STATE_UPDATED" && msg.state) {
 
+        console.log("🔄 otra pestaña actualizó → usando snapshot");
+
         LaunchCore.state.current = msg.state;
 
         LaunchCore.render({
@@ -1148,13 +1092,24 @@ LaunchCore.init = async function(){
           __status: msg.state.status
         });
 
+        if (msg.state.timing?.isAlive) {
+          LaunchCore.scheduleNext(msg.state.timing.nextUpdate);
+        }
+
+        return;
       }
 
       if (msg.type === "CODE_UPDATED") {
         console.log("💥 recargando por broadcast");
         location.reload();
       }
+
     };
+
+    // REANUDANDO DATA CONFIRM SI LO HAY
+    LaunchCore.vc.resume();
+
+    LaunchCore.smartCheckNow();
 
     // 👁 7. VISIBILITY (SIMPLIFICADO PERO INTELIGENTE)
     LaunchCore.visibility.init(() => {
@@ -1184,9 +1139,7 @@ LaunchCore.init = async function(){
       // 🧊 SIN STATE → FETCH
       if (!state) {
         console.log("⚡ sin state → fetch");
-
         fetchAndHandle(true);
-
         return;
       }
 
@@ -1200,26 +1153,19 @@ LaunchCore.init = async function(){
         return;
       }
 
-      // 🥉 SIN TIMING → NO HACER NADA
-      if (!timing?.nextUpdate) {
-        console.log("💀 sin nextUpdate → skip");
-        return;
-      }
-
       // 🧊 AÚN VÁLIDO
-      if (!timing.isExpired) {
-        console.log("🧊 cache válido → skip");
+      if (!timing?.nextUpdate) {
+        console.warn("💀 timing inválido → refetch inmediato");
+        fetchAndHandle(true);
         return;
       }
 
       // 🏁 EXPIRADO → FETCH
-      console.log("⚡ expirado → fetch");
-
-      LaunchCore.fetchWorker("", true).then(raw => {
-        if (raw) {
-          LaunchCore.handleEvent(raw, { source: "VISIBILITY" });
-        }
-      });
+      if (timing.isExpired) {
+        console.log("⚡ expirado → fetch inmediato");
+        fetchAndHandle(true);
+        window.__vcCheckNow?.();
+      }
 
       window.__vcCheckNow?.();
 
@@ -1334,13 +1280,7 @@ LaunchCore.scheduleNext = function(nextUpdate){
   // ⚡ vencido → fetch inmediato
   if (delay <= 0) {
     console.log("⚡ vencido → fetch inmediato");
-
-    LaunchCore.fetchWorker("", true).then(raw => {
-      if (raw) {
-        LaunchCore.handleEvent(raw, { source: "FETCH" });
-      }
-    });
-
+    fetchAndHandle(true);
     return;
   }
 
@@ -1349,15 +1289,8 @@ LaunchCore.scheduleNext = function(nextUpdate){
   LaunchCore.scheduler.schedule(
     key,
     () => {
-
       console.log("🚀 ejecutando fetch programado");
-
-      LaunchCore.fetchWorker("", true).then(raw => {
-        if (raw) {
-          LaunchCore.handleEvent(raw, { source: "FETCH" });
-        }
-      });
-
+      fetchAndHandle(true);
     },
     Math.max(delay, 1000),
     { allowHidden: false }
@@ -1404,6 +1337,11 @@ LaunchCore.vc.confirm = async function(){
     localStorage.removeItem("vc_next_confirm");
 
     LaunchCore.handleEvent(result, { source: "VC" });
+
+    LaunchCore.channel.postMessage({
+      type: "STATE_UPDATED",
+      state: LaunchCore.state.current
+    });
 
   } else {
     console.log("⌛ aún no lista");
@@ -1521,17 +1459,17 @@ LaunchCore.render = async function(data){
     return;
   }
 
-  console.group("🎨 RENDER DEBUG");
+  /*console.group("🎨 RENDER DEBUG");
 
   console.log("📦 DATA FINAL QUE RECIBE EL FRONT:", data);
   console.log("📁 evento:", data?.evento);
   console.log("💰 pricing:", data?.pricing);
 
-  console.groupEnd();
+  console.groupEnd();*/
 
   await module.render(data);
 
-  console.log("🎨 renderizando ",page);
+  console.log("🎨 renderizando",page);
 
 };
 
@@ -2044,7 +1982,7 @@ LaunchCore.smartCheckNow = function(){
 
 // =============  CONFIRMAR VERSION DEL WORKER ================
 
-LaunchCore.getWorkerVersion = async function(){
+/*LaunchCore.getWorkerVersion = async function(){
 
   const res = await LaunchCore.fetchWorker(
     LaunchCore.config.endpoint,
@@ -2059,7 +1997,7 @@ LaunchCore.getWorkerVersion = async function(){
     normalized
   };
 
-};
+};*/
 
 
 
@@ -2068,7 +2006,7 @@ LaunchCore.getWorkerVersion = async function(){
 
 // ======== FUNCIÓN VERIFICAR SI PUEDE FETCH =========
 
-LaunchCore.canFetch = function(){
+/*LaunchCore.canFetch = function(){
 
   if (LaunchCore.machine.state === "CLOSED") {
     console.log("💀 fetch bloqueado (CLOSED)");
@@ -2081,7 +2019,7 @@ LaunchCore.canFetch = function(){
   }
 
   return true;
-};
+};*/
 
 
 
@@ -2381,7 +2319,7 @@ LaunchCore.channel.onmessage = function (event) {
 
 // ============  ESTADOS DEL SISTEMA ===================
 
-LaunchCore.machine = {
+/*LaunchCore.machine = {
   state: "BOOT", // estado actual
 
   STATES: {
@@ -2391,7 +2329,7 @@ LaunchCore.machine = {
     WARNING: "WARNING",
     CLOSED: "CLOSED"
   }
-};
+};*/
 
 
 
