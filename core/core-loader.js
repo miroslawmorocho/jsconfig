@@ -915,7 +915,7 @@ LaunchCore.scheduleNext = function(nextUpdate){
 
 };
 
-// ============== CONTENEDOR ===========================
+// ============== CONTENEDOR ============================
 
 LaunchCore.vc = {};
 
