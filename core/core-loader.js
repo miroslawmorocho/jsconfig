@@ -404,8 +404,10 @@ LaunchCore.handleEvent = function(raw, context = {}) {
 
     LaunchCore.state.current = normalized;
 
-    // 🔥 SOLO schedule (NO render)
-    if (normalized.timing.nextUpdate !== null) {
+    const timingState = LaunchCore.getTimingState(normalized);
+    LaunchCore.logTimingState(normalized, "handleEvent");
+
+    if (timingState !== "IDLE") {
       LaunchCore.scheduleNext(normalized.timing.nextUpdate);
     }
 
@@ -436,7 +438,9 @@ LaunchCore.handleEvent = function(raw, context = {}) {
   }
 
   // ⏱ 6. SCHEDULE
-  if (normalized.timing.nextUpdate) {
+  const timingState = LaunchCore.getTimingState(normalized);
+
+  if (timingState !== "IDLE") {
     LaunchCore.scheduleNext(normalized.timing.nextUpdate);
   }
 
@@ -626,12 +630,15 @@ LaunchCore.init = async function(){
 
         LaunchCore.state.current = state;
 
+        const timingState = LaunchCore.getTimingState(state);
+        LaunchCore.logTimingState(state, "bootstrap");
+
         LaunchCore.render({
           ...state.payload,
           __status: state.status
         });
 
-        if (state.timing?.nextUpdate !== null) {
+        if (timingState !== "IDLE") {
 
           const delay = state.timing.nextUpdate - Date.now();
 
@@ -679,12 +686,15 @@ LaunchCore.init = async function(){
 
         LaunchCore.state.current = msg.state;
 
+        const timingState = LaunchCore.getTimingState(msg.state);
+        LaunchCore.logTimingState(msg.state, "broadcast");
+
         LaunchCore.render({
           ...msg.state.payload,
           __status: msg.state.status
         });
 
-        if (msg.state.timing?.nextUpdate !== null) {
+        if (timingState !== "IDLE") {
           LaunchCore.scheduleNext(msg.state.timing.nextUpdate);
         }
 
@@ -711,6 +721,9 @@ LaunchCore.init = async function(){
       const state = LaunchCore.state.current;
 
       const pending = localStorage.getItem("lc_pending_version");
+
+      LaunchCore.logTimingState(state, "visibility");
+      const timingState = LaunchCore.getTimingState(state);
 
       // 🥇 1. VC MANDA (EXCEPCIÓN VÁLIDA)
       if (pending) {
@@ -746,13 +759,13 @@ LaunchCore.init = async function(){
       }
 
       // 🧊 AÚN VÁLIDO
-      if (timing.nextUpdate === null) {
+      if (timingState === "IDLE") {
         console.log("🧊 sin nextUpdate → sistema congelado");
         return;
       }
 
       // 🏁 EXPIRADO → FETCH
-      if (timing.nextUpdate !== null && now >= timing.nextUpdate) {
+      if (timingState === "EXPIRED") {
         console.log("⚡ expirado → fetch inmediato");
         fetchAndHandle(true);
         window.__vcCheckNow?.();
@@ -763,10 +776,11 @@ LaunchCore.init = async function(){
     });
 
     // ⏱ 8. SCHEDULE INICIAL
-    if (LaunchCore.state.current?.timing?.nextUpdate) {
-      LaunchCore.scheduleNext(
-        LaunchCore.state.current.timing.nextUpdate
-      );
+    const state = LaunchCore.state.current;
+    const timingState = LaunchCore.getTimingState(state);
+
+    if (timingState !== "IDLE") {
+      LaunchCore.scheduleNext(state.timing.nextUpdate);
     }
 
     // 🚀 9. FETCH INICIAL (SI NO HAY CACHE VÁLIDO)
@@ -846,15 +860,24 @@ LaunchCore.scheduler = (function(){
 LaunchCore.scheduleNext = function(nextUpdate){
 
   const current = LaunchCore.state.current;
-
+  
   if (!current) {
     console.warn("💀 sin state → no schedule");
     return;
   }
 
+  const timingState = LaunchCore.getTimingState(current);
+
   // 💀 sin timing válido → nada que hacer
-  if (current.timing?.nextUpdate === null) {
+  if (timingState === "IDLE") {
     console.log("💀 sin nextUpdate → no schedule");
+    return;
+  }
+
+  // ⚡ vencido → fetch inmediato
+  if (timingState === "EXPIRED") {
+    console.log("⚡ timer vencido → fetch inmediato");
+    fetchAndHandle(true);
     return;
   }
 
@@ -868,13 +891,6 @@ LaunchCore.scheduleNext = function(nextUpdate){
 
   const key = `core-main-${LaunchCore.config.page}`;
 
-  // ⚡ vencido → fetch inmediato
-  if (delay <= 0) {
-    console.log("⚡ timer vencido → fetch inmediato");
-    fetchAndHandle(true);
-    return;
-  }
-
   const nextTime = formatNextUpdate(nextUpdate);
 
   console.log(
@@ -884,6 +900,8 @@ LaunchCore.scheduleNext = function(nextUpdate){
     formatTime(delay),
     `(${delay} ms)`
   );
+
+  console.log("⏱ scheduleNext → estado:", timingState);
 
   LaunchCore.scheduler.schedule(
     key,
@@ -1059,6 +1077,40 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
     delay,
     { allowHidden: true } // 🔥 importante
   );
+
+};
+
+
+
+LaunchCore.getTimingState = function(state){
+
+  if (!state || !state.timing) return "UNKNOWN";
+
+  const { nextUpdate } = state.timing;
+
+  if (nextUpdate === null) return "IDLE";
+
+  if (Date.now() >= nextUpdate) return "EXPIRED";
+
+  return "SCHEDULED";
+};
+
+
+
+LaunchCore.logTimingState = function(state, context = ""){
+
+  const timingState = LaunchCore.getTimingState(state);
+
+  const nextUpdate = state?.timing?.nextUpdate;
+
+  let extra = "";
+
+  if (nextUpdate !== null) {
+    const delay = nextUpdate - Date.now();
+    extra = `| en: ${formatTime(delay)}`;
+  }
+
+  console.log(`⏱ TIMING [${context}] → ${timingState}`, extra);
 
 };
 
