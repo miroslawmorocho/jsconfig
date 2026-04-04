@@ -1293,7 +1293,7 @@ LaunchCore.on("code:update", async () => {
     let versionTag = localStorage.getItem("lc_code_update_version");
 
     if (!versionTag) {
-      versionTag = Date.now().toString();
+      versionTag = LaunchCore.globals.fechaHumana();
       localStorage.setItem("lc_code_update_version", versionTag);
     }
 
@@ -1335,6 +1335,21 @@ LaunchCore.use = async function(name){
 
   return await fn();
 
+};
+
+
+
+LaunchCore.globals.fechaHumana = function(){
+  const d = new Date();
+  const pad = n => String(n).padStart(2, "0");
+
+  return (
+    d.getFullYear() +
+    pad(d.getMonth()+1) +
+    pad(d.getDate()) +
+    pad(d.getHours()) +
+    pad(d.getMinutes())
+  );
 };
 
 
@@ -1490,20 +1505,7 @@ document.addEventListener("click", function(e){
 
 LaunchCore.reloadWithVersion = function(version){
 
-  function fechaHumana(){
-    const d = new Date();
-    const pad = n => String(n).padStart(2, "0");
-
-    return (
-      d.getFullYear() +
-      pad(d.getMonth()+1) +
-      pad(d.getDate()) +
-      pad(d.getHours()) +
-      pad(d.getMinutes())
-    );
-  }
-
-  const v = version || fechaHumana();
+  const v = version || LaunchCore.globals.fechaHumana();
 
   const url =
     location.origin +
