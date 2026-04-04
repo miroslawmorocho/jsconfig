@@ -1079,6 +1079,10 @@ LaunchCore.vc.scheduleConfirm = function({ delay }){
 
 
 
+// =========== FORMATEADORES DEL TIMING ==================
+
+// ================= TIMING STATE ========================
+
 LaunchCore.getTimingState = function(state){
 
   if (!state || !state.timing) return "UNKNOWN";
