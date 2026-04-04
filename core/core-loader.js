@@ -754,6 +754,9 @@ LaunchCore.normalize = function(input, options = {}) {
       launch
     },
 
+    // ¡OJO!: Todos estos tiempos son "fotos del pasado" hechas en el
+    // momento del cálculo de normalize, luego debemos controlar
+    // activamente EN EL TIEMPO ACTUAL contra "nextUpdate" solamente.
     timing: {
       now,
       nextUpdate,
@@ -945,6 +948,12 @@ async function fetchAndHandle(force = false) {
 
   if (document.hidden) {
     console.log("🚫 fetch cancelado (hidden)");
+
+    // 🔥 REINTENTO CONTROLADO
+    setTimeout(() => {
+      fetchAndHandle(force);
+    }, 30000);
+
     return;
   }
 
@@ -962,12 +971,6 @@ async function fetchAndHandle(force = false) {
 
 
 
-function onVersionCheck(raw) {
-  LaunchCore.handleEvent(raw, { source: "VC" });
-}
-
-
-
 // ====================== NUEVO INIT =======================
 
 LaunchCore.init = async function(){
@@ -978,10 +981,10 @@ LaunchCore.init = async function(){
     LaunchCore.vc.detect(payload);
   });
 
-  LaunchCore.on("code:update", () => {
+  /*LaunchCore.on("code:update", () => {
     console.log("💥 recargando por code update");
     location.reload();
-  });
+  });*/
 
   try {
 
@@ -1165,7 +1168,7 @@ LaunchCore.init = async function(){
       }
 
       // 🏁 EXPIRADO → FETCH
-      if (timing.isExpired) {
+      if (timing.nextUpdate && now >= timing.nextUpdate) {
         console.log("⚡ expirado → fetch inmediato");
         fetchAndHandle(true);
         window.__vcCheckNow?.();
@@ -1266,7 +1269,7 @@ LaunchCore.scheduleNext = function(nextUpdate){
   }
 
   // 💀 sin timing válido → nada que hacer
-  if (!current.timing.isAlive) {
+  if (!current.timing?.nextUpdate || current.timing.nextUpdate === Infinity) {
     console.log("💀 no alive → no schedule");
     return;
   }
@@ -2412,12 +2415,6 @@ LaunchCore.channel.onmessage = function (event) {
 /* =====================================================
    6. EVENT SYSTEM (on, emit, handlers)
 ===================================================== */
-
-// ================ DATA UPDATE ========================
-
-LaunchCore.on("data:detected", LaunchCore.vc.detect);
-
-
 
 // ================== CODE UPDATE ==========================
 
