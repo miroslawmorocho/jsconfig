@@ -854,6 +854,8 @@ LaunchCore.scheduler = (function(){
 
 
 
+// ============== SCHEDULE NEXT UPDATE =================
+
 LaunchCore.scheduleNext = function(nextUpdate){
 
   const current = LaunchCore.state.current;
@@ -879,9 +881,17 @@ LaunchCore.scheduleNext = function(nextUpdate){
   }
 
   const now = Date.now();
-  const delay = nextUpdate - now;
+  let delay = nextUpdate - now;
 
-  if (!Number.isFinite(delay)) {
+  // 🧠 BASE DELAY (esperar al worker)
+  const BASE_DELAY = 100; // 1.5s (puedes ajustar)
+
+  // 🎲 JITTER (anti estampida)
+  const JITTER = Math.random() * 2000; // 0 - 2s
+
+  const finalDelay = delay + BASE_DELAY + JITTER;
+
+  if (!Number.isFinite(finalDelay)) {
     console.warn("💀 delay inválido");
     return;
   }
@@ -891,11 +901,17 @@ LaunchCore.scheduleNext = function(nextUpdate){
   const nextTime = formatNextUpdate(nextUpdate);
 
   console.log(
+    "🎲 jitter aplicado:",
+    `base=${BASE_DELAY}ms`,
+    `+ jitter=${Math.round(JITTER)}ms`
+  );
+
+  console.log(
     "⏱ próximo fetch:",
     nextTime,
     "| en:",
-    formatTime(delay),
-    `(${delay} ms)`
+    formatTime(finalDelay),
+    `(${finalDelay} ms)`
   );
 
   console.log("⏱ scheduleNext → estado:", timingState);
@@ -906,11 +922,13 @@ LaunchCore.scheduleNext = function(nextUpdate){
       console.log("🚀 ejecutando fetch programado");
       fetchAndHandle(true);
     },
-    Math.max(delay, 1000),
+    Math.max(finalDelay, 1000),
     { allowHidden: false }
   );
 
 };
+
+
 
 // ============== VERSION CHECKER FUNCTIONS ============================
 
