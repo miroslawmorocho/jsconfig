@@ -929,11 +929,6 @@ async function fetchAndHandle(force = false) {
   if (document.hidden) {
     console.log("🚫 fetch cancelado (hidden)");
 
-    // 🔥 REINTENTO CONTROLADO
-    setTimeout(() => {
-      fetchAndHandle(force);
-    }, 30000);
-
     return;
   }
 
