@@ -564,11 +564,6 @@ LaunchCore.init = async function(){
     LaunchCore.vc.detect(payload);
   });
 
-  LaunchCore.on("code:update", () => {
-    console.log("💥 recargando por code update");
-    location.reload();
-  });
-
   try {
 
     // 🧱 1. ROOT
