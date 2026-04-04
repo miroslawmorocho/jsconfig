@@ -38,7 +38,7 @@ async function initLaunchEngine(data){
   console.groupEnd();*/
 
   // 🔥 guardar ICS globalmente
-  window.__calendarICS = data.calendarICS || [];
+  window.__calendarICS = data.evento.calendarICS || [];
 
   // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)  
   const estado = LaunchCore.state.current?.status?.launch;
