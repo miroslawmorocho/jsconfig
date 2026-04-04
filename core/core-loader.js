@@ -1235,7 +1235,7 @@ LaunchCore.on("code:update", async () => {
     const data = await res.json();
     const newVersion = String(data.commit);
 
-    const currentVersion = LaunchCore.storage.get("lc_code_version", {source: "code:update"});
+    const currentVersion = localStorage.getItem("lc_code_version");
 
     console.log("💾 local code:", currentVersion);
     console.log("🌐 github code:", newVersion);
@@ -1247,7 +1247,7 @@ LaunchCore.on("code:update", async () => {
     }
 
     // 🔥 guardar nueva versión
-    LaunchCore.storage.set("lc_code_version", newVersion, {source: "code:update"});
+    localStorage.set("lc_code_version", newVersion);
 
     // 🔥 delegar reload
     LaunchCore.reloadWithVersion();
