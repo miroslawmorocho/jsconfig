@@ -19,7 +19,7 @@ LaunchCore.register("capture", {
     // 🔥 SOLO PINTA
     root.innerHTML = `
       <div id="evento-info">
-        ${data?.capturaHtml || ""}
+        ${data?.captura.capturaHtml || ""}
       </div>
     `;
 
