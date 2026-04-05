@@ -1443,7 +1443,7 @@ LaunchCore.globals.versionChecker = async function(){
     codeVersionUrl, // versión de código estático de Github
     workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
     checkInterval: 60*60*1000, // PRODUCCIÓN 15*60*1000 o incluso 60*60*1000,
-    confirmDelay: 3*60*1000, // PRODUCCIÓN 3 * 60 * 1000,
+    confirmDelay: 1*60*1000, // PRODUCCIÓN 3 * 60 * 1000,
     autoReload: true
   });
 
