@@ -20,6 +20,7 @@ const DOM = {
   calendarTitle: document.getElementById("launch-calendar-title"),
   offerText: document.getElementById("offer-deadline"), // Extraído a DOM para mejor orden
   sectionPadding: document.getElementById("section-6f21106b"), // El section de tu oferta
+  proximaLabel: document.getElementById("launch-proxima-label"),
   proxima: document.getElementById("launch-proxima"),
   estadoCerrado: document.getElementById("estado-cerrado")
 };
@@ -57,6 +58,7 @@ async function initLaunchEngine(data){
     if (DOM.countdown) DOM.countdown.style.display = "none";
     if (DOM.info) DOM.info.style.display = "none";
     if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
+    if (DOM.proximaLabel) DOM.proximaLabel.style.display = "none";
     if (DOM.proxima) DOM.proxima.style.display = "none";
     if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
     if (DOM.offerText) DOM.offerText.style.display = "none";
@@ -75,6 +77,7 @@ async function initLaunchEngine(data){
   if (DOM.countdown) DOM.countdown.style.display = "";
   if (DOM.info) DOM.info.style.display = "";
   if (DOM.calendarTitle) DOM.calendarTitle.style.display = "";
+  if (DOM.proximaLabel) DOM.proximaLabel.style.display = "";
   if (DOM.proxima) DOM.proxima.style.display = "";
 
   // 🔥 OFFER TEXT
@@ -106,6 +109,16 @@ async function initLaunchEngine(data){
   if (DOM.clases) {
     const html = await renderClases(data.evento.clases);
     DOM.clases.innerHTML = html;
+  }
+
+  // 🔥 PROXIMA LABEL
+  if (DOM.proximaLabel) {
+    if (data.evento.proximaClaseLabel) {
+      DOM.proximaLabel.innerHTML = data.evento.proximaClaseLabel;
+      DOM.proximaLabel.style.display = "block";
+    } else {
+      DOM.proximaLabel.style.display = "none";
+    }
   }
 
   // 🔥 PROXIMA
