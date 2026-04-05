@@ -982,6 +982,11 @@ LaunchCore.vc.confirm = async function(){
 
     const currentVersion = LaunchCore.state.current?.meta?.version;
 
+    if (!currentVersion) {
+      console.log("🆕 primera carga → skip detect");
+      return;
+    }
+
     if (String(currentVersion) === String(pending)) {
       console.log("🧊 ya tengo esta versión → limpiar");
 
