@@ -36,8 +36,14 @@ margin-bottom:var(--space-md);
 margin-bottom:var(--space-xl);
 }
 
-#launch-info{
+#launch-proxima-label{
 font-size:var(--text-size);
+/*margin-bottom:var(--space-xl);*/
+}
+
+
+#launch-info{
+/*font-size:var(--text-size);*/
 margin-bottom:var(--space-xl);
 }
 
