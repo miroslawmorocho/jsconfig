@@ -129,8 +129,39 @@ async function initLaunchEngine(data){
       DOM.proxima.style.display = "block";
     } else {
       DOM.proxima.style.display = "none";
-    }
+    }    
   }
+
+  // 🔥 CTA FINAL (solo antes del cierre)
+  if (DOM.proxima && data.evento.offerText) {
+
+    const offerUrl = getOfferUrl(data.evento.offerStickyHtml);
+
+    if (!offerUrl) return;
+
+    const fakeClase = {
+      titulo: "",
+      mensaje: "",
+      boton: {
+        tipo: "link",
+        texto: "🔥 Comprar ahora",
+        url: offerUrl
+      }
+    };
+
+    const html = await renderClases([fakeClase]);
+
+    DOM.proxima.innerHTML += html;
+  }
+
+
+  function getOfferUrl(html) {
+    if (!html) return null;
+
+    const match = html.match(/href="([^"]+)"/);
+    return match ? match[1] : null;
+  }
+
 
   // 🔥 COMPONENTES
   await renderComponentes();
