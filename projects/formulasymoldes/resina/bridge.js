@@ -1,306 +1,351 @@
-/**
- * ============================================================================
- * FRONTEND - LAUNCH ENGINE RENDERER
- * ============================================================================
- * Este script ya NO contiene lógica de negocio. Solo consulta al Worker y 
- * pinta los resultados en el DOM. Todo el cerebro está en Cloudflare.
- * ============================================================================
- */
+  /**
+   * ============================================================================
+   * FRONTEND - LAUNCH ENGINE RENDERER
+   * ============================================================================
+   * Este script ya NO contiene lógica de negocio. Solo consulta al Worker y 
+   * pinta los resultados en el DOM. Todo el cerebro está en Cloudflare.
+   * ============================================================================
+   */
 
-/* =====================================================
-   DOM
-===================================================== */
-const DOM = {
-  root: document.getElementById("launch-engine"),
-  header: document.getElementById("launch-header"),
-  clases: document.getElementById("launch-clases"),
-  countdown: document.getElementById("contador-wrapper"),
-  offerSticky: document.getElementById("offer-sticky"),
-  info: document.getElementById("launch-info"),
-  calendarTitle: document.getElementById("launch-calendar-title"),
-  offerText: document.getElementById("offer-deadline"), // Extraído a DOM para mejor orden
-  sectionPadding: document.getElementById("section-6f21106b"), // El section de tu oferta
-  proximaLabel: document.getElementById("launch-proxima-label"),
-  proxima: document.getElementById("launch-proxima"),
-  ctaFinal: document.getElementById("launch-cta-final"),
-  estadoCerrado: document.getElementById("estado-cerrado")
-};
+  /* =====================================================
+    VARIABLES DE RENDERIZACIÓN
+  ===================================================== */
+  let lastRender = {
+    header: null,
+    info: null,
+    clases: null,
+    proxima: null,
+    calendarTitle: null,
+    sticky: null,
+    ctaFinal: null,
+    estadoCerrado: null
+  };
 
-/* =====================================================
-   ENGINE INICIALIZADOR
-===================================================== */
-async function initLaunchEngine(data){
+  /* =====================================================
+    DOM
+  ===================================================== */
+  const DOM = {
+    root: document.getElementById("launch-engine"),
+    header: document.getElementById("launch-header"),
+    clases: document.getElementById("launch-clases"),
+    countdown: document.getElementById("contador-wrapper"),
+    offerSticky: document.getElementById("offer-sticky"),
+    info: document.getElementById("launch-info"),
+    calendarTitle: document.getElementById("launch-calendar-title"),
+    offerText: document.getElementById("offer-deadline"), // Extraído a DOM para mejor orden
+    sectionPadding: document.getElementById("section-6f21106b"), // El section de tu oferta
+    proximaLabel: document.getElementById("launch-proxima-label"),
+    proxima: document.getElementById("launch-proxima"),
+    ctaFinal: document.getElementById("launch-cta-final"),
+    estadoCerrado: document.getElementById("estado-cerrado")
+  };
 
-  /*console.group("🧪 FRONT DEBUG (bridge)");
+  /* =====================================================
+    ENGINE INICIALIZADOR
+  ===================================================== */
+  async function initLaunchEngine(data){
 
-  console.log("📦 DATA COMPLETA:", data);
-  console.log("📁 evento:", data?.evento);
-  console.log("💰 pricing:", data?.pricing);
+    /*console.group("🧪 FRONT DEBUG (bridge)");
 
-  console.groupEnd();*/
+    console.log("📦 DATA COMPLETA:", data);
+    console.log("📁 evento:", data?.evento);
+    console.log("💰 pricing:", data?.pricing);
 
-  // 🔥 guardar ICS globalmente
-  window.__calendarICS = data.evento.calendarICS || [];
+    console.groupEnd();*/
 
-  // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)  
-  const estado = LaunchCore.state.current?.status?.launch;
+    // 🔥 guardar ICS globalmente
+    window.__calendarICS = data.evento.calendarICS || [];
 
-  if (estado === "closed") {
+    // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)  
+    const estado = LaunchCore.state.current?.status?.launch;
 
-    console.log("💀 Evento cerrado → congelando sistema");
+    if (estado === "closed") {
+
+      console.log("💀 Evento cerrado → congelando sistema");
+
+      if (DOM.estadoCerrado && lastRender.estadoCerrado !== data.evento.htmlEventoCerrado) {
+        DOM.estadoCerrado.innerHTML = data.evento.htmlEventoCerrado;
+        lastRender.estadoCerrado = data.evento.htmlEventoCerrado;
+        DOM.estadoCerrado.style.display = "block";
+      }
+      
+      
+      if (DOM.header) DOM.header.style.display = "none";
+      if (DOM.clases) DOM.clases.style.display = "none";
+      if (DOM.countdown) DOM.countdown.style.display = "none";
+      if (DOM.info) DOM.info.style.display = "none";
+      if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
+      if (DOM.proximaLabel) DOM.proximaLabel.style.display = "none";
+      if (DOM.proxima) DOM.proxima.style.display = "none";
+      if (DOM.ctaFinal) DOM.ctaFinal.style.display = "none";
+      if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
+      if (DOM.offerText) DOM.offerText.style.display = "none";
+
+      return;
+    }
 
     if (DOM.estadoCerrado) {
-      DOM.estadoCerrado.innerHTML = data.evento.htmlEventoCerrado;
-      DOM.estadoCerrado.style.display = "block";
+      DOM.estadoCerrado.innerHTML = "";
+      DOM.estadoCerrado.style.display = "none";
+      lastRender.estadoCerrado = null;
     }
 
-    if (DOM.header) DOM.header.style.display = "none";
-    if (DOM.clases) DOM.clases.style.display = "none";
-    if (DOM.countdown) DOM.countdown.style.display = "none";
-    if (DOM.info) DOM.info.style.display = "none";
-    if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
-    if (DOM.proximaLabel) DOM.proximaLabel.style.display = "none";
-    if (DOM.proxima) DOM.proxima.style.display = "none";
-    if (DOM.ctaFinal) DOM.ctaFinal.style.display = "none";
-    if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
-    if (DOM.offerText) DOM.offerText.style.display = "none";
+    // 🔥 volver a mostrar todo
+    if (DOM.header) DOM.header.style.display = "";
+    if (DOM.clases) DOM.clases.style.display = "";
+    if (DOM.countdown) DOM.countdown.style.display = "";
+    if (DOM.info) DOM.info.style.display = "";
+    if (DOM.calendarTitle) DOM.calendarTitle.style.display = "";
+    if (DOM.proximaLabel) DOM.proximaLabel.style.display = "";
+    if (DOM.proxima) DOM.proxima.style.display = "";
+    if (DOM.ctaFinal) DOM.ctaFinal.style.display = "";
 
-    return;
-  }
-
-  if (DOM.estadoCerrado) {
-    DOM.estadoCerrado.innerHTML = "";
-    DOM.estadoCerrado.style.display = "none";
-  }
-
-  // 🔥 volver a mostrar todo
-  if (DOM.header) DOM.header.style.display = "";
-  if (DOM.clases) DOM.clases.style.display = "";
-  if (DOM.countdown) DOM.countdown.style.display = "";
-  if (DOM.info) DOM.info.style.display = "";
-  if (DOM.calendarTitle) DOM.calendarTitle.style.display = "";
-  if (DOM.proximaLabel) DOM.proximaLabel.style.display = "";
-  if (DOM.proxima) DOM.proxima.style.display = "";
-  if (DOM.ctaFinal) DOM.ctaFinal.style.display = "";
-
-  // 🔥 OFFER TEXT
-  if (DOM.offerText) {
-    DOM.offerText.innerText = data.evento.offerText;
-    DOM.offerText.style.display = data.evento.offerTextDisplay;
-  }
-
-  // 🔥 STICKY
-  if (DOM.offerSticky) {
-    DOM.offerSticky.style.display = data.evento.offerStickyDisplay;
-    DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
-
-    if (data.evento.offerStickyDisplay === "block" && DOM.sectionPadding && DOM.offerSticky) {
-
-      // 🔥 esperar a que el DOM renderice
-      requestAnimationFrame(() => {
-
-        const extraSpace = 10;
-
-        const height = DOM.offerSticky.offsetHeight + extraSpace;
-
-        console.log("📏 sticky height:", height);
-
-        DOM.sectionPadding.style.paddingTop = height + "px";
-
-      });
-
+    // 🔥 OFFER TEXT
+    if (DOM.offerText) {
+      DOM.offerText.innerText = data.evento.offerText;
+      DOM.offerText.style.display = data.evento.offerTextDisplay;
     }
-  }
 
-  // 🔥 TITULO
-  if (DOM.calendarTitle) {
-    DOM.calendarTitle.innerHTML = data.evento.calendarTitleHtml;
-  }
+    // 🔥 STICKY
+    if (DOM.offerSticky) {
+      DOM.offerSticky.style.display = data.evento.offerStickyDisplay;
+      if (lastRender.sticky !== data.evento.offerStickyHtml) {
 
-  if (DOM.info) DOM.info.innerHTML = data.evento.infoPaginaHtml;
-  if (DOM.header) DOM.header.innerHTML = data.evento.headerText;
+        DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
+        lastRender.sticky = data.evento.offerStickyHtml;
 
-  // 🔥 CLASES
-  if (DOM.clases) {
-    const html = await renderClases(data.evento.clases);
-    DOM.clases.innerHTML = html;
-  }
+        if (data.evento.offerStickyDisplay === "block" && DOM.sectionPadding && DOM.offerSticky) {
+          requestAnimationFrame(() => {
+            const extraSpace = 10;
+            const height = DOM.offerSticky.offsetHeight + extraSpace;
+            DOM.sectionPadding.style.paddingTop = height + "px";
+          });
+        }
 
-  // 🔥 PROXIMA LABEL
-  if (DOM.proximaLabel) {
-    if (data.evento.proximaClaseLabel) {
-      DOM.proximaLabel.innerHTML = data.evento.proximaClaseLabel;
-      DOM.proximaLabel.style.display = "block";
-    } else {
-      DOM.proximaLabel.style.display = "none";
+      }
     }
-  }
 
-  // 🔥 PROXIMA
-  if (DOM.proxima) {
-    if (data.evento.proximaClase) {
+    // 🔥 TITULO
+    if (DOM.calendarTitle && lastRender.calendarTitle !== data.evento.calendarTitleHtml) {
+      DOM.calendarTitle.innerHTML = data.evento.calendarTitleHtml;
+      lastRender.calendarTitle = data.evento.calendarTitleHtml;
+    }
+
+    if (DOM.info && lastRender.info !== data.evento.infoPaginaHtml) {
+      DOM.info.innerHTML = data.evento.infoPaginaHtml;
+      lastRender.info = data.evento.infoPaginaHtml;
+    }
+
+    if (DOM.header && lastRender.header !== data.evento.headerText) {
+      DOM.header.innerHTML = data.evento.headerText;
+      lastRender.header = data.evento.headerText;
+    }
+
+    // 🔥 CLASES
+    if (DOM.clases) {
+      const html = await renderClases(data.evento.clases);
+
+      if (lastRender.clases !== html) {
+        DOM.clases.innerHTML = html;
+        lastRender.clases = html;
+      }
+    }
+
+    // 🔥 PROXIMA LABEL
+    if (DOM.proximaLabel) {
+      if (data.evento.proximaClaseLabel) {
+        DOM.proximaLabel.innerHTML = data.evento.proximaClaseLabel;
+        DOM.proximaLabel.style.display = "block";
+      } else {
+        DOM.proximaLabel.style.display = "none";
+      }
+    }
+
+    // 🔥 PROXIMA
+    if (DOM.proxima && data.evento.proximaClase) {
+
       const html = await renderClases([data.evento.proximaClase]);
-      DOM.proxima.innerHTML = html;
-      DOM.proxima.style.display = "block";
-    } else {
-      DOM.proxima.style.display = "none";
-    }    
-  }
 
-  // CTA final antes de cierre
-  if (DOM.ctaFinal) {
-
-    if (data.evento.offerText && data.evento.offerUrl) {
-
-      DOM.ctaFinal.innerHTML = `
-        <div class="clase-item clase-item-cta">
-          <div class="clase-info"></div>
-          <div class="clase-boton">
-            <a href="${data.evento.offerUrl}" target="_blank">
-              🔥 Comprar ahora
-            </a>
-          </div>
-        </div>
-      `;
-
-      DOM.ctaFinal.style.display = "block";
-
-    } else {
-      DOM.ctaFinal.style.display = "none";
-    }
-
-  }
-
-  // 🔥 COMPONENTES
-  await renderComponentes();
-
-  // 🔥 COUNTDOWN
-  if (DOM.countdown) {
-    DOM.countdown.style.display = data.evento.countdownDisplay;
-  }
-
-  if (data.evento.countdownDisplay !== "none" && data.evento.countdownTarget) {
-    LaunchCore.countdown.start(data.evento.countdownTarget);
-  } else {
-    LaunchCore.countdown.stop();
-  }
-}
-
-
-let calendarTemplateCache = null;
-
-async function renderBotones() {
-
-  const botones = document.querySelectorAll(".clase-boton");
-
-  for (const el of botones) {
-
-    const raw = el.dataset.boton;
-    if (!raw) continue;
-
-    let data;
-    try {
-      data = JSON.parse(decodeURIComponent(raw));
-    } catch (e) {
-      console.warn("JSON inválido en data-boton", raw);
-      continue;
-    }
-
-    // 🔥 CALENDAR
-    if (data.tipo === "calendar") {
-
-      if (!calendarTemplateCache) {
-        calendarTemplateCache = await fetch(
-          LaunchCore.paths.components + "calendar-button.html"
-        ).then(r => r.text());
+      if (lastRender.proxima !== html) {
+        DOM.proxima.innerHTML = html;
+        lastRender.proxima = html;
       }
 
-      el.innerHTML = calendarTemplateCache
-        .replace("{{texto}}", data.texto)
-        .replace("{{google}}", data.google)
-        .replace("{{ics}}", data.ics)
-        .replace("{{ics_nombre}}", data.icsNombre || "evento.ics");
+      DOM.proxima.style.display = "block";
+
+    } else {
+      DOM.proxima.style.display = "none";
+    }
+
+    // CTA final antes de cierre
+    if (DOM.ctaFinal) {
+
+      if (data.evento.offerText && data.evento.offerUrl) {
+
+        const ctaHTML = `
+          <div class="clase-item clase-item-cta">
+            <div class="clase-info"></div>
+            <div class="clase-boton">
+              <a href="${data.evento.offerUrl}" target="_blank">
+                🔥 Comprar ahora
+              </a>
+            </div>
+          </div>
+        `;
+
+        if (lastRender.ctaFinal !== ctaHTML) {
+          DOM.ctaFinal.innerHTML = ctaHTML;
+          lastRender.ctaFinal = ctaHTML;
+        }
+
+        DOM.ctaFinal.style.display = "block";
+
+      } else {
+        DOM.ctaFinal.style.display = "none";
+      }
 
     }
 
-    // 🔥 LINK NORMAL
-    if (data.tipo === "link") {
+    // 🔥 COMPONENTES
+    await renderComponentes();
 
-      el.innerHTML = `
-        <a href="${data.url}" target="_blank">
-          ${data.texto}
-        </a>
-      `;
+    // 🔥 COUNTDOWN
+    if (DOM.countdown) {
+      DOM.countdown.style.display = data.evento.countdownDisplay;
+    }
+
+    if (data.evento.countdownDisplay !== "none" && data.evento.countdownTarget) {
+      LaunchCore.countdown.start(data.evento.countdownTarget);
+    } else {
+      LaunchCore.countdown.stop();
     }
   }
-}
 
 
-let messageTemplateCache = null;
+  let calendarTemplateCache = null;
 
-async function renderClases(clases) {
+  async function renderBotones() {
 
-  if (!messageTemplateCache) {
-    messageTemplateCache = await fetch(
-      LaunchCore.paths.components + "messages.html"
-    ).then(r => r.text());
+    const botones = document.querySelectorAll(".clase-boton");
+
+    for (const el of botones) {
+
+      const raw = el.dataset.boton;
+      if (!raw) continue;
+
+      let data;
+      try {
+        data = JSON.parse(decodeURIComponent(raw));
+      } catch (e) {
+        console.warn("JSON inválido en data-boton", raw);
+        continue;
+      }
+
+      // 🔥 CALENDAR
+      if (data.tipo === "calendar") {
+
+        if (!calendarTemplateCache) {
+          calendarTemplateCache = await fetch(
+            LaunchCore.paths.components + "calendar-button.html"
+          ).then(r => r.text());
+        }
+
+        const nuevoHTML = calendarTemplateCache
+          .replace("{{texto}}", data.texto)
+          .replace("{{google}}", data.google)
+          .replace("{{ics}}", data.ics)
+          .replace("{{ics_nombre}}", data.icsNombre || "evento.ics");
+
+        if (el.__lastHTML !== nuevoHTML) {
+          el.innerHTML = nuevoHTML;
+          el.__lastHTML = nuevoHTML;
+        }
+
+      }
+
+      // 🔥 LINK NORMAL
+      if (data.tipo === "link") {
+
+        const nuevoHTML = `
+          <a href="${data.url}" target="_blank">
+            ${data.texto}
+          </a>
+        `;
+
+        if (el.__lastHTML !== nuevoHTML) {
+          el.innerHTML = nuevoHTML;
+          el.__lastHTML = nuevoHTML;
+        }
+      }
+    }
   }
 
-  let html = "";
 
-  clases.forEach((c, index) => {
+  let messageTemplateCache = null;
 
-    // 🔥 INYECTAR ICS REAL DESDE calendarICS
-    const icsData = window.__calendarICS?.find(
-      i => i.id === c.id
-    );
+  async function renderClases(clases) {
 
-    if (icsData) {
-      c.boton.ics = icsData.url;
-      c.boton.icsNombre = icsData.nombre;
+    if (!messageTemplateCache) {
+      messageTemplateCache = await fetch(
+        LaunchCore.paths.components + "messages.html"
+      ).then(r => r.text());
     }
+
+    let html = "";
+
+    clases.forEach((c, index) => {
+
+      // 🔥 INYECTAR ICS REAL DESDE calendarICS
+      const icsData = window.__calendarICS?.find(
+        i => i.id === c.id
+      );
+
+      if (icsData) {
+        c.boton.ics = icsData.url;
+        c.boton.icsNombre = icsData.nombre;
+      }
+      
+      const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
+
+      html += messageTemplateCache
+        .replace("{{titulo}}", c.titulo)
+        .replace("{{mensaje}}", c.mensaje)
+        .replace("{{boton}}", botonJSON);
+
+    });
+
+    return html;
+  }
+
+
+  async function renderComponentes() {
+    await renderBotones();   
+  }
     
-    const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
 
-    html += messageTemplateCache
-      .replace("{{titulo}}", c.titulo)
-      .replace("{{mensaje}}", c.mensaje)
-      .replace("{{boton}}", botonJSON);
+  // botones de calendario
+  document.addEventListener("click", function(e) {
 
-  });
+    const toggle = e.target.closest(".calendar-toggle");
 
-  return html;
-}
+    if (toggle) {
+      const container = toggle.parentElement;
+      const menu = container.querySelector(".calendar-menu-inline");
 
+      if (!menu) return;
 
-async function renderComponentes() {
-  await renderBotones();   
-}
-  
+      const isOpen = getComputedStyle(menu).display === "flex";
 
-// botones de calendario
-document.addEventListener("click", function(e) {
+      // cerrar todos
+      document.querySelectorAll(".calendar-menu-inline")
+        .forEach(m => m.style.display = "none");
 
-  const toggle = e.target.closest(".calendar-toggle");
+      menu.style.display = isOpen ? "none" : "flex";
+      return;
+    }
 
-  if (toggle) {
-    const container = toggle.parentElement;
-    const menu = container.querySelector(".calendar-menu-inline");
-
-    if (!menu) return;
-
-    const isOpen = getComputedStyle(menu).display === "flex";
-
-    // cerrar todos
+    // cerrar si clic fuera
     document.querySelectorAll(".calendar-menu-inline")
       .forEach(m => m.style.display = "none");
 
-    menu.style.display = isOpen ? "none" : "flex";
-    return;
-  }
-
-  // cerrar si clic fuera
-  document.querySelectorAll(".calendar-menu-inline")
-    .forEach(m => m.style.display = "none");
-
-});
+  });

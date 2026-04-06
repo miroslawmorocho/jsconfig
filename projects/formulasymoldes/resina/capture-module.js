@@ -1,27 +1,29 @@
+let lastCapturaHTML = null;
+
 LaunchCore.register("capture", {
 
   init: async function(){
-
-    const root = LaunchCore.root;
     const { project, product, page } = LaunchCore.config;
-
     const url = LaunchCore.paths.projects + `${project}/${product}/${page}`;
-
-    // CSS
     await LaunchCore.loadCSS(url + ".css");
-
   },
 
   render: async function(data){
 
     const root = LaunchCore.root;
+    const nuevoHTML = data?.captura.capturaHtml || "";
 
-    // 🔥 SOLO PINTA
-    root.innerHTML = `
-      <div id="evento-info">
-        ${data?.captura.capturaHtml || ""}
-      </div>
-    `;
+    // 🧠 SOLO render si cambió
+    if (lastCapturaHTML !== nuevoHTML) {
+
+      root.innerHTML = `
+        <div id="evento-info">
+          ${nuevoHTML}
+        </div>
+      `;
+
+      lastCapturaHTML = nuevoHTML;
+    }
 
   }
 
