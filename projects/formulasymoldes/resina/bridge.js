@@ -99,7 +99,9 @@ async function initLaunchEngine(data){
       // 🔥 esperar a que el DOM renderice
       requestAnimationFrame(() => {
 
-        const height = DOM.offerSticky.offsetHeight;
+        const extraSpace = 10;
+
+        const height = DOM.offerSticky.offsetHeight + extraSpace;
 
         console.log("📏 sticky height:", height);
 
