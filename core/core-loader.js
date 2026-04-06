@@ -573,8 +573,9 @@ LaunchCore.init = async function(){
 
       const urlParams = new URLSearchParams(window.location.search);
       const v = urlParams.get("v");
+      const cu = localStorage.getItem("lc_code_update_version");
 
-      if (v) {
+      if (v && cu) {
         console.log("🧹 limpiando version compartida usada:", v);
         localStorage.removeItem("lc_code_update_version");
       }
