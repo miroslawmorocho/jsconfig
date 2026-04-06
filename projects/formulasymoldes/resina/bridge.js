@@ -182,68 +182,7 @@
       DOM.proxima.style.display = "none";
     }
 
-    // CTA final antes de cierre
-    /*if (DOM.ctaFinal) {
-
-      if (data.evento.offerText && data.evento.offerUrl) {
-
-        const ctaHTML = `
-          <div class="clase-item clase-item-cta">
-            <div class="clase-info"></div>
-            <div class="clase-boton">
-              <a href="${data.evento.offerUrl}" target="_blank">
-                🔥 Comprar ahora
-              </a>
-            </div>
-          </div>
-        `;
-
-        if (lastRender.ctaFinal !== ctaHTML) {
-          DOM.ctaFinal.innerHTML = ctaHTML;
-          lastRender.ctaFinal = ctaHTML;
-        }
-
-        DOM.ctaFinal.style.display = "block";
-
-      } else {
-        DOM.ctaFinal.style.display = "none";
-      }
-
-    }
-
-    // ===== CTA FINAL (MENSAJES DINÁMICOS) =====
-
-    if (!DOM.ctaFinal) return;
-
-    let html = "";
-
-    // PRIORIDAD 1 → durmiendo
-    if (data.evento.usuarioDurmiendo) {
-      html = `
-        <div class="mensaje-dormir">
-          ${data.evento.textoDurmiendo}
-        </div>
-      `;
-    }
-
-    // (futuro: aquí puedes meter más cosas sin romper nada)
-    // else if (...) { html = ... }
-
-
-    // ===== RENDER =====
-    if (html) {
-
-      if (lastRender.ctaFinal !== html) {
-        DOM.ctaFinal.innerHTML = html;
-        lastRender.ctaFinal = html;
-      }
-
-      DOM.ctaFinal.style.display = "block";
-
-    } else {
-      DOM.ctaFinal.style.display = "none";
-    }*/
-
+    
     // ===== CTA FINAL UNIFICADO =====
 
     if (!DOM.ctaFinal) return;
