@@ -122,6 +122,7 @@ align-items:center;
 
 #launch-cta-final{
   margin-top: calc(-1 * var(--space-lg)); /* -30px */
+  margin-bottom: var(--space-xl);
 }
 
 /* =====================================================
