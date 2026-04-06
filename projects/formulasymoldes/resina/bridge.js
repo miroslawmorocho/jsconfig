@@ -211,6 +211,24 @@
 
     }
 
+    // MENSAJE SI ESTÁ DURMIENDO
+    if (data.evento.usuarioDurmiendo && DOM.ctaFinal) {
+
+      if (lastRender.ctaFinal !== data.evento.textoDurmiendo) {
+        DOM.ctaFinal.innerHTML = `
+          <div class="mensaje-dormir">
+            ${data.evento.textoDurmiendo}
+          </div>
+        `;
+        lastRender.ctaFinal = data.evento.textoDurmiendo;
+      }
+
+      DOM.ctaFinal.style.display = "block";
+
+    } else {
+      DOM.ctaFinal.style.display = "none";
+    }
+
     // 🔥 COMPONENTES
     await renderComponentes();
 
