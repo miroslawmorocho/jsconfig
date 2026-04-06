@@ -183,7 +183,7 @@
     }
 
     // CTA final antes de cierre
-    if (DOM.ctaFinal) {
+    /*if (DOM.ctaFinal) {
 
       if (data.evento.offerText && data.evento.offerUrl) {
 
@@ -228,6 +228,51 @@
 
     // (futuro: aquí puedes meter más cosas sin romper nada)
     // else if (...) { html = ... }
+
+
+    // ===== RENDER =====
+    if (html) {
+
+      if (lastRender.ctaFinal !== html) {
+        DOM.ctaFinal.innerHTML = html;
+        lastRender.ctaFinal = html;
+      }
+
+      DOM.ctaFinal.style.display = "block";
+
+    } else {
+      DOM.ctaFinal.style.display = "none";
+    }*/
+
+    // ===== CTA FINAL UNIFICADO =====
+
+    if (!DOM.ctaFinal) return;
+
+    let html = "";
+
+    // PRIORIDAD 1 → durmiendo
+    if (data.evento.usuarioDurmiendo) {
+
+      html = `
+        <div class="mensaje-dormir">
+          ${data.evento.textoDurmiendo}
+        </div>
+      `;
+
+    // PRIORIDAD 2 → botón CTA
+    } else if (data.evento.offerText && data.evento.offerUrl) {
+
+      html = `
+        <div class="clase-item clase-item-cta">
+          <div class="clase-info"></div>
+          <div class="clase-boton">
+            <a href="${data.evento.offerUrl}" target="_blank">
+              🔥 Comprar ahora
+            </a>
+          </div>
+        </div>
+      `;
+    }
 
 
     // ===== RENDER =====
