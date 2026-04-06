@@ -211,16 +211,31 @@
 
     }
 
-    // MENSAJE SI ESTÁ DURMIENDO
-    if (data.evento.usuarioDurmiendo && DOM.ctaFinal) {
+    // ===== CTA FINAL (MENSAJES DINÁMICOS) =====
 
-      if (lastRender.ctaFinal !== data.evento.textoDurmiendo) {
-        DOM.ctaFinal.innerHTML = `
-          <div class="mensaje-dormir">
-            ${data.evento.textoDurmiendo}
-          </div>
-        `;
-        lastRender.ctaFinal = data.evento.textoDurmiendo;
+    if (!DOM.ctaFinal) return;
+
+    let html = "";
+
+    // PRIORIDAD 1 → durmiendo
+    if (data.evento.usuarioDurmiendo) {
+      html = `
+        <div class="mensaje-dormir">
+          ${data.evento.textoDurmiendo}
+        </div>
+      `;
+    }
+
+    // (futuro: aquí puedes meter más cosas sin romper nada)
+    // else if (...) { html = ... }
+
+
+    // ===== RENDER =====
+    if (html) {
+
+      if (lastRender.ctaFinal !== html) {
+        DOM.ctaFinal.innerHTML = html;
+        lastRender.ctaFinal = html;
       }
 
       DOM.ctaFinal.style.display = "block";
