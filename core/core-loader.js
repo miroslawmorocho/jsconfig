@@ -990,9 +990,7 @@ LaunchCore.vc.confirm = async function(){
     if (String(currentVersion) === String(pending)) {
       console.log("🧊 ya tengo esta versión → limpiar");
 
-      localStorage.removeItem("lc_pending_version");
-      localStorage.removeItem("vc_last_detected");
-      localStorage.removeItem("vc_next_confirm");
+      LaunchCore.vc.clearPending("sync ok");
       return;
     }
 
@@ -1003,13 +1001,21 @@ LaunchCore.vc.confirm = async function(){
 
     console.log("🛰️ worker version:", workerVersion);
 
+    if (
+      String(workerVersion) === String(currentVersion)
+    ) {
+      console.log("🧹 estado ya sincronizado → limpieza forzada");
+
+      LaunchCore.vc.clearPending("already current");
+
+      return;
+    }
+
     if (String(workerVersion) === String(pending)) {
 
       console.log("✅ DATA CONFIRMADA");
 
-      localStorage.removeItem("lc_pending_version");
-      localStorage.removeItem("vc_last_detected");
-      localStorage.removeItem("vc_next_confirm");
+      LaunchCore.vc.clearPending("confirmed");
 
       LaunchCore.handleEvent(result, { source: "VC" });
 
@@ -1029,7 +1035,29 @@ LaunchCore.vc.confirm = async function(){
 
 
 
+LaunchCore.vc.clearPending = function(reason = ""){
+
+  console.log("🧹 limpiando VC", reason);
+
+  localStorage.removeItem("lc_pending_version");
+  localStorage.removeItem("vc_last_detected");
+  localStorage.removeItem("vc_next_confirm");
+};
+
+
+
 LaunchCore.vc.detect = function({ version, confirmDelay }){
+
+  const currentVersion = LaunchCore.state.current?.meta?.version;
+
+  if (String(currentVersion) === String(version)) {
+    console.log("🧊 detect innecesario → ya estoy en esa versión");
+
+    // 🔥 LIMPIEZA CRÍTICA
+    LaunchCore.vc.clearPending("detect: already current");
+
+    return;
+  }
 
   const currentPending = localStorage.getItem("lc_pending_version");
 
