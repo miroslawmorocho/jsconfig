@@ -94,9 +94,19 @@ async function initLaunchEngine(data){
     DOM.offerSticky.style.display = data.evento.offerStickyDisplay;
     DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
 
-    if (data.evento.offerStickyDisplay === "block" && DOM.sectionPadding) {
-      DOM.sectionPadding.style.paddingTop =
-        window.innerWidth < 480 ? "50px" : "70px";
+    if (data.evento.offerStickyDisplay === "block" && DOM.sectionPadding && DOM.offerSticky) {
+
+      // 🔥 esperar a que el DOM renderice
+      requestAnimationFrame(() => {
+
+        const height = DOM.offerSticky.offsetHeight;
+
+        console.log("📏 sticky height:", height);
+
+        DOM.sectionPadding.style.paddingTop = height + "px";
+
+      });
+
     }
   }
 
