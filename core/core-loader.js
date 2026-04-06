@@ -667,7 +667,7 @@ LaunchCore.init = async function(){
             "🧊 bootstrap nextUpdate:",
             formatNextUpdate(state.timing.nextUpdate),
             "| en:",
-            formatTime(delay)
+            LaunchCore.globals.formatTime(delay)
           );
         }
 
@@ -934,7 +934,7 @@ LaunchCore.scheduleNext = function(nextUpdate){
     "⏱ próximo fetch:",
     nextTime,
     "| en:",
-    formatTime(finalDelay),
+    LaunchCore.globals.formatTime(finalDelay),
     `(${finalDelay} ms)`
   );
 
@@ -1185,7 +1185,7 @@ LaunchCore.logTimingState = function(state, context = ""){
 
   if (nextUpdate !== null) {
     const delay = nextUpdate - Date.now();
-    extra = `| en: ${formatTime(delay)}`;
+    extra = `| en: ${LaunchCore.globals.formatTime(delay)}`;
   }
 
   console.log(`⏱ TIMING [${context}] → ${timingState}`, extra);
@@ -1233,33 +1233,6 @@ LaunchCore.smartCheckNow = function(){
   }
 
 };
-
-
-
-// =============== FORMATEAR TIME ====================
-
-function formatTime(ms){
-
-  if(ms <= 0) return "AHORA";
-
-  const s = Math.floor(ms / 1000);
-  const m = Math.floor(s / 60);
-  const h = Math.floor(m / 60);
-  const d = Math.floor(h / 24);
-
-  const seconds = s % 60;
-  const minutes = m % 60;
-  const hours = h % 24;
-
-  let parts = [];
-
-  if(d > 0) parts.push(`${d}d`);
-  if(h > 0 || d > 0) parts.push(`${hours}h`);
-  if(m > 0 || h > 0 || d > 0) parts.push(`${minutes}m`);
-  parts.push(`${seconds}s`);
-
-  return parts.join(" ");
-}
 
 
 
@@ -1370,6 +1343,31 @@ LaunchCore.use = async function(name){
   return await fn();
 
 };
+
+// =============== FORMATEAR TIME ====================
+
+LaunchCore.globals.formatTime = function(ms) {
+
+  if(ms <= 0) return "AHORA";
+
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+
+  const seconds = s % 60;
+  const minutes = m % 60;
+  const hours = h % 24;
+
+  let parts = [];
+
+  if(d > 0) parts.push(`${d}d`);
+  if(h > 0 || d > 0) parts.push(`${hours}h`);
+  if(m > 0 || h > 0 || d > 0) parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+
+  return parts.join(" ");
+}
 
 
 

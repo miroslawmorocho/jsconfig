@@ -103,7 +103,8 @@ function initVersionChecker(config){
      LOOP
   ===================================================== */
 
-  console.log("⏱️ intervalo:", config.checkInterval);
+  console.log("⏱️ intervalo:", 
+    LaunchCore.globals.formatTime(config.checkInterval));
 
   setInterval(check, config.checkInterval);
 
