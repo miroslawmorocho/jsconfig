@@ -144,7 +144,7 @@ async function initLaunchEngine(data){
         <div class="clase-item clase-item-cta">
           <div class="clase-info"></div>
           <div class="clase-boton">
-            <a href="..." target="_blank">
+            <a href="${data.evento.offerUrl}" target="_blank">
               🔥 Comprar ahora
             </a>
           </div>
