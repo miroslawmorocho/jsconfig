@@ -142,13 +142,18 @@
     }
 
     // 🔥 CLASES
-    if (DOM.clases) {
+    const clasesString = JSON.stringify(data.evento.clases);
+
+    if (lastRender.clasesData !== clasesString) {
+
       const html = await renderClases(data.evento.clases);
 
       if (lastRender.clases !== html) {
         DOM.clases.innerHTML = html;
         lastRender.clases = html;
       }
+
+      lastRender.clasesData = clasesString;
     }
 
     // 🔥 PROXIMA LABEL
