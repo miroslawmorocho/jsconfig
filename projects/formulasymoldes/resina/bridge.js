@@ -133,11 +133,7 @@ async function initLaunchEngine(data){
   }
 
   // 🔥 CTA FINAL (solo antes del cierre)
-  if (DOM.proxima && data.evento.offerText) {
-
-    const offerUrl = getOfferUrl(data.evento.offerStickyHtml);
-
-    if (!offerUrl) return;
+  if (DOM.proxima && data.evento.offerText && data.evento.offerUrl) {
 
     const fakeClase = {
       titulo: "",
@@ -145,24 +141,12 @@ async function initLaunchEngine(data){
       boton: {
         tipo: "link",
         texto: "🔥 Comprar ahora",
-        url: offerUrl
+        url: data.evento.offerUrl
       }
     };
 
     const html = await renderClases([fakeClase]);
-
     DOM.proxima.innerHTML += html;
-  }
-
-
-  function getOfferUrl(html) {
-    if (!html) return null;
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-
-    const link = doc.querySelector("a");
-    return link ? link.href : null;
   }
 
 
