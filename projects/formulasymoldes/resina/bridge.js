@@ -212,15 +212,15 @@ async function renderClases(clases) {
   clases.forEach((c, index) => {
 
     // 🔥 INYECTAR ICS REAL DESDE calendarICS
-    if (window.__calendarICS && window.__calendarICS[index]) {
-      const icsData = window.__calendarICS[index];
+    const icsData = window.__calendarICS?.find(
+      i => i.id === c.id
+    );
 
-      if (icsData) {
-        c.boton.ics = icsData.url;
-        c.boton.icsNombre = icsData.nombre;
-      }
+    if (icsData) {
+      c.boton.ics = icsData.url;
+      c.boton.icsNombre = icsData.nombre;
     }
-
+    
     const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
 
     html += messageTemplateCache
