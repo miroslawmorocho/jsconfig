@@ -135,17 +135,17 @@ async function initLaunchEngine(data){
   // 🔥 CTA FINAL (solo antes del cierre)
   if (DOM.proxima && data.evento.offerText && data.evento.offerUrl) {
 
-    const fakeClase = {
-      titulo: "",
-      mensaje: "",
-      boton: {
-        tipo: "link",
-        texto: "🔥 Comprar ahora",
-        url: data.evento.offerUrl
-      }
-    };
+    const html = `
+      <div class="clase-item">
+        <div class="clase-info"></div>
+        <div class="clase-boton">
+          <a href="${data.evento.offerUrl}" target="_blank">
+            🔥 Comprar ahora
+          </a>
+        </div>
+      </div>
+    `;
 
-    const html = await renderClases([fakeClase]);
     DOM.proxima.innerHTML += html;
   }
 
