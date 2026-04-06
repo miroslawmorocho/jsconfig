@@ -61,6 +61,7 @@ async function initLaunchEngine(data){
     if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
     if (DOM.proximaLabel) DOM.proximaLabel.style.display = "none";
     if (DOM.proxima) DOM.proxima.style.display = "none";
+    if (DOM.ctaFinal) DOM.ctaFinal.style.display = "none";
     if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
     if (DOM.offerText) DOM.offerText.style.display = "none";
 
@@ -80,6 +81,7 @@ async function initLaunchEngine(data){
   if (DOM.calendarTitle) DOM.calendarTitle.style.display = "";
   if (DOM.proximaLabel) DOM.proximaLabel.style.display = "";
   if (DOM.proxima) DOM.proxima.style.display = "";
+  if (DOM.ctaFinal) DOM.ctaFinal.style.display = "";
 
   // 🔥 OFFER TEXT
   if (DOM.offerText) {
