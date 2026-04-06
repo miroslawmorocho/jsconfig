@@ -139,10 +139,10 @@ async function initLaunchEngine(data){
     if (data.evento.offerText && data.evento.offerUrl) {
 
       DOM.ctaFinal.innerHTML = `
-        <div class="clase-item">
+        <div class="clase-item clase-item-cta">
           <div class="clase-info"></div>
           <div class="clase-boton">
-            <a href="${data.evento.offerUrl}" target="_blank">
+            <a href="..." target="_blank">
               🔥 Comprar ahora
             </a>
           </div>

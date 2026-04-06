@@ -107,6 +107,20 @@ align-items:center;
   text-align:center;
 }
 
+.clase-item-cta{
+  justify-content: center; /* 🔥 centrado total */
+}
+
+/* opcional: quitar la línea gris solo en CTA */
+.clase-item-cta{
+  border-bottom: none;
+}
+
+/* por si acaso el botón se quiere alinear raro */
+.clase-item-cta .clase-boton{
+  justify-content: center;
+}
+
 /* =====================================================
 BOTON SELECTOR CALENDARIO (LIMPIO)
 ===================================================== */
