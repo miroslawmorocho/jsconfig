@@ -22,6 +22,7 @@ const DOM = {
   sectionPadding: document.getElementById("section-6f21106b"), // El section de tu oferta
   proximaLabel: document.getElementById("launch-proxima-label"),
   proxima: document.getElementById("launch-proxima"),
+  ctaFinal: document.getElementById("launch-cta-final"),
   estadoCerrado: document.getElementById("estado-cerrado")
 };
 
@@ -132,35 +133,29 @@ async function initLaunchEngine(data){
     }    
   }
 
+  // CTA final antes de cierre
+  if (DOM.ctaFinal) {
 
+    if (data.evento.offerText && data.evento.offerUrl) {
 
-  if (!DOM.proxima.querySelector(".cta-final")) {
-    DOM.proxima.innerHTML += `
-      <div class="clase-item cta-final">
-        ...
-      </div>
-    `;
+      DOM.ctaFinal.innerHTML = `
+        <div class="clase-item">
+          <div class="clase-info"></div>
+          <div class="clase-boton">
+            <a href="${data.evento.offerUrl}" target="_blank">
+              🔥 Comprar ahora
+            </a>
+          </div>
+        </div>
+      `;
+
+      DOM.ctaFinal.style.display = "block";
+
+    } else {
+      DOM.ctaFinal.style.display = "none";
+    }
+
   }
-
-  // 🔥 CTA FINAL (solo antes del cierre)
-  if (data.evento.offerText && data.evento.offerUrl) {
-    clases.push({
-      titulo: "",
-      mensaje: "",
-      boton: {
-        tipo: "link",
-        texto: "🔥 Comprar ahora",
-        url: data.evento.offerUrl
-      }
-    });
-  }
-
-  new MutationObserver(() => {
-    console.log("👀 PROXIMA CAMBIÓ");
-  }).observe(document.getElementById("launch-proxima"), {
-    childList: true
-  });
-
 
   // 🔥 COMPONENTES
   await renderComponentes();
