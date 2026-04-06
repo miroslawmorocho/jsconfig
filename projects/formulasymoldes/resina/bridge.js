@@ -158,8 +158,11 @@ async function initLaunchEngine(data){
   function getOfferUrl(html) {
     if (!html) return null;
 
-    const match = html.match(/href="([^"]+)"/);
-    return match ? match[1] : null;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    const link = doc.querySelector("a");
+    return link ? link.href : null;
   }
 
 
