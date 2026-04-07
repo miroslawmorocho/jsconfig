@@ -25,11 +25,12 @@ VARIABLES VISUALES
 font-size:var(--title-size);
 font-weight:bold;
 font-family: 'Montserrat', sans-serif;
-margin-bottom:var(--space-lg);
+margin-bottom:var(--space-xl);
 }
 
 #offer-deadline{
 margin-bottom:var(--space-md);
+font-size: var(--text-size);
 }
 
 #contador-wrapper{
