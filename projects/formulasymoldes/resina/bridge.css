@@ -389,3 +389,26 @@ font-size:14px;
 text-align:center;
 padding:40px;
 }
+
+/* =========================
+   🔤 FIX TIPOGRAFÍA BRIDGE
+========================= */
+
+#launch-engine,
+#launch-engine p,
+#launch-engine span,
+#launch-engine li,
+#launch-engine a,
+#launch-engine div {
+  font-family: 'DM Sans', Arial, sans-serif !important;
+}
+
+/* 👇 HEADINGS mantienen Montserrat */
+#launch-engine h1,
+#launch-engine h2,
+#launch-engine h3,
+#launch-engine h4,
+#launch-engine h5,
+#launch-engine h6 {
+  font-family: 'Montserrat', sans-serif !important;
+}
