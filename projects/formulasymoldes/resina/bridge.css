@@ -253,6 +253,10 @@ LIVE DOT
 
 @media(max-width:480px){
 
+  #launch-header{
+    font-size:var(--subtitle-size);    
+  }
+
   .clase-item{
     padding: 20px 0 0 0;
     flex-direction:column;
