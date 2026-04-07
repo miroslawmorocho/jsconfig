@@ -29,6 +29,7 @@ VARIABLES VISUALES
 }
 
 #offer-deadline{
+  margin-top: var(--space-md);
   margin-bottom:var(--space-md);
   font-size: var(--text-size);
 }
