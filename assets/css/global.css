@@ -14,22 +14,13 @@
    🎯 TIPOGRAFÍA CONTROLADA
 ========================= */
 
-/* 🔥 RESET TOTAL SOLO EN TU ROOT */
-#launch-engine-root * {
+/* 🔥 BASE TOTAL */
+html, body, * {
   font-family: 'DM Sans', Arial, sans-serif !important;
 }
 
-#launch-engine-root h1,
-#launch-engine-root h1 *,
-#launch-engine-root h2,
-#launch-engine-root h2 *,
-#launch-engine-root h3,
-#launch-engine-root h3 *,
-#launch-engine-root h4,
-#launch-engine-root h4 *,
-#launch-engine-root h5,
-#launch-engine-root h5 *,
-#launch-engine-root h6,
-#launch-engine-root h6 * {
+/* 🔥 HEADINGS */
+h1, h2, h3, h4, h5, h6,
+h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
   font-family: 'Montserrat', sans-serif !important;
 }
