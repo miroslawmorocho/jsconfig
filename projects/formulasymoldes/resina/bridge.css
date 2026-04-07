@@ -39,7 +39,7 @@ VARIABLES VISUALES
 
 #launch-proxima-label{
   font-size:var(--text-size);
-  margin-top: var(--space-md);
+  padding-top: 20px;
   margin-bottom:var(--space-md);
 }
 
