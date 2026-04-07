@@ -16,9 +16,12 @@
 
 /* 👉 TEXTOS (tu dominio) */
 #launch-engine-root p,
-#launch-engine-root span,
+#launch-engine-root p *,
 #launch-engine-root li,
+#launch-engine-root li *,
 #launch-engine-root a,
+#launch-engine-root a *,
+#launch-engine-root span,
 #launch-engine-root small,
 #launch-engine-root label,
 #launch-engine-root input,
@@ -29,10 +32,16 @@
 
 /* 👉 HEADINGS (dejas que Systeme mande) */
 #launch-engine-root h1,
+#launch-engine-root h1 *,
 #launch-engine-root h2,
+#launch-engine-root h2 *,
 #launch-engine-root h3,
+#launch-engine-root h3 *,
 #launch-engine-root h4,
+#launch-engine-root h4 *,
 #launch-engine-root h5,
-#launch-engine-root h6 {
-  font-family: inherit !important;
+#launch-engine-root h5 *,
+#launch-engine-root h6,
+#launch-engine-root h6 * {
+  font-family: 'Montserrat', sans-serif !important;
 }
