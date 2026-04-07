@@ -18,6 +18,10 @@
   --font-main: 'DM Sans', Arial, sans-serif;
 }
 
-body {
+/*body {
   font-family: var(--font-main);
+}*/
+
+body {
+  font-family: 'DM Sans', Arial, sans-serif !important;
 }
