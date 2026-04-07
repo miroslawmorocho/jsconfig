@@ -86,7 +86,7 @@ border-bottom:none;
 margin-bottom:var(--space-lg);
 }
 
-#clase-item{
+.clase-item{
 border-bottom:none;
 margin-bottom:var(--space-xl);
 }
