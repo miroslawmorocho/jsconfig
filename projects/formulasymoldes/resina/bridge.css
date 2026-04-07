@@ -81,7 +81,12 @@ gap:20px;
 }
 
 /* info clonada arriba */
-#launch-proxima .clase-item{
+#launch-proxima{
+border-bottom:none;
+margin-bottom:var(--space-lg);
+}
+
+#clase-item{
 border-bottom:none;
 margin-bottom:var(--space-xl);
 }
