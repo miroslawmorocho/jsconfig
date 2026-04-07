@@ -14,23 +14,11 @@
    🎯 TIPOGRAFÍA CONTROLADA
 ========================= */
 
-/* 👉 TEXTOS (tu dominio) */
-#launch-engine-root p,
-#launch-engine-root p *,
-#launch-engine-root li,
-#launch-engine-root li *,
-#launch-engine-root a,
-#launch-engine-root a *,
-#launch-engine-root span,
-#launch-engine-root small,
-#launch-engine-root label,
-#launch-engine-root input,
-#launch-engine-root textarea,
-#launch-engine-root button {
+/* 🔥 RESET TOTAL SOLO EN TU ROOT */
+#launch-engine-root * {
   font-family: 'DM Sans', Arial, sans-serif !important;
 }
 
-/* 👉 HEADINGS (dejas que Systeme mande) */
 #launch-engine-root h1,
 #launch-engine-root h1 *,
 #launch-engine-root h2,
