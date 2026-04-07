@@ -54,6 +54,7 @@ VARIABLES VISUALES
 #launch-cta-final{
   margin-top: calc(-1 * var(--space-md)); /* -20px */
   margin-bottom: var(--space-xl);
+  font-size: 18px;
 }
 
 #launch-info{
