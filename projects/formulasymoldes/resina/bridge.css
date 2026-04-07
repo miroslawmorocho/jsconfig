@@ -83,7 +83,7 @@ gap:20px;
 /* info clonada arriba */
 #launch-proxima .clase-item{
 border-bottom:none;
-margin-bottom:var(--space-lg);
+margin-bottom:var(--space-xl);
 }
 
 #launch-proxima {
@@ -94,8 +94,7 @@ margin-bottom:var(--space-lg);
 .clase-info{
   flex:2;
   font-size: 18px;
-  line-height:1.3;
-  margin-bottom: var(--space-md);
+  line-height:1.3;  
 }
 
 .clase-boton{
