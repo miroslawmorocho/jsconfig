@@ -17,21 +17,21 @@ LaunchCore.register("capture", {
 
     let htmlExtra = "";
 
-    // ===== PRIORIDAD 1 → REPETICIONES =====
-    if (evento.capturaRepeticiones) {
-
-      htmlExtra = `
-        <div class="mensaje-repeticiones">
-          ${evento.capturaRepeticiones}
-        </div>
-      `;
-
-    // ===== PRIORIDAD 2 → DURMIENDO =====
-    } else if (evento.capturaDurmiendo) {
+    // SIEMPRE mostrar algo si hay próxima clase
+    if (evento.proximaClase) {
 
       htmlExtra = `
         <div class="mensaje-dormir">
           ${evento.textoCapturaDurmiendo}
+        </div>
+      `;
+
+    // SOLO cuando ya no hay clases → repetición
+    } else if (evento.capturaRepeticiones) {
+
+      htmlExtra = `
+        <div class="mensaje-repeticiones">
+          ${evento.capturaRepeticiones}
         </div>
       `;
     }
