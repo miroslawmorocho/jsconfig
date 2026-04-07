@@ -17,6 +17,8 @@
   }
 }
 
-.mensaje-dormir {
-  margin-top: 10px;
+#evento-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
