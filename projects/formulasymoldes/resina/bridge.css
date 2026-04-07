@@ -70,6 +70,10 @@ VARIABLES VISUALES
   font-family: 'Montserrat', sans-serif;
 }
 
+#launch-clases {
+  gap: 20px;
+}
+
 /* =====================================================
 CONTENEDOR
 ===================================================== */
