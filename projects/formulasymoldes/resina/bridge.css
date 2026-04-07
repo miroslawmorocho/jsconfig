@@ -84,6 +84,10 @@ border-bottom:none;
 margin-bottom:var(--space-lg);
 }
 
+#launch-proxima {
+  font-size: 20px;
+}
+
 .clase-info{
 flex:2;
 line-height:1.5;
