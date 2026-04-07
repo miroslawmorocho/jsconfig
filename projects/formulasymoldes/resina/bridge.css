@@ -91,15 +91,10 @@ margin-bottom:var(--space-lg);
   line-height:1.3;
 }
 
-#launch-clases {
+.clase-info{
+  flex:2;
   font-size: 18px;
   line-height:1.3;
-}
-
-
-.clase-info{
-flex:2;
-line-height:1.5;
 }
 
 .clase-boton{
