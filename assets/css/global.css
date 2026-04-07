@@ -1,0 +1,23 @@
+/* =========================
+   🔤 FUENTE GLOBAL
+========================= */
+
+@font-face {
+  font-family: 'DM Sans';
+  src: url('https://miroslawmorocho.github.io/jsconfig/assets/fonts/DMSans-VariableFont_opsz,wght.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* =========================
+   🌍 BASE GLOBAL
+========================= */
+
+:root {
+  --font-main: 'DM Sans', Arial, sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+}

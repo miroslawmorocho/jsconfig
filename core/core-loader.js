@@ -8,7 +8,8 @@ LaunchCore.paths = {
   base: "https://miroslawmorocho.github.io/jsconfig/",
   components: "https://miroslawmorocho.github.io/jsconfig/components/",
   projects: "https://miroslawmorocho.github.io/jsconfig/projects/",
-  workerUrl: "https://launch-engine.miroslaw-mm.workers.dev"
+  workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
+  globalCSS: "https://miroslawmorocho.github.io/jsconfig/assets/css/global.css",
 };
 
 LaunchCore.config = {
@@ -605,7 +606,10 @@ LaunchCore.init = async function(){
 
     LaunchCore.config.endpoint = "/";
 
-    // 📦 3. LOAD MODULE
+    // 📦 3. GLOBAL CSS
+    await LaunchCore.loadCSS(LaunchCore.paths.globalCSS);
+
+    // 📦 4. LOAD MODULE
     const base = LaunchCore.paths.projects + `${project}/${product}/`;
     const moduleUrl = base + page + "-module.js";
 
@@ -623,7 +627,7 @@ LaunchCore.init = async function(){
       await module.init();
     }
 
-    // 💾 4. CACHE (BOOTSTRAP)
+    // 💾 5. CACHE (BOOTSTRAP)
     function loadCache() {
       try {
         const raw = localStorage.getItem("lc_state");
@@ -683,7 +687,7 @@ LaunchCore.init = async function(){
 
     loadCache();
 
-    // VERSION CHECKER
+    // 6. VERSION CHECKER
     await LaunchCore.use("versionChecker");
 
     console.log("🔥 LLAMANDO VERSION CHECKER...");
