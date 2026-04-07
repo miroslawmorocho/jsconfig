@@ -40,7 +40,7 @@ VARIABLES VISUALES
 #launch-proxima-label{
   font-size:var(--text-size);
   padding-top: 20px;
-  margin-bottom:var(--space-md);
+  /*margin-bottom:var(--space-md);*/
 }
 
 /* info clonada arriba */
@@ -90,7 +90,7 @@ CLASE ITEM
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:0;
+  padding:20px 0 0 0;
   border-bottom:1px solid var(--border-color);
   gap:20px;
   border-bottom:none;
