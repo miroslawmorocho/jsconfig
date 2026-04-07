@@ -11,17 +11,28 @@
 }
 
 /* =========================
-   🌍 BASE GLOBAL
+   🎯 TIPOGRAFÍA CONTROLADA
 ========================= */
 
-:root {
-  --font-main: 'DM Sans', Arial, sans-serif;
+/* 👉 TEXTOS (tu dominio) */
+#launch-engine-root p,
+#launch-engine-root span,
+#launch-engine-root li,
+#launch-engine-root a,
+#launch-engine-root small,
+#launch-engine-root label,
+#launch-engine-root input,
+#launch-engine-root textarea,
+#launch-engine-root button {
+  font-family: 'DM Sans', Arial, sans-serif !important;
 }
 
-/*body {
-  font-family: var(--font-main);
-}*/
-
-html, body, * {
-  font-family: 'DM Sans', Arial, sans-serif !important;
+/* 👉 HEADINGS (dejas que Systeme mande) */
+#launch-engine-root h1,
+#launch-engine-root h2,
+#launch-engine-root h3,
+#launch-engine-root h4,
+#launch-engine-root h5,
+#launch-engine-root h6 {
+  font-family: inherit !important;
 }
