@@ -1,5 +1,5 @@
 *{
-box-sizing:border-box;
+  box-sizing:border-box;
 }
 
 /* =====================================================
@@ -7,53 +7,66 @@ VARIABLES VISUALES
 ===================================================== */
 
 :root{
---text-color:#ffffff;
---button-bg:#009d43;
---button-text:#ffffff;
---border-color:#333;
+  --text-color:#ffffff;
+  --button-bg:#009d43;
+  --button-text:#ffffff;
+  --border-color:#333;
 
---title-size:40px;
---subtitle-size:32px;
---text-size:22px;
+  --title-size:40px;
+  --subtitle-size:32px;
+  --text-size:20px;
 
---space-xl:40px;
---space-lg:30px;
---space-md:20px;
+  --space-xl:40px;
+  --space-lg:30px;
+  --space-md:20px;
 }
 
 #launch-header{
-font-size:var(--title-size);
-font-weight:bold;
-font-family: 'Montserrat', sans-serif;
-margin-bottom:var(--space-xl);
+  font-size:var(--title-size);
+  font-weight:bold;
+  font-family: 'Montserrat', sans-serif;
+  margin-bottom:var(--space-xl);
 }
 
 #offer-deadline{
-margin-bottom:var(--space-md);
-font-size: var(--text-size);
+  margin-bottom:var(--space-md);
+  font-size: var(--text-size);
 }
 
 #contador-wrapper{
-margin-bottom:var(--space-xl);
+  margin-bottom:var(--space-xl);
 }
 
 #launch-proxima-label{
-font-size:var(--text-size);
-margin-bottom:var(--space-md);
+  font-size:var(--text-size);
+  /*margin-top: var(--space-xl);*/
+  margin-bottom:var(--space-md);
 }
 
+/* info clonada arriba */
+#launch-proxima{
+  border-bottom:none;
+  margin-bottom:var(--space-xl);
+  font-size: 18px;
+  line-height:1.3;
+}
+
+#launch-cta-final{
+  margin-top: calc(-1 * var(--space-md)); /* -20px */
+  margin-bottom: var(--space-xl);
+}
 
 #launch-info{
-font-size: 16px;
-margin-bottom:var(--space-xl);
-line-height: 1.3;
+  font-size: 16px;
+  margin-bottom:var(--space-md);
+  line-height: 1.3;
 }
 
 #launch-calendar-title{
-font-size:var(--subtitle-size);
-margin-top:var(--space-xl);
-margin-bottom:var(--space-md);
-font-family: 'Montserrat', sans-serif;
+  font-size:var(--subtitle-size);
+  margin-top:var(--space-xl);
+  margin-bottom:var(--space-xl);
+  font-family: 'Montserrat', sans-serif;
 }
 
 /* =====================================================
@@ -61,10 +74,10 @@ CONTENEDOR
 ===================================================== */
 
 #launch-engine{
-max-width:768px;
-margin:auto;
-font-size:20px;
-color:var(--text-color);
+  max-width:768px;
+  margin:auto;
+  font-size:20px;
+  color:var(--text-color);
 }
 
 /* =====================================================
@@ -72,28 +85,14 @@ CLASE ITEM
 ===================================================== */
 
 .clase-item{
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:20px 0;
-border-bottom:1px solid var(--border-color);
-gap:20px;
-}
-
-/* info clonada arriba */
-#launch-proxima{
-border-bottom:none;
-margin-bottom:var(--space-lg);
-}
-
-.clase-item{
-border-bottom:none;
-margin-bottom:var(--space-xl);
-}
-
-#launch-proxima {
-  font-size: 18px;
-  line-height:1.3;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 0;
+  border-bottom:1px solid var(--border-color);
+  gap:20px;
+  border-bottom:none;
+  margin-bottom:var(--space-xl);
 }
 
 .clase-info{
@@ -103,10 +102,10 @@ margin-bottom:var(--space-xl);
 }
 
 .clase-boton{
-flex:0 0 auto;
-display:flex;
-justify-content:flex-end;
-align-items:center;
+  flex:0 0 auto;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
 }
 
 .clase-boton a{
@@ -133,11 +132,6 @@ align-items:center;
   justify-content: center;
 }
 
-#launch-cta-final{
-  margin-top: calc(-1 * var(--space-lg)); /* -30px */
-  margin-bottom: var(--space-xl);
-}
-
 /* =====================================================
 BOTON SELECTOR CALENDARIO (LIMPIO)
 ===================================================== */
@@ -145,7 +139,7 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
 .calendar-dropdown-inline {
   position: relative;
   width: 100%;
-  display:flex;              /* 🔥 */
+  display:flex;
   justify-content:center;
 }
 
@@ -237,39 +231,35 @@ LIVE DOT
 ===================================================== */
 
 .live-dot{
-width:10px;
-height:10px;
-background:red;
-border-radius:50%;
-display:inline-block;
-margin-right:6px;
-vertical-align:middle;
-animation:pulse 1s infinite;
+  width:10px;
+  height:10px;
+  background:red;
+  border-radius:50%;
+  display:inline-block;
+  margin-right:6px;
+  vertical-align:middle;
+  animation:pulse 1s infinite;
 }
 
 @keyframes pulse{
-0%{opacity:1;}
-50%{opacity:.3;}
-100%{opacity:1;}
+  0%{opacity:1;}
+  50%{opacity:.3;}
+  100%{opacity:1;}
 }
 
 @media(max-width:480px){
 
-#launch-engine{
-font-size:20px;
-}
+  .clase-item{
+    flex-direction:column;
+    align-items:flex-start;
+  }
 
-.clase-item{
-flex-direction:column;
-align-items:flex-start;
-}
+  .clase-boton{
+    width:100%;
+    justify-content:center;
+  }
 
-.clase-boton{
-width:100%;
-justify-content:center;
-}
-
-.clase-boton a,
+  .clase-boton a,
   .calendar-toggle{
     width:90%;              /* 🔥 AQUÍ lo que querías */
     max-width:none;         /* opcional */
@@ -289,7 +279,6 @@ COUNTDOWN
 }
 
 .countdown{
-
   --numero-color:#ffffff;
   --texto-color:#bbbbbb;
 
@@ -344,61 +333,57 @@ OFERTA FIXED
 ===================================================== */
 
 #offer-sticky{
-position:fixed;
-top:0;
-left:50%;
-transform:translateX(-50%);
-width:100%;
-max-width:768px;
-z-index:9999;
+  position:fixed;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:100%;
+  max-width:768px;
+  z-index:9999;
 }
 
 .offer-inner{
-width:100%;
-max-width:768px;
-padding:5px 5px;
+  width:100%;
+  max-width:768px;
+  padding:5px 5px;
 }
 
 .offer-button{
-display:block;
-background:#ffcc00;
-color:#000; /* color del texto del botón de oferta */
-text-decoration:none;
-text-align:center;
-padding:4px 4px;
-border-radius:25px;
-box-shadow:0 6px 20px rgba(0,0,0,.3);
+  display:block;
+  background:#ffcc00;
+  color:#000; /* color del texto del botón de oferta */
+  text-decoration:none;
+  text-align:center;
+  padding:4px 4px;
+  border-radius:25px;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
 }
 
 .offer-top{
-
-font-weight:800;
-font-size:20px;
-
+  font-weight:800;
+  font-size:20px;
 }
 
-.offer-bottom{
-  
-font-size:16px;
-margin-top:4px;
-color:#0000ff; /* color del enlace del botón de oferta */
-word-break:break-all;
-
+.offer-bottom{  
+  font-size:16px;
+  margin-top:4px;
+  color:#0000ff; /* color del enlace del botón de oferta */
+  word-break:break-all;
 }
 
 @media(max-width:480px){
 
-.offer-top{
-font-size:18px;
-}
+  .offer-top{
+    font-size:18px;
+  }
 
-.offer-bottom{
-font-size:14px;
-}
+  .offer-bottom{
+    font-size:14px;
+  }
 
 }
 
 .evento-cerrado{
-text-align:center;
-padding:40px;
+  text-align:center;
+  padding:40px;
 }
