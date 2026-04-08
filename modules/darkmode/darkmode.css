@@ -31,10 +31,10 @@ body {
 .dark-mode h5,
 .dark-mode h6,
 .dark-mode p,
-.dark-mode span,
+/*.dark-mode span,*/
 .dark-mode li,
 .dark-mode a {
-  color: #ffffff !important;
+  color: #d3d3d3 !important;
 }
 
 .dark-mode div,

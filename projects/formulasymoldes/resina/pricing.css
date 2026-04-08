@@ -1,6 +1,7 @@
 /* TEXTO DE CIERRE */
 #texto-cierre {
   font-size:20px;
+  color: #111;
 }
 
 /* TABLA DE PRECIOS */
@@ -13,7 +14,7 @@
   padding:18px 4px;
   margin-bottom:30px;
   /*font-family:Arial, sans-serif;*/
-  font-size:18px;
+  font-size: 16px;
 }
 
 .pricing-box h2 {
@@ -226,41 +227,51 @@ font-size:22px;
 font-weight:700;
 }
 
+/* cabecera de la tabla fija arriba */
+.pricing-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
 /* =========================================
    🌙 DARK MODE PRICING
 ========================================= */
+.dark-mode #texto-cierre {  
+  color: #d3d3d3;
+}
 
 .dark-mode .pricing-box {
-  background: #2e0069 !important;
-  color: #ffffff !important;
+  background: #3c096c !important;
+  /*color: #ffffff !important;*/
 }
 
 .dark-mode .pricing-table {
-  background: #111 !important;
-  color: #fff !important;
+  background: #10002b !important;
+  color: #d3d3d3 !important;
 }
 
 .dark-mode .pricing-table th,
 .dark-mode .pricing-table td {
-  border: 1px solid #5a29eb !important;
+  border: 1px solid #9fa0ff !important;
 }
 
 .dark-mode .pricing-table th {
-  background: #2e0069 !important;
-  color: #00ff00 !important;
+  background: #564592 !important;
+  color: #fff !important;
 }
 
 /* filas especiales */
 .dark-mode .section-row td,
 .dark-mode .highlight td {
-  background: #2e0069 !important;
-  color: #00ff00 !important;
+  background: #564592 !important;
+  color: #fff !important;
 }
 
 /* botón */
 .dark-mode .buy-btn {
-  background: #00ff00 !important;
-  color: #2e0069 !important;
+  background: fuchsia !important;
+  color: #fff !important;
 }
 
 .dark-mode .buy-btn:hover {
@@ -269,13 +280,13 @@ font-weight:700;
 
 /* notas */
 .dark-mode .pricing-country-note {
-  background: #2e0069 !important;
-  color: #00ff00 !important;
+  background: #10002b !important;
+  color: #d3d3d3 !important;
 }
 
 .dark-mode .pricing-extra-note {
-  background: #111 !important;
-  color: #fff !important;
+  background: #10002b !important;
+  color: #d3d3d3 !important;
 }
 
 /* contador */
