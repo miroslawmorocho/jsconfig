@@ -63,25 +63,31 @@ async function cargarPricing(data){
 
   }
 
-}
+  // LISTENER PARA OCULTAR SWITCH CUANDO LLEGA A LA TABLA
 
-// LISTENER PARA OCULTAR SWITCH CUANDO LLEGA A LA TABLA
-let scrollListenerAdded = false;
+  if (!window.scrollListenerAdded) {
 
-if (!scrollListenerAdded && pricing && switchEl) {
+    const pricing = document.querySelector('.pricing-box');
+    const switchEl = document.querySelector('.switch');
 
-  scrollListenerAdded = true;
+    if (pricing && switchEl) {
 
-  window.addEventListener('scroll', () => {
-    const rect = pricing.getBoundingClientRect();
+      window.scrollListenerAdded = true;
 
-    if (rect.top < 60 && rect.bottom > 0) {
-      switchEl.style.opacity = "0";
-      switchEl.style.pointerEvents = "none";
-    } else {
-      switchEl.style.opacity = "1";
-      switchEl.style.pointerEvents = "auto";
+      window.addEventListener('scroll', () => {
+        const rect = pricing.getBoundingClientRect();
+
+        if (rect.top < 60 && rect.bottom > 0) {
+          switchEl.style.opacity = "0";
+          switchEl.style.pointerEvents = "none";
+        } else {
+          switchEl.style.opacity = "1";
+          switchEl.style.pointerEvents = "auto";
+        }
+      });
+
     }
-  });
+
+  }
 
 }
