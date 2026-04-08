@@ -283,3 +283,8 @@ font-weight:700;
   background: #222 !important;
   color: #fff !important;
 }
+
+/* FIX: respetar fondo del pricing */
+.dark-mode .pricing-box div {
+  background-color: transparent !important;
+}
