@@ -246,14 +246,14 @@ font-weight:700;
 }
 
 .dark-mode .pricing-table th {
-  background: #14532d !important;
+  background: #14251d !important;
   color: #bbf7d0 !important;
 }
 
 /* filas especiales */
 .dark-mode .section-row td,
 .dark-mode .highlight td {
-  background: #14532d !important;
+  background: #14251d !important;
   color: #bbf7d0 !important;
 }
 
@@ -269,7 +269,7 @@ font-weight:700;
 
 /* notas */
 .dark-mode .pricing-country-note {
-  background: #14532d !important;
+  background: #14251d !important;
   color: #bbf7d0 !important;
 }
 
