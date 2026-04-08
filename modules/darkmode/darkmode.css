@@ -1,25 +1,22 @@
+:root {
+  --bg: white;
+  --text: black;
+}
+
+.dark-mode {
+  --bg: #0f1115;
+  --text: #ffffff;
+}
+
 /* Transición suave */
 html {
   transition: background-color 0.3s, color 0.3s;
 }
 
-/* ====== DARK MODE GLOBAL ====== */
-.dark-mode {
-  filter: invert(1) hue-rotate(180deg);
-}
-
-/* Reinvertir elementos que NO queremos oscuros */
-.dark-mode .no-dark,
-.dark-mode .carousel-btn,
-.dark-mode .slider {
-  filter: invert(1) hue-rotate(180deg);
-}
-
-/* Reinvertir imágenes excepto las que quieras forzar */
-.dark-mode img:not(.force-dark),
-.dark-mode video,
-.dark-mode iframe {
-  filter: invert(1) hue-rotate(180deg);
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  transition: background-color 0.3s, color 0.3s;
 }
 
 /* ====== SWITCH ====== */
