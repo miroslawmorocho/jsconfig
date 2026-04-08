@@ -225,3 +225,61 @@ opacity:.8;
 font-size:22px;
 font-weight:700;
 }
+
+/* =========================================
+   🌙 DARK MODE PRICING
+========================================= */
+
+.dark-mode .pricing-box {
+  background: #1c1f26 !important;
+  color: #ffffff !important;
+}
+
+.dark-mode .pricing-table {
+  background: #111 !important;
+  color: #fff !important;
+}
+
+.dark-mode .pricing-table th,
+.dark-mode .pricing-table td {
+  border: 1px solid #444 !important;
+}
+
+.dark-mode .pricing-table th {
+  background: #14532d !important;
+  color: #bbf7d0 !important;
+}
+
+/* filas especiales */
+.dark-mode .section-row td,
+.dark-mode .highlight td {
+  background: #14532d !important;
+  color: #bbf7d0 !important;
+}
+
+/* botón */
+.dark-mode .buy-btn {
+  background: #22c55e !important;
+  color: #022c22 !important;
+}
+
+.dark-mode .buy-btn:hover {
+  background: #16a34a !important;
+}
+
+/* notas */
+.dark-mode .pricing-country-note {
+  background: #14532d !important;
+  color: #bbf7d0 !important;
+}
+
+.dark-mode .pricing-extra-note {
+  background: #111 !important;
+  color: #fff !important;
+}
+
+/* contador */
+.dark-mode .unit {
+  background: #222 !important;
+  color: #fff !important;
+}
