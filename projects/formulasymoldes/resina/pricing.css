@@ -231,7 +231,7 @@ font-weight:700;
 ========================================= */
 
 .dark-mode .pricing-box {
-  background: #1c1f26 !important;
+  background: #e031a0 !important;
   color: #ffffff !important;
 }
 
@@ -258,10 +258,10 @@ font-weight:700;
 }
 
 /* botón */
-.dark-mode .buy-btn {
+/*.dark-mode .buy-btn {
   background: #22c55e !important;
   color: #022c22 !important;
-}
+}*/
 
 .dark-mode .buy-btn:hover {
   background: #16a34a !important;
