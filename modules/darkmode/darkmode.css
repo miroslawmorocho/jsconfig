@@ -19,6 +19,29 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
+.dark-mode body {
+  background-color: #0f1115 !important;
+  color: #ffffff !important;
+}
+
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6,
+.dark-mode p,
+.dark-mode span,
+.dark-mode li,
+.dark-mode a {
+  color: #ffffff !important;
+}
+
+.dark-mode div,
+.dark-mode section {
+  background-color: #0f1115 !important;
+}
+
 /* ====== SWITCH ====== */
 .switch {
   position: fixed;
