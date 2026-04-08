@@ -48,7 +48,7 @@ body {
   top: 20px;
   width: 64px;
   height: 34px;
-  z-index: 9999;
+  z-index: 5;
 }
 
 /* Desktop alineado al contenedor */
@@ -61,7 +61,7 @@ body {
 /* Móvil esquina normal */
 @media (max-width: 1023px) {
   .switch {
-    right: 40px;
+    right: 10px;
     left: auto;
   }
 }
