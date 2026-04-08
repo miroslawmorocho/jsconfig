@@ -66,10 +66,11 @@ async function cargarPricing(data){
 }
 
 // LISTENER PARA OCULTAR SWITCH CUANDO LLEGA A LA TABLA
-const pricing = document.querySelector('.pricing-box');
-const switchEl = document.querySelector('.switch');
+let scrollListenerAdded = false;
 
-if (pricing && switchEl) {
+if (!scrollListenerAdded && pricing && switchEl) {
+
+  scrollListenerAdded = true;
 
   window.addEventListener('scroll', () => {
     const rect = pricing.getBoundingClientRect();
