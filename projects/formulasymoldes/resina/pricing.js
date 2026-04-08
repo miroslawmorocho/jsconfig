@@ -64,3 +64,23 @@ async function cargarPricing(data){
   }
 
 }
+
+// LISTENER PARA OCULTAR SWITCH CUANDO LLEGA A LA TABLA
+const pricing = document.querySelector('.pricing-box');
+const switchEl = document.querySelector('.switch');
+
+if (pricing && switchEl) {
+
+  window.addEventListener('scroll', () => {
+    const rect = pricing.getBoundingClientRect();
+
+    if (rect.top < 60 && rect.bottom > 0) {
+      switchEl.style.opacity = "0";
+      switchEl.style.pointerEvents = "none";
+    } else {
+      switchEl.style.opacity = "1";
+      switchEl.style.pointerEvents = "auto";
+    }
+  });
+
+}

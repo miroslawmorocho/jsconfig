@@ -48,7 +48,8 @@ body {
   top: 20px;
   width: 64px;
   height: 34px;
-  z-index: 5;
+  z-index: 9999;
+  transition: opacity 0.3s ease;
 }
 
 /* Desktop alineado al contenedor */
