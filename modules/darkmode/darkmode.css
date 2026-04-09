@@ -31,10 +31,13 @@ body {
 .dark-mode h5,
 .dark-mode h6,
 .dark-mode p,
-/*.dark-mode span,*/
-.dark-mode li,
-.dark-mode a {
+.dark-mode li {
   color: #d3d3d3 !important;
+}
+
+.dark-mode a,
+.dark-mode span {
+  color: #00ffff !important; /* fuchsia neon */
 }
 
 .dark-mode div,

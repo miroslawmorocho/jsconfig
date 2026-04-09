@@ -242,12 +242,13 @@ font-weight:700;
 }
 
 .dark-mode .pricing-box {
-  background: #3c096c !important;
+  background: #15173D !important;
   /*color: #ffffff !important;*/
+  box-shadow: 0 10px 6px -6px #00ffff;
 }
 
 .dark-mode .pricing-table {
-  background: #10002b !important;
+  background: #111 !important;
   color: #d3d3d3 !important;
 }
 
@@ -257,35 +258,40 @@ font-weight:700;
 }
 
 .dark-mode .pricing-table th {
-  background: #564592 !important;
+  background: #465C88 !important;
   color: #fff !important;
 }
 
 /* filas especiales */
 .dark-mode .section-row td,
 .dark-mode .highlight td {
-  background: #564592 !important;
+  background: #465C88 !important;
   color: #fff !important;
 }
+
+
 
 /* botón */
 .dark-mode .buy-btn {
-  background: fuchsia !important;
-  color: #fff !important;
+  background: #00ffff !important;
+  color: #000 !important;
+  box-shadow: 0 0 12px #00ffff;
 }
 
 .dark-mode .buy-btn:hover {
-  background: #16a34a !important;
+  background: #ff00ff !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px #ff00ff;
 }
 
 /* notas */
 .dark-mode .pricing-country-note {
-  background: #10002b !important;
+  background: #111 !important;
   color: #d3d3d3 !important;
 }
 
 .dark-mode .pricing-extra-note {
-  background: #10002b !important;
+  background: #111 !important;
   color: #d3d3d3 !important;
 }
 
