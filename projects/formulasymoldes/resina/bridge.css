@@ -96,7 +96,7 @@ VARIABLES VISUALES
   /*margin-bottom:var(--space-md);*/
   padding: 40px 0 20px 0;
   line-height: 1.3;
-  min-height: 80px;
+  min-height: 45px;
 }
 
 #launch-calendar-title{

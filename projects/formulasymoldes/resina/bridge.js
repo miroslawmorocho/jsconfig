@@ -132,7 +132,12 @@ async function initLaunchEngine(data){
 
   // 🔥 OFFER TEXT
   if (DOM.offerText) {
-    DOM.offerText.innerText = data.evento.offerText || "";    
+    if (data.evento.offerText) {
+      DOM.offerText.innerText = data.evento.offerText;
+      showSmooth(DOM.offerText);
+    } else {
+      hideSmooth(DOM.offerText);
+    }
   }
 
   // 🔥 STICKY
