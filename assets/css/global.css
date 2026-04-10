@@ -1,58 +1,4 @@
 /* =====================================================
-   FUENTES
-===================================================== */
-
-/* montserrat-700 - latin */
-/*@font-face {
-  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
- /* font-family: 'Montserrat';
-  font-style: normal;
-  font-weight: 700;
-  src: url('https://miroslawmorocho.github.io/jsconfig/assets/fonts/montserrat/montserrat-v31-latin-700.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-/*}
-/* montserrat-700italic - latin */
-/*@font-face {
-  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
-/*  font-family: 'Montserrat';
-  font-style: italic;
-  font-weight: 700;
-  src: url('https://miroslawmorocho.github.io/jsconfig/assets/fonts/montserrat/montserrat-v31-latin-700italic.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-/*}
-
-/* inter-regular - latin */
-/*@font-face {
-  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
-/*  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400;
-  src: url('https://miroslawmorocho.github.io/jsconfig/assets/fonts/inter/inter-v20-latin-regular.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-/*}
-/* inter-italic - latin */
-/*@font-face {
-  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
-/*  font-family: 'Inter';
-  font-style: italic;
-  font-weight: 400;
-  src: url('https://miroslawmorocho.github.io/jsconfig/assets/fonts/inter/inter-v20-latin-italic.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-/*}
-/* inter-700 - latin */
-/*@font-face {
-  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
- /* font-family: 'Inter';
-  font-style: normal;
-  font-weight: 700;
-  src: url('https://miroslawmorocho.github.io/jsconfig/assets/fonts/inter/inter-v20-latin-700.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-/*}
-/* inter-700italic - latin */
-/*@font-face {
-  font-display: swap; /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
-/*  font-family: 'Inter';
-  font-style: italic;
-  font-weight: 700;
-  src: url('https://miroslawmorocho.github.io/jsconfig/assets/fonts/inter/inter-v20-latin-700italic.woff2') format('woff2'); /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-/*}
-
-/* =====================================================
    VARIABLES BASE (GLOBAL SYSTEM)
 ===================================================== */
 
@@ -121,7 +67,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 h2 {
