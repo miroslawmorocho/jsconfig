@@ -25,13 +25,8 @@ LaunchCore.currentDataVersion = 0;
 LaunchCore.currentRunId = 0;
 LaunchCore.currentScheduleOwner = 0;
 
-let currentJob = null;
-let queue = [];
-let isRunning = false;
-
 LaunchCore.state = {
-  current: null,
-  machine: "BOOT"
+  current: null,  
 };
 
 
@@ -1488,7 +1483,7 @@ LaunchCore.globals.versionChecker = async function(){
 LaunchCore.globals.loadFooter = async function () {
 
   if (document.getElementById("global-footer")) return;
-  
+
   const html = await fetch(LaunchCore.paths.footer).then(r => r.text());
 
   const wrapper = document.createElement("div");
@@ -1578,3 +1573,14 @@ LaunchCore.modules = {};
 LaunchCore.register = function(name, fn){
   LaunchCore.modules[name] = fn;
 };
+
+
+
+// 🚀 AUTO INIT
+window.addEventListener("DOMContentLoaded", () => {
+  if (window.LaunchCore && typeof LaunchCore.init === "function") {
+    LaunchCore.init();
+  } else {
+    console.error("💀 LaunchCore no disponible para init");
+  }
+});
