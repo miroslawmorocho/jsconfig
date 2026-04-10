@@ -65,6 +65,22 @@ function adjustSwitchPosition() {
 
   const isVisible = getComputedStyle(DOM.offerSticky).display !== "none";
 
+  const screenWidth = window.innerWidth;
+  const containerWidth = 768; // tu var global
+
+  const sideSpace = (screenWidth - containerWidth) / 2;
+
+  // 🔥 CASO 1: HAY ESPACIO A LOS LADOS (desktop grande)
+  if (sideSpace > 100) {
+
+    DOM.switch.style.top = "20px";
+    DOM.switch.style.left = `calc(50% + ${containerWidth / 2 + 20}px)`;
+    DOM.switch.style.right = "auto";
+
+    return;
+  }
+
+  // 🔥 CASO 2: PANTALLA PEQUEÑA → debajo del sticky
   if (isVisible) {
 
     const height = DOM.offerSticky.offsetHeight;
@@ -73,8 +89,11 @@ function adjustSwitchPosition() {
 
   } else {
 
-    DOM.switch.style.top = "20px"; // posición original
+    DOM.switch.style.top = "20px";
   }
+
+  // reset para mobile
+  DOM.switch.style.left = "";
 }
 
 /* =====================================================
