@@ -375,6 +375,10 @@ COUNTDOWN
     --texto-size:10px;
   }
 
+  #contador-wrapper{
+    min-height: 60px;
+  }
+
 }
 
 /* =====================================================
