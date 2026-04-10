@@ -121,14 +121,14 @@ async function initLaunchEngine(data){
   }
 
   // 🔥 volver a mostrar todo
-  if (DOM.header) showSmooth(DOM.header);
+  /*if (DOM.header) showSmooth(DOM.header);
   if (DOM.clases) showSmooth(DOM.clases);
   if (DOM.countdown) showSmooth(DOM.countdown);
   if (DOM.info) showSmooth(DOM.info);
   if (DOM.calendarTitle) showSmooth(DOM.calendarTitle);
   if (DOM.proximaLabel) showSmooth(DOM.proximaLabel);
   if (DOM.proxima) showSmooth(DOM.proxima);
-  if (DOM.ctaFinal) showSmooth(DOM.ctaFinal);
+  if (DOM.ctaFinal) showSmooth(DOM.ctaFinal);*/
 
   // 🔥 OFFER TEXT
   if (DOM.offerText) {
@@ -179,6 +179,33 @@ async function initLaunchEngine(data){
   if (DOM.header && lastRender.header !== data.evento.headerText) {
     DOM.header.innerHTML = data.evento.headerText;
     lastRender.header = data.evento.headerText;
+  }
+
+  // 🔥 HEADER (visibilidad)
+  if (DOM.header) {
+    if (data.evento.headerText) {
+      showSmooth(DOM.header);
+    } else {
+      hideSmooth(DOM.header);
+    }
+  }
+
+  // 🔥 INFO (visibilidad)
+  if (DOM.info) {
+    if (data.evento.infoPaginaHtml) {
+      showSmooth(DOM.info);
+    } else {
+      hideSmooth(DOM.info);
+    }
+  }
+
+  // 🔥 CALENDAR TITLE (visibilidad)
+  if (DOM.calendarTitle) {
+    if (data.evento.calendarTitleHtml) {
+      showSmooth(DOM.calendarTitle);
+    } else {
+      hideSmooth(DOM.calendarTitle);
+    }
   }
 
   // 🔥 CLASES
