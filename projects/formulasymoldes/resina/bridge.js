@@ -253,7 +253,7 @@ async function initLaunchEngine(data){
 
   // 🔥 COUNTDOWN
   if (DOM.countdown) {
-    
+
     if (data.evento.countdownDisplay === "none") {
       hide(DOM.countdown);
     } else {
@@ -266,6 +266,8 @@ async function initLaunchEngine(data){
   } else {
     LaunchCore.countdown.stop();
   }
+
+  document.getElementById("launch-engine")?.classList.add("is-ready");
 }
 
 

@@ -25,6 +25,17 @@ VARIABLES VISUALES
   pointer-events: none;
 }
 
+/* OCULTAMOS TODO HASTA QUE ESTÉ LISTO */
+#launch-engine {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#launch-engine.is-ready {
+  opacity: 1;
+}
+
+/* inicio */
 #launch-logo {
   display: flex;
   justify-content: center;
