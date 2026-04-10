@@ -59,6 +59,23 @@ function showSmooth(el) {
   }, 300);
 }
 
+function adjustSwitchPosition() {
+
+  if (!DOM.switch || !DOM.offerSticky) return;
+
+  const isVisible = getComputedStyle(DOM.offerSticky).display !== "none";
+
+  if (isVisible) {
+
+    const height = DOM.offerSticky.offsetHeight;
+
+    DOM.switch.style.top = (height + 10) + "px";
+
+  } else {
+
+    DOM.switch.style.top = "20px"; // posición original
+  }
+}
 
 /* =====================================================
   DOM
@@ -69,6 +86,7 @@ const DOM = {
   clases: document.getElementById("launch-clases"),
   countdown: document.getElementById("contador-wrapper"),
   offerSticky: document.getElementById("offer-sticky"),
+  switch: document.querySelector(".switch"),
   info: document.getElementById("launch-info"),
   divider: document.getElementById("divider"),
   calendarTitle: document.getElementById("launch-calendar-title"),
@@ -145,33 +163,37 @@ async function initLaunchEngine(data){
   // 🔥 STICKY
   if (DOM.offerSticky) {
 
-    if (data.evento.offerStickyDisplay === "none") {
-      hideSmooth(DOM.offerSticky);
+    const isVisible = data.evento.offerStickyDisplay !== "none";
 
-      // 🔥 QUITAR ESPACIO
-      if (DOM.root) {
-        DOM.root.style.paddingTop = "0px";
-      }
-
-    } else {
+    if (isVisible) {
       showSmooth(DOM.offerSticky);
-
-      // 🔥 AÑADIR ESPACIO
-      if (DOM.root && DOM.offerSticky) {
-        setTimeout(() => {
-          const extraSpace = 10;
-          const height = DOM.offerSticky.offsetHeight + extraSpace;
-
-          DOM.root.style.paddingTop = height + "px";
-        }, 350);
-      }
+    } else {
+      hideSmooth(DOM.offerSticky);
     }
 
-    // 🔥 SOLO HTML (esto queda aparte)
+    // 🔥 HTML
     if (lastRender.sticky !== data.evento.offerStickyHtml) {
       DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
       lastRender.sticky = data.evento.offerStickyHtml;
     }
+
+    // 🔥 ESPACIADO + SWITCH
+    setTimeout(() => {
+
+      if (!DOM.root || !DOM.offerSticky) return;
+
+      if (isVisible) {
+        const extraSpace = 10;
+        const height = DOM.offerSticky.offsetHeight + extraSpace;
+
+        DOM.root.style.paddingTop = height + "px";
+      } else {
+        DOM.root.style.paddingTop = "0px";
+      }
+
+      adjustSwitchPosition(); // 🔥 SIEMPRE al final
+
+    }, 350);
   }
 
   // 🔥 TITULO

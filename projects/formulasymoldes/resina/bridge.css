@@ -9,7 +9,10 @@ VARIABLES VISUALES
 :root{  
   --button-bg:#009d43;
   --button-text:#ffffff;
-  --border-color:#333;
+  --offer-bg:#ffcc00;
+  --offer-text:#000;
+  --neon-offer: transparent;
+  --neon-clase: transparent;
 
   --title-size:40px;
   --subtitle-size:32px;
@@ -18,6 +21,17 @@ VARIABLES VISUALES
   --space-xl:40px;
   --space-lg:30px;
   --space-md:20px;
+}
+
+.dark-mode {
+  --button-bg:#00ffff;
+  --button-text:#000;
+
+  --offer-bg:#ff00ff;
+  --offer-text:#000;
+
+  --neon-offer: #ff00ff;
+  --neon-clase: #00ffff;
 }
 
 /* OCULTAMOS TODO HASTA QUE ESTÉ LISTO */
@@ -132,8 +146,7 @@ CLASE ITEM
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:20px 0 0 0;
-  /*border-bottom:1px solid var(--border-color);*/
+  padding:20px 0 0 0;  
   gap:20px;
   border-bottom:none;
   margin-bottom:var(--space-xl);
@@ -161,6 +174,7 @@ CLASE ITEM
   border-radius:25px;
   display:block;  
   text-align:center;
+  box-shadow: 0 0 18px var(--neon-clase);
 }
 
 .clase-item-cta .clase-info{
@@ -405,15 +419,17 @@ OFERTA FIXED
 
 .offer-button{
   display:block;
-  background:#ffcc00;
-  color:#000; /* color del texto del botón de oferta */
+  background: var(--offer-bg);
+  color: var(--offer-text);
   text-decoration:none;
   text-align:center;
   padding:4px 4px;
   border-radius:25px;
+
   box-shadow:
-  0 8px 24px rgba(0,0,0,0.15),
-  0 2px 6px rgba(0,0,0,0.1);
+    0 12px 35px rgba(0,0,0,0.35),
+    0 6px 15px rgba(0,0,0,0.2),
+    0 0 18px var(--neon-offer);
 }
 
 .offer-top{
