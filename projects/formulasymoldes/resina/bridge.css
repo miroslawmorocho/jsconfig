@@ -306,9 +306,9 @@ COUNTDOWN
   text-align:center;
 }
 
-.countdown{
-  --numero-color:#ffffff;
-  --texto-color:#bbbbbb;
+.countdown {
+  --numero-color: var(--text);
+  --texto-color: var(--text-soft);
 
   --numero-size:52px;
   --texto-size:16px;
