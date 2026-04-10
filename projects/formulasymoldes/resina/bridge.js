@@ -294,16 +294,20 @@ async function initLaunchEngine(data){
   // 🔥 COUNTDOWN
   if (DOM.countdown) {
 
+    const raw = data.evento.countdownTarget;
+
     const shouldShow = (
-      !LaunchCore.state.countdownFinished && // 🔥 CLAVE
-      data.evento.countdownDisplay !== "none" &&
-      Number.isFinite(Number(data.evento.countdownTarget))
+      raw !== null && // 🔥 CLAVE 1: EXISTE
+      Number(raw) > Date.now() && // 🔥 CLAVE 2: FUTURO
+      data.evento.countdownDisplay !== "none"
     );
 
     if (shouldShow) {
       showSmooth(DOM.countdown);
+      LaunchCore.countdown.start(raw); // 🔥 aquí también
     } else {
       hideSmooth(DOM.countdown);
+      LaunchCore.countdown.stop(); // 🔥 y esto también
     }
 
   }

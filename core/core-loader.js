@@ -168,8 +168,6 @@ LaunchCore.countdown = (function(){
 
     stop();
 
-    LaunchCore.state.countdownFinished = false; // 🔥 RESET
-
     targetTime = Number(target);
   
     function update(){
@@ -178,20 +176,7 @@ LaunchCore.countdown = (function(){
       const diff = targetTime - now;
 
       if(diff <= 0){
-
-        if(DOM.days()) DOM.days().textContent = "00";
-        if(DOM.hours()) DOM.hours().textContent = "00";
-        if(DOM.minutes()) DOM.minutes().textContent = "00";
-        if(DOM.seconds()) DOM.seconds().textContent = "00";
-
         stop();
-
-        LaunchCore.state.countdownFinished = true; // 🔥 CLAVE
-
-        LaunchCore.emit("countdown:finished", {
-          targetTime
-        });
-
         return;
       }
 
