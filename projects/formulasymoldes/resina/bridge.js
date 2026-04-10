@@ -66,21 +66,25 @@ function adjustSwitchPosition() {
   const isVisible = getComputedStyle(DOM.offerSticky).display !== "none";
 
   const screenWidth = window.innerWidth;
-  const containerWidth = 768; // tu var global
+  const containerWidth = 768;
 
   const sideSpace = (screenWidth - containerWidth) / 2;
 
-  // 🔥 CASO 1: HAY ESPACIO A LOS LADOS (desktop grande)
+  // 🔥 RESET TOTAL (CLAVE)
+  DOM.switch.style.left = "";
+  DOM.switch.style.right = "";
+  DOM.switch.style.top = "";
+
+  // ===== DESKTOP =====
   if (sideSpace > 100) {
 
     DOM.switch.style.top = "20px";
     DOM.switch.style.left = `calc(50% + ${containerWidth / 2 + 20}px)`;
-    DOM.switch.style.right = "auto";
 
     return;
   }
 
-  // 🔥 CASO 2: PANTALLA PEQUEÑA → debajo del sticky
+  // ===== MOBILE =====
   if (isVisible) {
 
     const height = DOM.offerSticky.offsetHeight;
@@ -91,9 +95,26 @@ function adjustSwitchPosition() {
 
     DOM.switch.style.top = "20px";
   }
+}
 
-  // reset para mobile
-  DOM.switch.style.left = "";
+function adjustLayout() {
+
+  if (!DOM.root || !DOM.offerSticky) return;
+
+  const isVisible = getComputedStyle(DOM.offerSticky).display !== "none";
+
+  // ===== ESPACIADO =====
+  if (isVisible) {
+    const extraSpace = 10;
+    const height = DOM.offerSticky.offsetHeight + extraSpace;
+
+    DOM.root.style.paddingTop = height + "px";
+  } else {
+    DOM.root.style.paddingTop = "0px";
+  }
+
+  // ===== SWITCH =====
+  adjustSwitchPosition();
 }
 
 /* =====================================================
@@ -194,27 +215,7 @@ async function initLaunchEngine(data){
     if (lastRender.sticky !== data.evento.offerStickyHtml) {
       DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
       lastRender.sticky = data.evento.offerStickyHtml;
-    }
-
-    // 🔥 ESPACIADO + SWITCH
-    setTimeout(() => {
-
-      if (!DOM.root || !DOM.offerSticky) return;
-
-      if (isVisible) {
-        const extraSpace = 10;
-        const height = DOM.offerSticky.offsetHeight + extraSpace;
-
-        DOM.root.style.paddingTop = height + "px";
-      } else {
-        DOM.root.style.paddingTop = "0px";
-      }
-
-      window.addEventListener("resize", () => {
-        adjustSwitchPosition();
-      });
-
-    }, 350);
+    }  
   }
 
   // 🔥 TITULO
@@ -546,4 +547,10 @@ document.addEventListener("click", function(e) {
   document.querySelectorAll(".calendar-menu-inline")
     .forEach(m => m.style.display = "none");
 
+});
+
+window.addEventListener("resize", adjustLayout);
+
+const stickyObserver = new ResizeObserver(() => {
+  adjustLayout();
 });
