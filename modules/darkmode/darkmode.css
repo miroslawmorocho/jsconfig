@@ -1,14 +1,30 @@
-:root {
-  --bg: white;
-  --text: black;
+* {
+  box-sizing: border-box;
 }
 
+/* =====================================================
+   VARIABLES BASE
+===================================================== */
+
+:root {
+  --bg: #ffffff;
+  --text: #111111;
+  --text-soft: #555555;
+  --accent: #007bff;
+}
+
+/* DARK MODE */
 .dark-mode {
   --bg: #0f1115;
   --text: #ffffff;
+  --text-soft: #d3d3d3;
+  --accent: #00ffff;
 }
 
-/* Transición suave */
+/* =====================================================
+   BASE
+===================================================== */
+
 html {
   transition: background-color 0.3s, color 0.3s;
 }
@@ -19,50 +35,39 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
-.dark-mode body {
-  background-color: #0f1115 !important;
-  color: #ffffff !important;
+/* TEXTOS */
+p, li {
+  color: var(--text-soft);
 }
 
-.dark-mode h1,
-.dark-mode h2,
-.dark-mode h3,
-.dark-mode h4,
-.dark-mode h5,
-.dark-mode h6,
-.dark-mode p,
-.dark-mode li {
-  color: #d3d3d3 !important;
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text);
 }
 
-.dark-mode a,
-.dark-mode span {
-  color: #00ffff !important; /* fuchsia neon */
+/* LINKS */
+a {
+  color: var(--accent);
 }
 
-.dark-mode div,
-.dark-mode section {
-  background-color: #0f1115 !important;
-}
 
 /* ====== SWITCH ====== */
+
 .switch {
   position: fixed;
   top: 20px;
   width: 64px;
   height: 34px;
   z-index: 9999;
-  transition: opacity 0.3s ease;
 }
 
-/* Desktop alineado al contenedor */
+/* Desktop */
 @media (min-width: 1024px) {
   .switch {
-    left: calc(50% + 384px); /* 768/2 + separación left: calc(50% + 384px + 20px); */
+    left: calc(50% + 470px); /* ajusta a tu max-width */
   }
 }
 
-/* Móvil esquina normal */
+/* Móvil */
 @media (max-width: 1023px) {
   .switch {
     right: 10px;
@@ -81,12 +86,12 @@ body {
   border-radius: 34px;
   width: 100%;
   height: 100%;
-  transition: 0.4s;
+  transition: 0.3s;
 }
 
 .slider:before {
-  position: absolute;
   content: "☀️";
+  position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -95,9 +100,9 @@ body {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: white;
+  background: white;
   border-radius: 50%;
-  transition: 0.4s;
+  transition: 0.3s;
 }
 
 input:checked + .slider {

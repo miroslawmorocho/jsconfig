@@ -53,21 +53,84 @@
 }
 
 /* =====================================================
-   BASE TIPOGRÁFICA
+   VARIABLES BASE (GLOBAL SYSTEM)
 ===================================================== */
 
 :root {
+  /* 🎨 COLORES LIGHT MODE */
+  --bg: #f7f7f8;
+  --bg-card: #ffffff;
+  --text: #111111;
+  --text-soft: #555555;
+  --accent: #007bff;
+
+  /* 🔤 TIPOGRAFÍA */
   --font-body: 'Inter', system-ui, sans-serif;
   --font-heading: 'Montserrat', system-ui, sans-serif;
+
+  /* 📐 LAYOUT */
+  --container-width: 768px;
+  --spacing: 20px;
+}
+
+/* 🌙 DARK MODE */
+.dark-mode {
+  --bg: #0f1115;
+  --bg-card: #1a1d23;
+  --text: #ffffff;
+  --text-soft: #b0b0b0;
+  --accent: #00ffff;
+}
+
+/* =====================================================
+   BASE
+===================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  transition: background-color 0.3s, color 0.3s;
 }
 
 body {
-  font-family: var(--font-body);
   margin: 0;
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-/* TÍTULOS */
+/* =====================================================
+   TIPOGRAFÍA
+===================================================== */
+
+p, li {
+  color: var(--text-soft);
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   font-weight: 700;
+  color: var(--text);
+}
+
+/* CAJAS / CARDS */
+.card {
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+/* LINKS */
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }

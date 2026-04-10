@@ -14,7 +14,8 @@ LaunchCore.register("bridge", {
     root.innerHTML = html;
 
     // 🔥 CSS + JS
-    await LaunchCore.loadCSS(url + ".css");
+    await LaunchCore.loadCSS(url + ".css");    
+    await LaunchCore.use("darkmode");
     await LaunchCore.loadScript(url + ".js");
 
   },

@@ -6,8 +6,7 @@
 VARIABLES VISUALES
 ===================================================== */
 
-:root{
-  --text-color:#ffffff;
+:root{  
   --button-bg:#009d43;
   --button-text:#ffffff;
   --border-color:#333;
@@ -83,10 +82,11 @@ CONTENEDOR
 ===================================================== */
 
 #launch-engine{
-  max-width:768px;
-  margin:auto;
+  max-width: var(--container-width);
+  margin:0 auto;
   font-size:20px;
-  color:var(--text-color);
+  text-align: center;
+  padding: 5px;  
 }
 
 /* =====================================================
@@ -98,7 +98,7 @@ CLASE ITEM
   justify-content:space-between;
   align-items:center;
   padding:20px 0 0 0;
-  border-bottom:1px solid var(--border-color);
+  /*border-bottom:1px solid var(--border-color);*/
   gap:20px;
   border-bottom:none;
   margin-bottom:var(--space-xl);
@@ -218,8 +218,8 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
   font-size: 14px;
   cursor: pointer;
 
-  background: none !important;
-  color: #000 !important;
+  background: none;
+  color: var(--text);
 }
 
 /* SEPARADOR */
@@ -288,7 +288,7 @@ COUNTDOWN
 
 .countdown-container{
   width:100%;
-  max-width:768px;
+  /*max-width:768px;*/
   margin:auto;
   text-align:center;
 }
