@@ -177,9 +177,22 @@ LaunchCore.countdown = (function(){
       const diff = targetTime - now;
 
       if(diff <= 0){
-        stop();
-        return;
+
+      if(DOM.days()) DOM.days().textContent = "00";
+      if(DOM.hours()) DOM.hours().textContent = "00";
+      if(DOM.minutes()) DOM.minutes().textContent = "00";
+      if(DOM.seconds()) DOM.seconds().textContent = "00";
+
+      stop();
+
+      // 🔥 OPCIONAL PERO RECOMENDADO
+      const wrapper = document.getElementById("contador-wrapper");
+      if(wrapper){
+        wrapper.style.display = "none";
       }
+
+      return;
+    }
 
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);

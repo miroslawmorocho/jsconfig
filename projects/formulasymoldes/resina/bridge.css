@@ -66,6 +66,10 @@ VARIABLES VISUALES
   font-size: var(--text-size);
 }
 
+#offer-deadline:empty {
+  display: none;
+}
+
 #contador-wrapper{
   margin-bottom:var(--space-md);
   min-height: 80px;
