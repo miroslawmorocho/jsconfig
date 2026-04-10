@@ -20,6 +20,19 @@ VARIABLES VISUALES
   --space-md:20px;
 }
 
+#launch-logo {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+  margin-bottom: var(--space-xl);
+}
+
+#launch-logo img {
+  width: 60px;      /* tamaño visual */
+  height: auto;     /* mantiene proporción */
+  image-rendering: -webkit-optimize-contrast;
+}
+
 #launch-header{
   font-size:var(--title-size);
   font-weight:bold;
@@ -86,7 +99,7 @@ CONTENEDOR
   margin:0 auto;
   font-size:20px;
   text-align: center;
-  padding: 5px;  
+  padding: var(--spacing);
 }
 
 /* =====================================================
