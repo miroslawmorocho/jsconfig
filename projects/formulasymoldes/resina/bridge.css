@@ -20,6 +20,11 @@ VARIABLES VISUALES
   --space-md:20px;
 }
 
+.is-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 #launch-logo {
   display: flex;
   justify-content: center;
@@ -48,6 +53,7 @@ VARIABLES VISUALES
 
 #contador-wrapper{
   margin-bottom:var(--space-xl);
+  min-height: 60px;
 }
 
 #launch-proxima-label{
@@ -75,6 +81,7 @@ VARIABLES VISUALES
   /*margin-bottom:var(--space-md);*/
   padding: 40px 0 20px 0;
   line-height: 1.3;
+  min-height: 80px;
 }
 
 #launch-calendar-title{
@@ -304,6 +311,7 @@ COUNTDOWN
   /*max-width:768px;*/
   margin:auto;
   text-align:center;
+  font-variant-numeric: tabular-nums;
 }
 
 .countdown {

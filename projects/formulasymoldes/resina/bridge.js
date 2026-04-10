@@ -1,373 +1,398 @@
-  /**
-   * ============================================================================
-   * FRONTEND - LAUNCH ENGINE RENDERER
-   * ============================================================================
-   * Este script ya NO contiene lógica de negocio. Solo consulta al Worker y 
-   * pinta los resultados en el DOM. Todo el cerebro está en Cloudflare.
-   * ============================================================================
-   */
+/**
+ * ============================================================================
+ * FRONTEND - LAUNCH ENGINE RENDERER
+ * ============================================================================
+ * Este script ya NO contiene lógica de negocio. Solo consulta al Worker y 
+ * pinta los resultados en el DOM. Todo el cerebro está en Cloudflare.
+ * ============================================================================
+ */
 
-  /* =====================================================
-    VARIABLES DE RENDERIZACIÓN
-  ===================================================== */
-  let lastRender = {
-    header: null,
-    info: null,
-    clases: null,
-    proxima: null,
-    calendarTitle: null,
-    sticky: null,
-    ctaFinal: null,
-    estadoCerrado: null
-  };
+/* =====================================================
+  VARIABLES DE RENDERIZACIÓN
+===================================================== */
+let lastRender = {
+  header: null,
+  info: null,
+  clases: null,
+  proxima: null,
+  calendarTitle: null,
+  sticky: null,
+  ctaFinal: null,
+  estadoCerrado: null
+};
 
-  /* =====================================================
-    DOM
-  ===================================================== */
-  const DOM = {
-    root: document.getElementById("launch-engine"),
-    header: document.getElementById("launch-header"),
-    clases: document.getElementById("launch-clases"),
-    countdown: document.getElementById("contador-wrapper"),
-    offerSticky: document.getElementById("offer-sticky"),
-    info: document.getElementById("launch-info"),
-    calendarTitle: document.getElementById("launch-calendar-title"),
-    offerText: document.getElementById("offer-deadline"), // Extraído a DOM para mejor orden
-    sectionPadding: document.getElementById("section-6f21106b"), // El section de tu oferta
-    proximaLabel: document.getElementById("launch-proxima-label"),
-    proxima: document.getElementById("launch-proxima"),
-    ctaFinal: document.getElementById("launch-cta-final"),
-    estadoCerrado: document.getElementById("estado-cerrado")
-  };
+function hide(el) {
+  if (!el) return;
+  el.classList.add("is-hidden");
+}
 
-  /* =====================================================
-    ENGINE INICIALIZADOR
-  ===================================================== */
-  async function initLaunchEngine(data){
+function show(el) {
+  if (!el) return;
+  el.classList.remove("is-hidden");
+}
 
-    /*console.group("🧪 FRONT DEBUG (bridge)");
+/* =====================================================
+  DOM
+===================================================== */
+const DOM = {
+  root: document.getElementById("launch-engine"),
+  header: document.getElementById("launch-header"),
+  clases: document.getElementById("launch-clases"),
+  countdown: document.getElementById("contador-wrapper"),
+  offerSticky: document.getElementById("offer-sticky"),
+  info: document.getElementById("launch-info"),
+  calendarTitle: document.getElementById("launch-calendar-title"),
+  offerText: document.getElementById("offer-deadline"), // Extraído a DOM para mejor orden
+  sectionPadding: document.getElementById("section-6f21106b"), // El section de tu oferta
+  proximaLabel: document.getElementById("launch-proxima-label"),
+  proxima: document.getElementById("launch-proxima"),
+  ctaFinal: document.getElementById("launch-cta-final"),
+  estadoCerrado: document.getElementById("estado-cerrado")
+};
 
-    console.log("📦 DATA COMPLETA:", data);
-    console.log("📁 evento:", data?.evento);
-    console.log("💰 pricing:", data?.pricing);
+/* =====================================================
+  ENGINE INICIALIZADOR
+===================================================== */
+async function initLaunchEngine(data){
 
-    console.groupEnd();*/
+  /*console.group("🧪 FRONT DEBUG (bridge)");
 
-    // 🔥 guardar ICS globalmente
-    window.__calendarICS = data.evento.calendarICS || [];
+  console.log("📦 DATA COMPLETA:", data);
+  console.log("📁 evento:", data?.evento);
+  console.log("💰 pricing:", data?.pricing);
 
-    // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)  
-    const estado = LaunchCore.state.current?.status?.launch;
+  console.groupEnd();*/
 
-    if (estado === "closed") {
+  // 🔥 guardar ICS globalmente
+  window.__calendarICS = data.evento.calendarICS || [];
 
-      console.log("💀 Evento cerrado → congelando sistema");
+  // 🔥 ESTADO CERRADO (SIN DESTRUIR DOM)  
+  const estado = LaunchCore.state.current?.status?.launch;
 
-      if (DOM.estadoCerrado && lastRender.estadoCerrado !== data.evento.htmlEventoCerrado) {
-        DOM.estadoCerrado.innerHTML = data.evento.htmlEventoCerrado;
-        lastRender.estadoCerrado = data.evento.htmlEventoCerrado;
-        DOM.estadoCerrado.style.display = "block";
-      }
-      
-      
-      if (DOM.header) DOM.header.style.display = "none";
-      if (DOM.clases) DOM.clases.style.display = "none";
-      if (DOM.countdown) DOM.countdown.style.display = "none";
-      if (DOM.info) DOM.info.style.display = "none";
-      if (DOM.calendarTitle) DOM.calendarTitle.style.display = "none";
-      if (DOM.proximaLabel) DOM.proximaLabel.style.display = "none";
-      if (DOM.proxima) DOM.proxima.style.display = "none";
-      if (DOM.ctaFinal) DOM.ctaFinal.style.display = "none";
-      if (DOM.offerSticky) DOM.offerSticky.style.display = "none";
-      if (DOM.offerText) DOM.offerText.style.display = "none";
+  if (estado === "closed") {
 
-      return;
+    console.log("💀 Evento cerrado → congelando sistema");
+
+    if (DOM.estadoCerrado && lastRender.estadoCerrado !== data.evento.htmlEventoCerrado) {
+      DOM.estadoCerrado.innerHTML = data.evento.htmlEventoCerrado;
+      lastRender.estadoCerrado = data.evento.htmlEventoCerrado;
+      show(DOM.estadoCerrado);
     }
-
-    if (DOM.estadoCerrado) {
-      DOM.estadoCerrado.innerHTML = "";
-      DOM.estadoCerrado.style.display = "none";
-      lastRender.estadoCerrado = null;
-    }
-
-    // 🔥 volver a mostrar todo
-    if (DOM.header) DOM.header.style.display = "";
-    if (DOM.clases) DOM.clases.style.display = "";
-    if (DOM.countdown) DOM.countdown.style.display = "";
-    if (DOM.info) DOM.info.style.display = "";
-    if (DOM.calendarTitle) DOM.calendarTitle.style.display = "";
-    if (DOM.proximaLabel) DOM.proximaLabel.style.display = "";
-    if (DOM.proxima) DOM.proxima.style.display = "";
-    if (DOM.ctaFinal) DOM.ctaFinal.style.display = "";
-
-    // 🔥 OFFER TEXT
-    if (DOM.offerText) {
-      DOM.offerText.innerText = data.evento.offerText;
-      DOM.offerText.style.display = data.evento.offerTextDisplay;
-    }
-
-    // 🔥 STICKY
-    if (DOM.offerSticky) {
-      DOM.offerSticky.style.display = data.evento.offerStickyDisplay;
-      if (lastRender.sticky !== data.evento.offerStickyHtml) {
-
-        DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
-        lastRender.sticky = data.evento.offerStickyHtml;
-
-        if (data.evento.offerStickyDisplay === "block" && DOM.sectionPadding && DOM.offerSticky) {
-          requestAnimationFrame(() => {
-            const extraSpace = 10;
-            const height = DOM.offerSticky.offsetHeight + extraSpace;
-            DOM.sectionPadding.style.paddingTop = height + "px";
-          });
-        }
-
-      }
-    }
-
-    // 🔥 TITULO
-    if (DOM.calendarTitle && lastRender.calendarTitle !== data.evento.calendarTitleHtml) {
-      DOM.calendarTitle.innerHTML = data.evento.calendarTitleHtml;
-      lastRender.calendarTitle = data.evento.calendarTitleHtml;
-    }
-
-    if (DOM.info && lastRender.info !== data.evento.infoPaginaHtml) {
-      DOM.info.innerHTML = data.evento.infoPaginaHtml;
-      lastRender.info = data.evento.infoPaginaHtml;
-    }
-
-    if (DOM.header && lastRender.header !== data.evento.headerText) {
-      DOM.header.innerHTML = data.evento.headerText;
-      lastRender.header = data.evento.headerText;
-    }
-
-    // 🔥 CLASES
-    const clasesString = JSON.stringify(data.evento.clases);
-
-    if (lastRender.clasesData !== clasesString) {
-
-      const html = await renderClases(data.evento.clases);
-
-      if (lastRender.clases !== html) {
-        DOM.clases.innerHTML = html;
-        lastRender.clases = html;
-      }
-
-      lastRender.clasesData = clasesString;
-    }
-
-    // 🔥 PROXIMA LABEL
-    if (DOM.proximaLabel) {
-      if (data.evento.proximaClaseLabel) {
-        DOM.proximaLabel.innerHTML = data.evento.proximaClaseLabel;
-        DOM.proximaLabel.style.display = "block";
-      } else {
-        DOM.proximaLabel.style.display = "none";
-      }
-    }
-
-    // 🔥 PROXIMA
-    if (DOM.proxima && data.evento.proximaClase) {
-
-      const html = await renderClases([data.evento.proximaClase]);
-
-      if (lastRender.proxima !== html) {
-        DOM.proxima.innerHTML = html;
-        lastRender.proxima = html;
-      }
-
-      DOM.proxima.style.display = "block";
-
-    } else {
-      DOM.proxima.style.display = "none";
-    }
-
     
-    // ===== CTA FINAL UNIFICADO =====
+    
+    if (DOM.header) hide(DOM.header);
+    if (DOM.clases) hide(DOM.clases);
+    if (DOM.countdown) hide(DOM.countdown);
+    if (DOM.info) hide(DOM.info);
+    if (DOM.calendarTitle) hide(DOM.calendarTitle);
+    if (DOM.proximaLabel) hide(DOM.proximaLabel);
+    if (DOM.proxima) hide(DOM.proxima);
+    if (DOM.ctaFinal) hide(DOM.ctaFinal);
+    if (DOM.offerSticky) hide(DOM.offerSticky);
+    if (DOM.offerText) hide(DOM.offerText);
 
-    if (!DOM.ctaFinal) return;
+    return;
+  }
 
-    let html = "";
+  if (DOM.estadoCerrado) {
+    DOM.estadoCerrado.innerHTML = "";
+    hide(DOM.estadoCerrado);
+    lastRender.estadoCerrado = null;
+  }
 
-    // PRIORIDAD 1 → durmiendo
-    if (data.evento.usuarioDurmiendo) {
+  // 🔥 volver a mostrar todo
+  if (DOM.header) show(DOM.header);
+  if (DOM.clases) show(DOM.clases);
+  if (DOM.countdown) show(DOM.countdown);
+  if (DOM.info) show(DOM.info);
+  if (DOM.calendarTitle) show(DOM.calendarTitle);
+  if (DOM.proximaLabel) show(DOM.proximaLabel);
+  if (DOM.proxima) show(DOM.proxima);
+  if (DOM.ctaFinal) show(DOM.ctaFinal);
 
-      html = `
-        <div class="mensaje-dormir">
-          ${data.evento.textoDurmiendo}
-        </div>
-      `;
-
-    // PRIORIDAD 2 → botón CTA
-    } else if (data.evento.offerText && data.evento.offerUrl) {
-
-      html = `
-        <div class="clase-item clase-item-cta">
-          <div class="clase-info"></div>
-          <div class="clase-boton">
-            <a href="${data.evento.offerUrl}" target="_blank">
-              🔥 Comprar ahora
-            </a>
-          </div>
-        </div>
-      `;
-    }
-
-
-    // ===== RENDER =====
-    if (html) {
-
-      if (lastRender.ctaFinal !== html) {
-        DOM.ctaFinal.innerHTML = html;
-        lastRender.ctaFinal = html;
-      }
-
-      DOM.ctaFinal.style.display = "block";
-
+  // 🔥 OFFER TEXT
+  if (DOM.offerText) {
+    DOM.offerText.innerText = data.evento.offerText;
+    if (data.evento.offerTextDisplay === "none") {
+      hide(DOM.offerText);
     } else {
-      DOM.ctaFinal.style.display = "none";
-    }
-
-    // 🔥 COMPONENTES
-    await renderComponentes();
-
-    // 🔥 COUNTDOWN
-    if (DOM.countdown) {
-      DOM.countdown.style.display = data.evento.countdownDisplay;
-    }
-
-    if (data.evento.countdownDisplay !== "none" && data.evento.countdownTarget) {
-      LaunchCore.countdown.start(data.evento.countdownTarget);
-    } else {
-      LaunchCore.countdown.stop();
+      show(DOM.offerText);
     }
   }
 
+  // 🔥 STICKY
+  if (DOM.offerSticky) {
 
-  let calendarTemplateCache = null;
+    if (data.evento.offerStickyDisplay === "none") {
+      hide(DOM.offerSticky);
+    } else {
+      show(DOM.offerSticky);
+    }
 
-  async function renderBotones() {
+    if (lastRender.sticky !== data.evento.offerStickyHtml) {
 
-    const botones = document.querySelectorAll(".clase-boton");
+      DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
+      lastRender.sticky = data.evento.offerStickyHtml;
 
-    for (const el of botones) {
-
-      const raw = el.dataset.boton;
-      if (!raw) continue;
-
-      let data;
-      try {
-        data = JSON.parse(decodeURIComponent(raw));
-      } catch (e) {
-        console.warn("JSON inválido en data-boton", raw);
-        continue;
+      if (data.evento.offerStickyDisplay === "block" && DOM.sectionPadding && DOM.offerSticky) {
+        requestAnimationFrame(() => {
+          const extraSpace = 10;
+          const height = DOM.offerSticky.offsetHeight + extraSpace;
+          DOM.sectionPadding.style.paddingTop = height + "px";
+        });
       }
 
-      // 🔥 CALENDAR
-      if (data.tipo === "calendar") {
+    }
+  }
 
-        if (!calendarTemplateCache) {
-          calendarTemplateCache = await fetch(
-            LaunchCore.paths.components + "calendar-button.html"
-          ).then(r => r.text());
-        }
+  // 🔥 TITULO
+  if (DOM.calendarTitle && lastRender.calendarTitle !== data.evento.calendarTitleHtml) {
+    DOM.calendarTitle.innerHTML = data.evento.calendarTitleHtml;
+    lastRender.calendarTitle = data.evento.calendarTitleHtml;
+  }
 
-        const nuevoHTML = calendarTemplateCache
-          .replace("{{texto}}", data.texto)
-          .replace("{{google}}", data.google)
-          .replace("{{ics}}", data.ics)
-          .replace("{{ics_nombre}}", data.icsNombre || "evento.ics");
+  if (DOM.info && lastRender.info !== data.evento.infoPaginaHtml) {
+    DOM.info.innerHTML = data.evento.infoPaginaHtml;
+    lastRender.info = data.evento.infoPaginaHtml;
+  }
 
-        if (el.__lastHTML !== nuevoHTML) {
-          el.innerHTML = nuevoHTML;
-          el.__lastHTML = nuevoHTML;
-        }
+  if (DOM.header && lastRender.header !== data.evento.headerText) {
+    DOM.header.innerHTML = data.evento.headerText;
+    lastRender.header = data.evento.headerText;
+  }
 
-      }
+  // 🔥 CLASES
+  const clasesString = JSON.stringify(data.evento.clases);
 
-      // 🔥 LINK NORMAL
-      if (data.tipo === "link") {
+  if (lastRender.clasesData !== clasesString) {
 
-        const nuevoHTML = `
-          <a href="${data.url}" target="_blank">
-            ${data.texto}
+    const html = await renderClases(data.evento.clases);
+
+    if (lastRender.clases !== html) {
+      DOM.clases.innerHTML = html;
+      lastRender.clases = html;
+    }
+
+    lastRender.clasesData = clasesString;
+  }
+
+  // 🔥 PROXIMA LABEL
+  if (DOM.proximaLabel) {
+    if (data.evento.proximaClaseLabel) {
+      DOM.proximaLabel.innerHTML = data.evento.proximaClaseLabel;
+      show(DOM.proximaLabel);
+    } else {
+      hide(DOM.proximaLabel);
+    }
+  }
+
+  // 🔥 PROXIMA
+  if (DOM.proxima && data.evento.proximaClase) {
+
+    const html = await renderClases([data.evento.proximaClase]);
+
+    if (lastRender.proxima !== html) {
+      DOM.proxima.innerHTML = html;
+      lastRender.proxima = html;
+    }
+
+    show(DOM.proxima);
+
+  } else {
+    hide(DOM.proxima);
+  }
+
+  
+  // ===== CTA FINAL UNIFICADO =====
+
+  if (!DOM.ctaFinal) return;
+
+  let html = "";
+
+  // PRIORIDAD 1 → durmiendo
+  if (data.evento.usuarioDurmiendo) {
+
+    html = `
+      <div class="mensaje-dormir">
+        ${data.evento.textoDurmiendo}
+      </div>
+    `;
+
+  // PRIORIDAD 2 → botón CTA
+  } else if (data.evento.offerText && data.evento.offerUrl) {
+
+    html = `
+      <div class="clase-item clase-item-cta">
+        <div class="clase-info"></div>
+        <div class="clase-boton">
+          <a href="${data.evento.offerUrl}" target="_blank">
+            🔥 Comprar ahora
           </a>
-        `;
-
-        if (el.__lastHTML !== nuevoHTML) {
-          el.innerHTML = nuevoHTML;
-          el.__lastHTML = nuevoHTML;
-        }
-      }
-    }
+        </div>
+      </div>
+    `;
   }
 
 
-  let messageTemplateCache = null;
+  // ===== RENDER =====
+  if (html) {
 
-  async function renderClases(clases) {
-
-    if (!messageTemplateCache) {
-      messageTemplateCache = await fetch(
-        LaunchCore.paths.components + "messages.html"
-      ).then(r => r.text());
+    if (lastRender.ctaFinal !== html) {
+      DOM.ctaFinal.innerHTML = html;
+      lastRender.ctaFinal = html;
     }
 
-    let html = "";
+    show(DOM.ctaFinal);
 
-    clases.forEach((c, index) => {
-
-      // 🔥 INYECTAR ICS REAL DESDE calendarICS
-      const icsData = window.__calendarICS?.find(
-        i => i.id === c.id
-      );
-
-      if (icsData) {
-        c.boton.ics = icsData.url;
-        c.boton.icsNombre = icsData.nombre;
-      }
-      
-      const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
-
-      html += messageTemplateCache
-        .replace("{{titulo}}", c.titulo)
-        .replace("{{mensaje}}", c.mensaje)
-        .replace("{{boton}}", botonJSON);
-
-    });
-
-    return html;
+  } else {
+    hide(DOM.ctaFinal);
   }
 
+  // 🔥 COMPONENTES
+  await renderComponentes();
 
-  async function renderComponentes() {
-    await renderBotones();   
-  }
+  // 🔥 COUNTDOWN
+  if (DOM.countdown) {
     
+    if (data.evento.countdownDisplay === "none") {
+      hide(DOM.countdown);
+    } else {
+      show(DOM.countdown);
+    }
+  }
 
-  // botones de calendario
-  document.addEventListener("click", function(e) {
+  if (data.evento.countdownDisplay !== "none" && data.evento.countdownTarget) {
+    LaunchCore.countdown.start(data.evento.countdownTarget);
+  } else {
+    LaunchCore.countdown.stop();
+  }
+}
 
-    const toggle = e.target.closest(".calendar-toggle");
 
-    if (toggle) {
-      const container = toggle.parentElement;
-      const menu = container.querySelector(".calendar-menu-inline");
+let calendarTemplateCache = null;
 
-      if (!menu) return;
+async function renderBotones() {
 
-      const isOpen = getComputedStyle(menu).display === "flex";
+  const botones = document.querySelectorAll(".clase-boton");
 
-      // cerrar todos
-      document.querySelectorAll(".calendar-menu-inline")
-        .forEach(m => m.style.display = "none");
+  for (const el of botones) {
 
-      menu.style.display = isOpen ? "none" : "flex";
-      return;
+    const raw = el.dataset.boton;
+    if (!raw) continue;
+
+    let data;
+    try {
+      data = JSON.parse(decodeURIComponent(raw));
+    } catch (e) {
+      console.warn("JSON inválido en data-boton", raw);
+      continue;
     }
 
-    // cerrar si clic fuera
+    // 🔥 CALENDAR
+    if (data.tipo === "calendar") {
+
+      if (!calendarTemplateCache) {
+        calendarTemplateCache = await fetch(
+          LaunchCore.paths.components + "calendar-button.html"
+        ).then(r => r.text());
+      }
+
+      const nuevoHTML = calendarTemplateCache
+        .replace("{{texto}}", data.texto)
+        .replace("{{google}}", data.google)
+        .replace("{{ics}}", data.ics)
+        .replace("{{ics_nombre}}", data.icsNombre || "evento.ics");
+
+      if (el.__lastHTML !== nuevoHTML) {
+        el.innerHTML = nuevoHTML;
+        el.__lastHTML = nuevoHTML;
+      }
+
+    }
+
+    // 🔥 LINK NORMAL
+    if (data.tipo === "link") {
+
+      const nuevoHTML = `
+        <a href="${data.url}" target="_blank">
+          ${data.texto}
+        </a>
+      `;
+
+      if (el.__lastHTML !== nuevoHTML) {
+        el.innerHTML = nuevoHTML;
+        el.__lastHTML = nuevoHTML;
+      }
+    }
+  }
+}
+
+
+let messageTemplateCache = null;
+
+async function renderClases(clases) {
+
+  if (!messageTemplateCache) {
+    messageTemplateCache = await fetch(
+      LaunchCore.paths.components + "messages.html"
+    ).then(r => r.text());
+  }
+
+  let html = "";
+
+  clases.forEach((c, index) => {
+
+    // 🔥 INYECTAR ICS REAL DESDE calendarICS
+    const icsData = window.__calendarICS?.find(
+      i => i.id === c.id
+    );
+
+    if (icsData) {
+      c.boton.ics = icsData.url;
+      c.boton.icsNombre = icsData.nombre;
+    }
+    
+    const botonJSON = encodeURIComponent(JSON.stringify(c.boton));
+
+    html += messageTemplateCache
+      .replace("{{titulo}}", c.titulo)
+      .replace("{{mensaje}}", c.mensaje)
+      .replace("{{boton}}", botonJSON);
+
+  });
+
+  return html;
+}
+
+
+async function renderComponentes() {
+  await renderBotones();   
+}
+  
+
+// botones de calendario
+document.addEventListener("click", function(e) {
+
+  const toggle = e.target.closest(".calendar-toggle");
+
+  if (toggle) {
+    const container = toggle.parentElement;
+    const menu = container.querySelector(".calendar-menu-inline");
+
+    if (!menu) return;
+
+    const isOpen = getComputedStyle(menu).display === "flex";
+
+    // cerrar todos
     document.querySelectorAll(".calendar-menu-inline")
       .forEach(m => m.style.display = "none");
 
-  });
+    menu.style.display = isOpen ? "none" : "flex";
+    return;
+  }
+
+  // cerrar si clic fuera
+  document.querySelectorAll(".calendar-menu-inline")
+    .forEach(m => m.style.display = "none");
+
+});
