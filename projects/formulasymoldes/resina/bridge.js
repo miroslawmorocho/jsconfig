@@ -267,7 +267,14 @@ async function initLaunchEngine(data){
     LaunchCore.countdown.stop();
   }
 
-  document.getElementById("loader")?.remove();
+  const loader = document.getElementById("loader");
+  if (loader) {
+    loader.style.opacity = "0";
+    loader.style.transition = "opacity 0.3s ease";
+
+    setTimeout(() => loader.remove(), 300);
+  }
+  
   document.getElementById("launch-engine")?.classList.add("is-ready");
 }
 
