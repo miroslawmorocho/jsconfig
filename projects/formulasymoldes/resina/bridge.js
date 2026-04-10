@@ -101,7 +101,7 @@ function adjustLayout() {
 
   if (!DOM.root || !DOM.offerSticky) return;
 
-  const isVisible = getComputedStyle(DOM.offerSticky).display !== "none";
+  const isVisible = DOM.offerSticky.offsetHeight > 0;
 
   // ===== ESPACIADO =====
   if (isVisible) {
@@ -554,3 +554,7 @@ window.addEventListener("resize", adjustLayout);
 const stickyObserver = new ResizeObserver(() => {
   adjustLayout();
 });
+
+if (DOM.offerSticky) {
+  stickyObserver.observe(DOM.offerSticky);
+}
