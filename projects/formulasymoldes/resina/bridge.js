@@ -294,11 +294,17 @@ async function initLaunchEngine(data){
   // 🔥 COUNTDOWN
   if (DOM.countdown) {
 
-    if (data.evento.countdownDisplay === "none") {
-      hideSmooth(DOM.countdown);
-    } else {
+    const shouldShow = (
+      data.evento.countdownDisplay !== "none" &&
+      Number.isFinite(Number(data.evento.countdownTarget))
+    );
+
+    if (shouldShow) {
       showSmooth(DOM.countdown);
+    } else {
+      hideSmooth(DOM.countdown);
     }
+
   }
 
   if (data.evento.countdownDisplay !== "none" && data.evento.countdownTarget) {
