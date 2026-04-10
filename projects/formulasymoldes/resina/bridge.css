@@ -37,9 +37,7 @@ VARIABLES VISUALES
 }
 
 .dynamic-block.is-hidden {
-  height: 0 !important;
-  opacity: 0;
-  pointer-events: none;
+  display: none;
 }
 
 /* inicio */
