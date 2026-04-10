@@ -30,11 +30,19 @@ function hideSmooth(el) {
   requestAnimationFrame(() => {
     el.style.height = "0px";
     el.classList.add("is-hidden");
+
+    // 🔥 AÑADE ESTO
+    setTimeout(() => {
+      el.style.display = "none";
+    }, 300);
   });
 }
 
 function showSmooth(el) {
   if (!el || !el.classList.contains("is-hidden")) return;
+
+  // 🔥 AÑADE ESTO
+  el.style.display = "block";
 
   el.classList.remove("is-hidden");
 
@@ -50,6 +58,7 @@ function showSmooth(el) {
     el.style.height = "auto";
   }, 300);
 }
+
 
 /* =====================================================
   DOM
