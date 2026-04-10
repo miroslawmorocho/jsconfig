@@ -111,6 +111,9 @@ async function initLaunchEngine(data){
     if (DOM.offerSticky) hideSmooth(DOM.offerSticky);
     if (DOM.offerText) hideSmooth(DOM.offerText);
 
+    // 🔥 asegurar que la UI marque como lista
+    finalizeRender();
+
     return;
   }
 
@@ -119,16 +122,6 @@ async function initLaunchEngine(data){
     hideSmooth(DOM.estadoCerrado);
     lastRender.estadoCerrado = null;
   }
-
-  // 🔥 volver a mostrar todo
-  /*if (DOM.header) showSmooth(DOM.header);
-  if (DOM.clases) showSmooth(DOM.clases);
-  if (DOM.countdown) showSmooth(DOM.countdown);
-  if (DOM.info) showSmooth(DOM.info);
-  if (DOM.calendarTitle) showSmooth(DOM.calendarTitle);
-  if (DOM.proximaLabel) showSmooth(DOM.proximaLabel);
-  if (DOM.proxima) showSmooth(DOM.proxima);
-  if (DOM.ctaFinal) showSmooth(DOM.ctaFinal);*/
 
   // 🔥 OFFER TEXT
   if (DOM.offerText) {
@@ -322,8 +315,31 @@ async function initLaunchEngine(data){
     setTimeout(() => loader.remove(), 300);
   }
 
+  finalizeRender();
+}
+
+function finalizeRender() {
+  const loader = document.getElementById("loader");
+
+  if (loader) {
+    loader.style.opacity = "0";
+    loader.style.transition = "opacity 0.3s ease";
+    setTimeout(() => loader.remove(), 300);
+  }
+
   document.getElementById("launch-engine")?.classList.add("is-ready");
 }
+
+// OCULTAR CONTADOR CUANDO LLEGA A CERO
+LaunchCore.on("countdown:finished", () => {
+
+  console.log("⏱ countdown terminado → ocultando UI");
+
+  if (DOM.countdown) {
+    hideSmooth(DOM.countdown);
+  }
+
+});
 
 
 let calendarTemplateCache = null;

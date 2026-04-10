@@ -178,21 +178,20 @@ LaunchCore.countdown = (function(){
 
       if(diff <= 0){
 
-      if(DOM.days()) DOM.days().textContent = "00";
-      if(DOM.hours()) DOM.hours().textContent = "00";
-      if(DOM.minutes()) DOM.minutes().textContent = "00";
-      if(DOM.seconds()) DOM.seconds().textContent = "00";
+        if(DOM.days()) DOM.days().textContent = "00";
+        if(DOM.hours()) DOM.hours().textContent = "00";
+        if(DOM.minutes()) DOM.minutes().textContent = "00";
+        if(DOM.seconds()) DOM.seconds().textContent = "00";
 
-      stop();
+        stop();
 
-      // 🔥 OPCIONAL PERO RECOMENDADO
-      const wrapper = document.getElementById("contador-wrapper");
-      if(wrapper){
-        wrapper.style.display = "none";
+        // 🔥 EMITIR EVENTO GLOBAL
+        LaunchCore.emit("countdown:finished", {
+          targetTime
+        });
+
+        return;
       }
-
-      return;
-    }
 
       const d = Math.floor(diff / 86400000);
       const h = Math.floor((diff % 86400000) / 3600000);
