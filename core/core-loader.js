@@ -1484,12 +1484,24 @@ LaunchCore.globals.loadFooter = async function () {
 
   if (document.getElementById("global-footer")) return;
 
+  const slot = document.getElementById("footer-slot");
+
+  // 🔥 si no hay slot, fallback (por si acaso)
+  if (!slot) {
+    console.warn("⚠️ No hay #footer-slot, usando body");
+    const html = await fetch(LaunchCore.paths.footer).then(r => r.text());
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html;
+
+    document.body.appendChild(wrapper);
+    return;
+  }
+
+  // 🔥 carga normal
   const html = await fetch(LaunchCore.paths.footer).then(r => r.text());
 
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = html;
-
-  document.body.appendChild(wrapper);
+  slot.innerHTML = html;
 };
 
 // ================= CSS DE BANDERAS ======================
@@ -1573,14 +1585,3 @@ LaunchCore.modules = {};
 LaunchCore.register = function(name, fn){
   LaunchCore.modules[name] = fn;
 };
-
-
-
-// 🚀 AUTO INIT
-window.addEventListener("DOMContentLoaded", () => {
-  if (window.LaunchCore && typeof LaunchCore.init === "function") {
-    LaunchCore.init();
-  } else {
-    console.error("💀 LaunchCore no disponible para init");
-  }
-});
