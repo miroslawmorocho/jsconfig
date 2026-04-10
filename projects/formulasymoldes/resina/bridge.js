@@ -225,6 +225,14 @@ async function initLaunchEngine(data){
     lastRender.clasesData = clasesString;
   }
 
+  if (DOM.clases) {
+    if (data.evento.clases && data.evento.clases.length > 0) {
+      showSmooth(DOM.clases);
+    } else {
+      hideSmooth(DOM.clases);
+    }
+  }
+
   // 🔥 PROXIMA LABEL
   if (DOM.proximaLabel) {
     if (data.evento.proximaClaseLabel) {
