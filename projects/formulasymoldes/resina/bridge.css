@@ -24,14 +24,14 @@ VARIABLES VISUALES
 }
 
 .dark-mode {
-  --button-bg:#ff00ff;
+  --button-bg:#FFE700;
   --button-text:#000;
 
   --offer-bg:#00ffff;
   --offer-text:#000;
 
   --neon-offer: #00ffff;
-  --neon-clase: #ff00ff;
+  --neon-clase: #FFE700;
 }
 
 /* OCULTAMOS TODO HASTA QUE ESTÉ LISTO */
@@ -442,7 +442,7 @@ OFERTA FIXED
 }
 
 .offer-top{
-  font-weight:800;
+  font-weight:700;
   font-size:20px;
 }
 
