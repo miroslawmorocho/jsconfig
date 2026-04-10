@@ -177,8 +177,7 @@ CLASE ITEM
   font-weight:bold;
   border-radius:25px;
   display:block;  
-  text-align:center;
-  box-shadow: 0 0 18px var(--neon-clase);
+  text-align:center;  
 }
 
 .clase-item-cta .clase-info{
@@ -228,6 +227,11 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
   width:260px;   /* 🔥 ancho fijo elegante */
 }
 
+.clase-boton a,
+.calendar-toggle {
+  box-shadow: 0 0 18px var(--neon-clase);
+}
+
 .calendar-inner{
   display:flex;
   align-items:center;
@@ -273,6 +277,7 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
 
   background: none;
   color: black;
+  box-shadow: none;
 }
 
 /* SEPARADOR */
