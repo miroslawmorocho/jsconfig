@@ -210,7 +210,9 @@ async function initLaunchEngine(data){
         DOM.root.style.paddingTop = "0px";
       }
 
-      adjustSwitchPosition(); // 🔥 SIEMPRE al final
+      window.addEventListener("resize", () => {
+        adjustSwitchPosition();
+      });
 
     }, 350);
   }
