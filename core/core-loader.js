@@ -10,6 +10,7 @@ LaunchCore.paths = {
   projects: "https://miroslawmorocho.github.io/jsconfig/projects/",
   workerUrl: "https://launch-engine.miroslaw-mm.workers.dev",
   globalCSS: "https://miroslawmorocho.github.io/jsconfig/assets/css/global.css",
+  footer: "https://miroslawmorocho.github.io/jsconfig/assets/ui/footer.html",
 };
 
 LaunchCore.config = {
@@ -626,6 +627,8 @@ LaunchCore.init = async function(){
     if (module.init) {
       await module.init();
     }
+
+    await LaunchCore.globals.loadFooter();
 
     // 💾 5. CACHE (BOOTSTRAP)
     function loadCache() {
@@ -1480,7 +1483,19 @@ LaunchCore.globals.versionChecker = async function(){
 
 };
 
+// =============== INSERTAR FOOTER =======================
 
+LaunchCore.globals.loadFooter = async function () {
+
+  if (document.getElementById("global-footer")) return;
+  
+  const html = await fetch(LaunchCore.paths.footer).then(r => r.text());
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = html;
+
+  document.body.appendChild(wrapper);
+};
 
 // ================= CSS DE BANDERAS ======================
 
