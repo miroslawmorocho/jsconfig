@@ -168,8 +168,9 @@ LaunchCore.countdown = (function(){
 
     stop();
 
-    targetTime = Number(target);
+    LaunchCore.state.countdownFinished = false; // 🔥 RESET
 
+    targetTime = Number(target);
   
     function update(){
 
@@ -185,7 +186,8 @@ LaunchCore.countdown = (function(){
 
         stop();
 
-        // 🔥 EMITIR EVENTO GLOBAL
+        LaunchCore.state.countdownFinished = true; // 🔥 CLAVE
+
         LaunchCore.emit("countdown:finished", {
           targetTime
         });

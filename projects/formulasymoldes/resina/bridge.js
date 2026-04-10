@@ -295,8 +295,9 @@ async function initLaunchEngine(data){
   if (DOM.countdown) {
 
     const shouldShow = (
+      !LaunchCore.state.countdownFinished && // 🔥 CLAVE
       data.evento.countdownDisplay !== "none" &&
-      data.evento.countdownTarget
+      Number.isFinite(Number(data.evento.countdownTarget))
     );
 
     if (shouldShow) {
