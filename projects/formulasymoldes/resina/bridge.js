@@ -147,23 +147,30 @@ async function initLaunchEngine(data){
 
     if (data.evento.offerStickyDisplay === "none") {
       hideSmooth(DOM.offerSticky);
-    } else {
-      showSmooth(DOM.offerSticky);
-    }
 
-    if (lastRender.sticky !== data.evento.offerStickyHtml) {
-
-      DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
-      lastRender.sticky = data.evento.offerStickyHtml;
-
-      if (data.evento.offerStickyDisplay === "block" && DOM.sectionPadding && DOM.offerSticky) {
-        requestAnimationFrame(() => {
-          const extraSpace = 10;
-          const height = DOM.offerSticky.offsetHeight + extraSpace;
-          DOM.sectionPadding.style.paddingTop = height + "px";
-        });
+      // 🔥 QUITAR ESPACIO
+      if (DOM.root) {
+        DOM.root.style.paddingTop = "0px";
       }
 
+    } else {
+      showSmooth(DOM.offerSticky);
+
+      // 🔥 AÑADIR ESPACIO
+      if (DOM.root && DOM.offerSticky) {
+        setTimeout(() => {
+          const extraSpace = 10;
+          const height = DOM.offerSticky.offsetHeight + extraSpace;
+
+          DOM.root.style.paddingTop = height + "px";
+        }, 350);
+      }
+    }
+
+    // 🔥 SOLO HTML (esto queda aparte)
+    if (lastRender.sticky !== data.evento.offerStickyHtml) {
+      DOM.offerSticky.innerHTML = data.evento.offerStickyHtml;
+      lastRender.sticky = data.evento.offerStickyHtml;
     }
   }
 
