@@ -232,7 +232,7 @@ BOTON SELECTOR CALENDARIO (LIMPIO)
   cursor: pointer;
 
   background: none;
-  color: var(--text);
+  color: black;
 }
 
 /* SEPARADOR */
