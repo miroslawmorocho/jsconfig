@@ -21,14 +21,34 @@ let lastRender = {
   estadoCerrado: null
 };
 
-function hide(el) {
-  if (!el) return;
-  el.classList.add("is-hidden");
+// FUNCIÓN PARA APARICIONES CON TRANSICIÓN SUAVE
+function hideSmooth(el) {
+  if (!el || el.classList.contains("is-hidden")) return;
+
+  el.style.height = el.offsetHeight + "px";
+
+  requestAnimationFrame(() => {
+    el.style.height = "0px";
+    el.classList.add("is-hidden");
+  });
 }
 
-function show(el) {
-  if (!el) return;
+function showSmooth(el) {
+  if (!el || !el.classList.contains("is-hidden")) return;
+
   el.classList.remove("is-hidden");
+
+  const fullHeight = el.scrollHeight;
+
+  el.style.height = "0px";
+
+  requestAnimationFrame(() => {
+    el.style.height = fullHeight + "px";
+  });
+
+  setTimeout(() => {
+    el.style.height = "auto";
+  }, 300);
 }
 
 /* =====================================================
@@ -41,9 +61,9 @@ const DOM = {
   countdown: document.getElementById("contador-wrapper"),
   offerSticky: document.getElementById("offer-sticky"),
   info: document.getElementById("launch-info"),
+  divider: document.getElementById("divider"),
   calendarTitle: document.getElementById("launch-calendar-title"),
-  offerText: document.getElementById("offer-deadline"), // Extraído a DOM para mejor orden
-  sectionPadding: document.getElementById("section-6f21106b"), // El section de tu oferta
+  offerText: document.getElementById("offer-deadline"), // Extraído a DOM para mejor orden  
   proximaLabel: document.getElementById("launch-proxima-label"),
   proxima: document.getElementById("launch-proxima"),
   ctaFinal: document.getElementById("launch-cta-final"),
@@ -76,39 +96,39 @@ async function initLaunchEngine(data){
     if (DOM.estadoCerrado && lastRender.estadoCerrado !== data.evento.htmlEventoCerrado) {
       DOM.estadoCerrado.innerHTML = data.evento.htmlEventoCerrado;
       lastRender.estadoCerrado = data.evento.htmlEventoCerrado;
-      show(DOM.estadoCerrado);
+      showSmooth(DOM.estadoCerrado);
     }
     
     
-    if (DOM.header) hide(DOM.header);
-    if (DOM.clases) hide(DOM.clases);
-    if (DOM.countdown) hide(DOM.countdown);
-    if (DOM.info) hide(DOM.info);
-    if (DOM.calendarTitle) hide(DOM.calendarTitle);
-    if (DOM.proximaLabel) hide(DOM.proximaLabel);
-    if (DOM.proxima) hide(DOM.proxima);
-    if (DOM.ctaFinal) hide(DOM.ctaFinal);
-    if (DOM.offerSticky) hide(DOM.offerSticky);
-    if (DOM.offerText) hide(DOM.offerText);
+    if (DOM.header) hideSmooth(DOM.header);
+    if (DOM.clases) hideSmooth(DOM.clases);
+    if (DOM.countdown) hideSmooth(DOM.countdown);
+    if (DOM.info) hideSmooth(DOM.info);
+    if (DOM.calendarTitle) hideSmooth(DOM.calendarTitle);
+    if (DOM.proximaLabel) hideSmooth(DOM.proximaLabel);
+    if (DOM.proxima) hideSmooth(DOM.proxima);
+    if (DOM.ctaFinal) hideSmooth(DOM.ctaFinal);
+    if (DOM.offerSticky) hideSmooth(DOM.offerSticky);
+    if (DOM.offerText) hideSmooth(DOM.offerText);
 
     return;
   }
 
   if (DOM.estadoCerrado) {
     DOM.estadoCerrado.innerHTML = "";
-    hide(DOM.estadoCerrado);
+    hideSmooth(DOM.estadoCerrado);
     lastRender.estadoCerrado = null;
   }
 
   // 🔥 volver a mostrar todo
-  if (DOM.header) show(DOM.header);
-  if (DOM.clases) show(DOM.clases);
-  if (DOM.countdown) show(DOM.countdown);
-  if (DOM.info) show(DOM.info);
-  if (DOM.calendarTitle) show(DOM.calendarTitle);
-  if (DOM.proximaLabel) show(DOM.proximaLabel);
-  if (DOM.proxima) show(DOM.proxima);
-  if (DOM.ctaFinal) show(DOM.ctaFinal);
+  if (DOM.header) showSmooth(DOM.header);
+  if (DOM.clases) showSmooth(DOM.clases);
+  if (DOM.countdown) showSmooth(DOM.countdown);
+  if (DOM.info) showSmooth(DOM.info);
+  if (DOM.calendarTitle) showSmooth(DOM.calendarTitle);
+  if (DOM.proximaLabel) showSmooth(DOM.proximaLabel);
+  if (DOM.proxima) showSmooth(DOM.proxima);
+  if (DOM.ctaFinal) showSmooth(DOM.ctaFinal);
 
   // 🔥 OFFER TEXT
   if (DOM.offerText) {
@@ -119,9 +139,9 @@ async function initLaunchEngine(data){
   if (DOM.offerSticky) {
 
     if (data.evento.offerStickyDisplay === "none") {
-      hide(DOM.offerSticky);
+      hideSmooth(DOM.offerSticky);
     } else {
-      show(DOM.offerSticky);
+      showSmooth(DOM.offerSticky);
     }
 
     if (lastRender.sticky !== data.evento.offerStickyHtml) {
@@ -175,9 +195,9 @@ async function initLaunchEngine(data){
   if (DOM.proximaLabel) {
     if (data.evento.proximaClaseLabel) {
       DOM.proximaLabel.innerHTML = data.evento.proximaClaseLabel;
-      show(DOM.proximaLabel);
+      showSmooth(DOM.proximaLabel);
     } else {
-      hide(DOM.proximaLabel);
+      hideSmooth(DOM.proximaLabel);
     }
   }
 
@@ -191,10 +211,10 @@ async function initLaunchEngine(data){
       lastRender.proxima = html;
     }
 
-    show(DOM.proxima);
+    showSmooth(DOM.proxima);
 
   } else {
-    hide(DOM.proxima);
+    hideSmooth(DOM.proxima);
   }
 
   
@@ -237,10 +257,10 @@ async function initLaunchEngine(data){
       lastRender.ctaFinal = html;
     }
 
-    show(DOM.ctaFinal);
+    showSmooth(DOM.ctaFinal);
 
   } else {
-    hide(DOM.ctaFinal);
+    hideSmooth(DOM.ctaFinal);
   }
 
   // 🔥 COMPONENTES
@@ -250,9 +270,9 @@ async function initLaunchEngine(data){
   if (DOM.countdown) {
 
     if (data.evento.countdownDisplay === "none") {
-      hide(DOM.countdown);
+      hideSmooth(DOM.countdown);
     } else {
-      show(DOM.countdown);
+      showSmooth(DOM.countdown);
     }
   }
 
