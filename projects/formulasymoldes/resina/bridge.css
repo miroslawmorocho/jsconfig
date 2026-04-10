@@ -63,7 +63,7 @@ VARIABLES VISUALES
 
 #contador-wrapper{
   margin-bottom:var(--space-xl);
-  min-height: 60px;
+  min-height: 20px;
 }
 
 #launch-proxima-label{
