@@ -55,6 +55,10 @@ VARIABLES VISUALES
   margin-bottom:var(--space-xl);
 }
 
+#offer-deadline:empty {
+  display: none;
+}
+
 #offer-deadline{
   padding-top: 20px;
   margin-bottom:var(--space-md);
@@ -62,7 +66,7 @@ VARIABLES VISUALES
 }
 
 #contador-wrapper{
-  margin-bottom:var(--space-xl);
+  margin-bottom:var(--space-md);
   min-height: 80px;
 }
 

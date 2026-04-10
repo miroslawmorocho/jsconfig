@@ -112,12 +112,7 @@ async function initLaunchEngine(data){
 
   // 🔥 OFFER TEXT
   if (DOM.offerText) {
-    DOM.offerText.innerText = data.evento.offerText;
-    if (data.evento.offerTextDisplay === "none") {
-      hide(DOM.offerText);
-    } else {
-      show(DOM.offerText);
-    }
+    DOM.offerText.innerText = data.evento.offerText || "";    
   }
 
   // 🔥 STICKY
@@ -274,7 +269,7 @@ async function initLaunchEngine(data){
 
     setTimeout(() => loader.remove(), 300);
   }
-  
+
   document.getElementById("launch-engine")?.classList.add("is-ready");
 }
 
