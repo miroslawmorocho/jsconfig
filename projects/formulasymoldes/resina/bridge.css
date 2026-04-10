@@ -107,6 +107,10 @@ VARIABLES VISUALES
   font-size: 18px;
 }
 
+.mensaje-dormir {
+  margin-bottom: var(--space-md);
+}
+
 #launch-info{
   font-size: 16px;  
   padding: 40px 0 20px 0;
