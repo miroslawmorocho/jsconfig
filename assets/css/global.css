@@ -141,6 +141,6 @@ img {
 #global-footer {
   text-align: center;
   font-size: 12px;
-  padding: 20px;
+  padding-top: 20px;
   color: var(--text-soft);
 }

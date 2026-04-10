@@ -9,13 +9,15 @@ LaunchCore.register("bridge", {
 
     const url = `${base}${project}/${product}/${page}`;
 
+    // 🔥 CSS
+    await LaunchCore.loadCSS(url + ".css");
+    await LaunchCore.use("darkmode");
+    
     // 🔥 HTML
     const html = await fetch(url + ".html").then(r => r.text());
     root.innerHTML = html;
 
-    // 🔥 CSS + JS
-    await LaunchCore.loadCSS(url + ".css");    
-    await LaunchCore.use("darkmode");
+    // JS
     await LaunchCore.loadScript(url + ".js");
 
   },

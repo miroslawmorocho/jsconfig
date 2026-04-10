@@ -267,6 +267,7 @@ async function initLaunchEngine(data){
     LaunchCore.countdown.stop();
   }
 
+  document.getElementById("loader")?.remove();
   document.getElementById("launch-engine")?.classList.add("is-ready");
 }
 
