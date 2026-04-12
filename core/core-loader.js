@@ -481,7 +481,7 @@ LaunchCore.fetchWorker = async function(endpoint = "", force = false){
 
         const queryString = queryParams.toString();
         if (queryString) {
-          url += "?" + queryString;
+          url += (url.includes("?") ? "&" : "?") + queryString;
         }
 
         console.log(`🌐 FETCH intento ${attempt + 1}:`, url);
