@@ -590,8 +590,9 @@ LaunchCore.init = async function(){
     // ⚙️ 2. CONFIG
     LaunchCore.config.project = root.dataset.project;
     LaunchCore.config.product = root.dataset.product;
+    LaunchCore.config.launch = root.dataset.launch;
     LaunchCore.config.page = root.dataset.page;
-
+    
     if (!LaunchCore.config.project || !LaunchCore.config.product || !LaunchCore.config.page) {
       console.error("💀 Faltan atributos data-*");
       return;
@@ -599,7 +600,7 @@ LaunchCore.init = async function(){
 
     const { project, product, page } = LaunchCore.config;
 
-    LaunchCore.config.endpoint = "/";
+    LaunchCore.config.endpoint = `/?launch=${LaunchCore.config.launch}`;
 
     // 📦 3. GLOBAL CSS
     await LaunchCore.loadCSS(LaunchCore.paths.globalCSS);
