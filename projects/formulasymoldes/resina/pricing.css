@@ -16,7 +16,7 @@
   background:#3b0764;  
   isolation:isolate;
   border-radius:16px;
-  padding:18px 4px;
+  padding:12px 4px;
   margin-bottom:30px;  
   font-size: 16px;
 }
@@ -29,13 +29,13 @@
 
 .pricing-box h2 {
   text-align:center;
-  margin-bottom:20px;
+  margin-bottom:4px;
 }
 
 .pricing-intro {
   display:flex;
   gap:16px;
-  align-items:flex-start;
+  align-items:flex;
   margin-bottom:20px;
 }
 
