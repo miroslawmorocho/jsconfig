@@ -261,64 +261,100 @@ font-weight:700;
 }
 
 .dark-mode .pricing-box {
-  background: #15173D !important;
+  background: #28396C; /*#1A3263;*/
   /*color: #ffffff !important;*/
   box-shadow: 0 10px 6px -6px #00ffff;
 }
 
 .dark-mode .pricing-table {
-  background: #111 !important;
-  color: #d3d3d3 !important;
+  background: #111;
+  color: #d3d3d3;
 }
 
 .dark-mode .pricing-table th,
 .dark-mode .pricing-table td {
-  border: 1px solid #9fa0ff !important;
+  border: 1px solid #9fa0ff;
 }
 
 .dark-mode .pricing-table th {
-  background: #465C88 !important;
-  color: #fff !important;
+  background: #465C88;
+  color: #fff;
 }
 
 /* filas especiales */
 .dark-mode .section-row td,
 .dark-mode .highlight td {
-  background: #465C88 !important;
-  color: #fff !important;
+  background: #465C88;
+  color: #fff;
 }
 
 /* botón */
 .dark-mode .buy-btn {
-  background: #00ffff !important;
-  color: #000 !important;
+  background: #00ffff;
+  color: #000;
   box-shadow: 0 0 12px #00ffff;
 }
 
 .dark-mode .buy-btn:hover {
-  background: #ff00ff !important;
-  color: #fff !important;
+  background: #ff00ff;
+  color: #fff;
   box-shadow: 0 0 12px #ff00ff;
 }
 
 /* notas */
 .dark-mode .pricing-country-note {
-  background: #111 !important;
-  color: #d3d3d3 !important;
+  background: #111;
+  color: #d3d3d3;
 }
 
 .dark-mode .pricing-extra-note {
-  background: #111 !important;
-  color: #d3d3d3 !important;
+  background: #111;
+  color: #d3d3d3;
 }
 
 /* contador */
 .dark-mode .unit {
-  background: #222 !important;
-  color: #fff !important;
+  background: #222;
+  color: #fff;
 }
 
 /* FIX: respetar fondo del pricing */
 .dark-mode .pricing-box div {
-  background-color: transparent !important;
+  background-color: transparent;
+}
+
+/* HTML */
+.bloque {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+/* Imagen 40% */
+.bloque-img {
+  flex: 0 0 40%;
+}
+
+/* Texto 60% */
+.bloque-texto {
+  flex: 0 0 60%;
+}
+
+/* Imagen responsiva */
+.bloque-img img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 📱 MÓVIL */
+@media (max-width: 600px) {
+  .bloque {
+    flex-direction: column;
+  }
+
+  .bloque-img,
+  .bloque-texto {
+    flex: 0 0 100%;
+  }
 }
