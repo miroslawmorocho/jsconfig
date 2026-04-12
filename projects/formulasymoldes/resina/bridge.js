@@ -380,12 +380,6 @@ async function initLaunchEngine(data){
 
   }
 
-  if (data.evento.countdownDisplay !== "none" && data.evento.countdownTarget) {
-    LaunchCore.countdown.start(data.evento.countdownTarget);
-  } else {
-    LaunchCore.countdown.stop();
-  }
-
   const loader = document.getElementById("loader");
   if (loader) {
     loader.style.opacity = "0";
