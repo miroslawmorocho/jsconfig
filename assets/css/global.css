@@ -18,7 +18,8 @@
 
   /* 📐 LAYOUT */
   --container-width: 768px;
-  --spacing: 20px;
+  --spacing-md: 20px;
+  --spacing-sm: 10px;
 }
 
 /* 🌙 DARK MODE */

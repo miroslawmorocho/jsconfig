@@ -1,7 +1,7 @@
 #pricing-engine {
   max-width: var(--container-width);
   margin: 0 auto;
-  padding: 0 var(--spacing);
+  padding: 0 var(--spacing-sm);
 }
 
 /* TEXTO DE CIERRE */
@@ -65,6 +65,16 @@
 
 #pricing{
   transition: opacity 0.3s ease;
+}
+
+@media (max-width:480px){
+
+  .pricing-box {
+    margin-left: -6px;
+    margin-right: -6px;
+    border-radius: 0;
+  }
+
 }
 
 @media (min-width:768px) {
