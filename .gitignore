@@ -38,5 +38,4 @@ Thumbs.db
 .idea/
 worker.js
 legacy_core-loader.js
-bridge-test/index.html
-programa-resina/index.html
+pages/*
