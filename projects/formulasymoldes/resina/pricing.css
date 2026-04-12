@@ -327,7 +327,11 @@ font-weight:700;
 .bloque {
   display: flex;
   gap: 20px;
-  align-items: center;
+  align-items: center;  
+}
+
+.bloque.reverse {
+  flex-direction: row-reverse;
 }
 
 /* Imagen 40% */
