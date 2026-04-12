@@ -538,7 +538,7 @@ async function fetchAndHandle(force = false) {
     return;
   }
 
-  const raw = await LaunchCore.fetchWorker("", force);
+  const raw = await LaunchCore.fetchWorker(LaunchCore.config.endpoint, force);
 
   if (!raw) return;
 
@@ -997,7 +997,7 @@ LaunchCore.vc.confirm = async function(){
       return;
     }
 
-    const result = await LaunchCore.fetchWorker("", true);
+    const result = await LaunchCore.fetchWorker(LaunchCore.config.endpoint, true);
     if (!result) return;
 
     const workerVersion = String(result?.status?.version || 0);
