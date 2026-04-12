@@ -13,14 +13,19 @@
 /* TABLA DE PRECIOS */
 
 .pricing-box {
-  background:#3b0764;
-  color:#fff;
+  background:#3b0764;  
   isolation:isolate;
   border-radius:16px;
   padding:18px 4px;
   margin-bottom:30px;  
   font-size: 16px;
 }
+
+.pricing-box h2,
+.pricing-box p {
+  color: #fff;
+}
+
 
 .pricing-box h2 {
   text-align:center;
@@ -72,7 +77,6 @@
   .pricing-box {
     margin-left: -6px;
     margin-right: -6px;
-    border-radius: 0;
   }
 
 }
