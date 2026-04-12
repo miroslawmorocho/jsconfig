@@ -1,3 +1,9 @@
+#pricing-engine {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing);
+}
+
 /* TEXTO DE CIERRE */
 #texto-cierre {
   font-size:20px;
@@ -12,8 +18,7 @@
   isolation:isolate;
   border-radius:16px;
   padding:18px 4px;
-  margin-bottom:30px;
-  /*font-family:Arial, sans-serif;*/
+  margin-bottom:30px;  
   font-size: 16px;
 }
 
@@ -268,8 +273,6 @@ font-weight:700;
   background: #465C88 !important;
   color: #fff !important;
 }
-
-
 
 /* botón */
 .dark-mode .buy-btn {
